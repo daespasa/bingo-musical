@@ -45,6 +45,11 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Write .env from the example
+        run: |
+          cp .env.example .env
+          sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=$SESSION_SECRET|" .env
+          sed -i "s|^GUEST_TOKEN_SECRET=.*|GUEST_TOKEN_SECRET=$GUEST_TOKEN_SECRET|" .env
       - name: Validate Prisma schema and migrations
         run: pnpm --filter @bingo/database prisma:validate && pnpm db:deploy
       - name: Lint
@@ -56,10 +61,7 @@ jobs:
       - name: Build
         run: pnpm build
       - name: Validate docker compose
-        run: |
-          cp .env.example .env
-          sed -i 's/replace-with-a-long-random-secret/ci-secret-a/;s/replace-with-another-long-random-secret/ci-secret-b/' .env
-          docker compose config -q
+        run: docker compose config -q
 
   commitlint:
     if: github.event_name == 'pull_request'

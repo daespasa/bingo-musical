@@ -13,7 +13,8 @@
     "migrate:deploy": "dotenv -c -e ../../.env -- prisma migrate deploy",
     "seed": "dotenv -c -e ../../.env -- ts-node --transpile-only prisma/seed.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src prisma --no-warn-ignored"
+    "lint": "eslint src prisma --no-warn-ignored",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "ts-node --transpile-only prisma/seed.ts"

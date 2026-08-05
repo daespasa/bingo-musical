@@ -58,6 +58,7 @@ jobs:
           sed -i "s|^GUEST_TOKEN_SECRET=.*|GUEST_TOKEN_SECRET=$GUEST_TOKEN_SECRET|" .env
       - name: Prepare database and demo assets
         run: |
+          pnpm --filter @bingo/database prisma:generate
           pnpm db:deploy
           pnpm db:seed
           pnpm demo:assets
