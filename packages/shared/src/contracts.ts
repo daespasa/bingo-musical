@@ -108,6 +108,12 @@ export type RoundRevealedPayload = {
   artist: string;
 };
 
+export type CardUpdatedPayload = {
+  cellId: string;
+  status: 'UNMARKED' | 'PENDING' | 'VALID' | 'INVALID';
+  pointsAwarded: number;
+};
+
 export type ClaimResultPayload = {
   participantId: string;
   alias: string;
