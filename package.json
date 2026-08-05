@@ -19,7 +19,9 @@
     "demo:audio": "node scripts/generate-demo-audio.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,md,yml,yaml}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "demo:icons": "node scripts/generate-icons.mjs",
+    "demo:assets": "node scripts/generate-demo-audio.mjs && node scripts/generate-icons.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
