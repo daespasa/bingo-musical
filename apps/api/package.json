@@ -9,7 +9,7 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --no-warn-ignored",
-    "test": "dotenv -c -e ../../.env -- vitest run"
+    "test": "dotenv -c -e ../../.env -- vitest run --passWithNoTests"
   },
   "dependencies": {
     "@bingo/database": "workspace:*",
