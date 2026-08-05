@@ -3,6 +3,7 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { Music4 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { saveGuestSession, loadGuestSession, type RoomPublic } from '@/lib/types';
 
@@ -94,7 +95,8 @@ export default function JoinCodePage({ params }: { params: Promise<{ code: strin
                 disabled={joining || alias.trim().length < 2}
                 className="btn-primary text-lg"
               >
-                {joining ? 'Entrando…' : '🎵 ¡A jugar!'}
+                <Music4 className="h-5 w-5" aria-hidden />
+                {joining ? 'Entrando…' : '¡A jugar!'}
               </button>
             </form>
           </>

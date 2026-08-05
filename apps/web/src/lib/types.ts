@@ -23,6 +23,9 @@ export type GameSettings = {
   freeCenter: boolean;
   snippetDurationMs: number;
   answerWindowMs: number;
+  autoReveal: boolean;
+  autoAdvance: boolean;
+  roundResultsMs: number;
   lineEnabled: boolean;
   bingoEnabled: boolean;
   showLeaderboard: boolean;

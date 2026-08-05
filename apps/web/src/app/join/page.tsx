@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Headphones } from 'lucide-react';
 
 export default function JoinPage() {
   const router = useRouter();
@@ -10,9 +11,7 @@ export default function JoinPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <div className="card p-8 text-center">
-        <p className="mb-2 text-4xl" aria-hidden>
-          🎧
-        </p>
+        <Headphones className="mx-auto mb-3 h-10 w-10 text-brand-500" aria-hidden />
         <h1 className="mb-6 text-2xl font-bold">Unirse a una partida</h1>
         <form
           onSubmit={(e) => {
@@ -27,7 +26,7 @@ export default function JoinPage() {
             placeholder="CÓDIGO"
             maxLength={6}
             autoFocus
-            className="input text-center text-3xl font-black tracking-[0.4em] uppercase"
+            className="input text-center text-3xl font-black uppercase tracking-[0.4em]"
             aria-label="Código de sala"
           />
           <button type="submit" disabled={code.trim().length < 4} className="btn-primary text-lg">

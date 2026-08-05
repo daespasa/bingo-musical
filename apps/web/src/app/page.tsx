@@ -1,12 +1,11 @@
 import Link from 'next/link';
+import { Headphones, Music4 } from 'lucide-react';
 
 export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-8 px-6 text-center">
       <div>
-        <p className="mb-3 text-5xl" aria-hidden>
-          🎵🎱
-        </p>
+        <Music4 className="mx-auto mb-4 h-14 w-14 text-brand-500" aria-hidden />
         <h1 className="bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-5xl font-black text-transparent">
           Bingo Musical
         </h1>
@@ -16,7 +15,8 @@ export default function HomePage() {
       </div>
       <div className="flex w-full max-w-sm flex-col gap-3">
         <Link href="/join" className="btn-primary text-lg">
-          🎧 Unirme a una partida
+          <Headphones className="h-5 w-5" aria-hidden />
+          Unirme a una partida
         </Link>
         <Link href="/login" className="btn-secondary">
           Soy anfitrión — Iniciar sesión

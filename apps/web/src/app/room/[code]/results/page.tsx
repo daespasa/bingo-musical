@@ -3,6 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { Flame, Megaphone, Repeat, Rocket, Sparkles, Trophy, Zap } from 'lucide-react';
 import { api } from '@/lib/api';
 
 type ResultData = {
@@ -18,13 +19,13 @@ type ResultData = {
   highlights: Array<{ type: string; alias: string; roundIndex: number | null }>;
 };
 
-const LABELS: Record<string, string> = {
-  FASTEST_ANSWER: '⚡ Respuesta más rápida',
-  LEADER_CHANGE: '🔄 Cambio de líder',
-  BEST_STREAK: '🔥 Mayor racha',
-  FIRST_LINE: '📣 Primera línea',
-  BINGO: '🏆 Bingo',
-  BIGGEST_COMEBACK: '🚀 Mayor remontada',
+const HIGHLIGHTS: Record<string, { label: string; Icon: typeof Zap; className: string }> = {
+  FASTEST_ANSWER: { label: 'Respuesta más rápida', Icon: Zap, className: 'text-amber-500' },
+  LEADER_CHANGE: { label: 'Cambio de líder', Icon: Repeat, className: 'text-sky-500' },
+  BEST_STREAK: { label: 'Mayor racha', Icon: Flame, className: 'text-orange-500' },
+  FIRST_LINE: { label: 'Primera línea', Icon: Megaphone, className: 'text-brand-500' },
+  BINGO: { label: 'Bingo', Icon: Trophy, className: 'text-amber-500' },
+  BIGGEST_COMEBACK: { label: 'Mayor remontada', Icon: Rocket, className: 'text-emerald-500' },
 };
 
 export default function ResultsPage({ params }: { params: Promise<{ code: string }> }) {
@@ -62,8 +63,9 @@ export default function ResultsPage({ params }: { params: Promise<{ code: string
           {Math.round(data.durationMs / 60000)} min · {data.totalRounds} rondas
         </p>
         {data.winnerAlias && (
-          <p className="mt-3 text-xl">
-            🏆 Ganador: <span className="font-bold">{data.winnerAlias}</span>
+          <p className="mt-3 flex items-center justify-center gap-2 text-xl">
+            <Trophy className="h-5 w-5 text-amber-500" aria-hidden />
+            Ganador: <span className="font-bold">{data.winnerAlias}</span>
           </p>
         )}
       </header>
@@ -82,7 +84,7 @@ export default function ResultsPage({ params }: { params: Promise<{ code: string
                 <span>
                   {r.position}. {r.alias}
                 </span>
-                <span className="font-mono font-semibold">{r.score}</span>
+                <span className="font-mono font-semibold tabular-nums">{r.score}</span>
               </li>
             ))}
           </ol>
@@ -91,16 +93,23 @@ export default function ResultsPage({ params }: { params: Promise<{ code: string
 
       {data.highlights.length > 0 && (
         <section className="card p-4">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+          <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-slate-400">
+            <Sparkles className="h-4 w-4" aria-hidden />
             Momentazos
           </h2>
           <ul className="flex flex-col gap-1 text-sm">
-            {data.highlights.map((h, i) => (
-              <li key={i} className="flex justify-between">
-                <span>{LABELS[h.type] ?? h.type}</span>
-                <span className="font-semibold">{h.alias}</span>
-              </li>
-            ))}
+            {data.highlights.map((h, i) => {
+              const cfg = HIGHLIGHTS[h.type];
+              return (
+                <li key={i} className="flex justify-between">
+                  <span className="flex items-center gap-2">
+                    {cfg && <cfg.Icon className={`h-4 w-4 ${cfg.className}`} aria-hidden />}
+                    {cfg?.label ?? h.type}
+                  </span>
+                  <span className="font-semibold">{h.alias}</span>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

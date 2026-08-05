@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { Trophy } from 'lucide-react';
 import { api } from '@/lib/api';
 
 type HistoryEntry = {
@@ -39,8 +41,17 @@ export default function HistoryPage() {
                   {Math.round(h.durationMs / 60000)} min · {h.participants} jugadores
                 </p>
               </div>
-              <div className="text-sm">
-                🏆 <span className="font-medium">{h.winnerAlias ?? '—'}</span>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="flex items-center gap-1.5">
+                  <Trophy className="h-4 w-4 text-amber-500" aria-hidden />
+                  <span className="font-medium">{h.winnerAlias ?? '—'}</span>
+                </span>
+                <Link
+                  href={`/room/${h.code}/results`}
+                  className="text-brand-600 hover:underline dark:text-brand-400"
+                >
+                  Ver resumen
+                </Link>
               </div>
             </div>
           ))}

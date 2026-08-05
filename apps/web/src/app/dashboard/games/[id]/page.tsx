@@ -4,6 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Copy, MonitorPlay, Smartphone, Wand2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import type { CollectionDetail, GameDetail } from '@/lib/types';
 import { TrackList } from '@/components/track-list';
@@ -60,12 +61,23 @@ export default function GameDetailPage({ params }: { params: Promise<{ id: strin
             {game.settings?.cardSize}×{game.settings?.cardSize} ·{' '}
             {(game.settings?.snippetDurationMs ?? 15000) / 1000}s por ronda
           </p>
+          {game.settings && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+              <Wand2 className="h-3.5 w-3.5" aria-hidden />
+              {game.settings.autoReveal
+                ? game.settings.autoAdvance
+                  ? 'Revelado y avance automáticos'
+                  : 'Revelado automático, avance manual'
+                : 'Revelado manual por el anfitrión'}
+            </p>
+          )}
         </div>
         <button
           onClick={() => duplicate.mutate()}
           disabled={duplicate.isPending}
           className="btn-secondary"
         >
+          <Copy className="h-4 w-4" aria-hidden />
           Duplicar
         </button>
       </div>
@@ -95,14 +107,16 @@ export default function GameDetailPage({ params }: { params: Promise<{ id: strin
             disabled={openRoom.isPending}
             className="btn-primary flex-1"
           >
-            📱 Abrir sala (modo remoto)
+            <Smartphone className="h-4 w-4" aria-hidden />
+            Abrir sala (modo remoto)
           </button>
           <button
             onClick={() => openRoom.mutate('PROJECTOR')}
             disabled={openRoom.isPending}
             className="btn-secondary flex-1"
           >
-            📽️ Abrir sala (modo proyector)
+            <MonitorPlay className="h-4 w-4" aria-hidden />
+            Abrir sala (modo proyector)
           </button>
         </div>
       )}

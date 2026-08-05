@@ -3,6 +3,16 @@
 import { use, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  CheckCircle2,
+  Loader2,
+  Megaphone,
+  MonitorPlay,
+  PartyPopper,
+  Trophy,
+  Volume2,
+  XCircle,
+} from 'lucide-react';
 import { loadGuestSession } from '@/lib/types';
 import { useRoom } from '@/hooks/use-room';
 import { useRoundAudio } from '@/hooks/use-round-audio';
@@ -11,6 +21,12 @@ import { Leaderboard } from '@/components/leaderboard';
 import { RoundStatus } from '@/components/round-status';
 import { PodiumCeremony } from '@/components/podium';
 
+/** WAV silencioso mínimo: desbloquea el autoplay tras un gesto del usuario. */
+const SILENT_WAV =
+  'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=';
+
+type Toast = { text: string; tone: 'success' | 'error' | 'info' };
+
 export default function PlayPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
   const router = useRouter();
@@ -18,7 +34,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [noSession, setNoSession] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
 
   useEffect(() => {
     const session = loadGuestSession(code);
@@ -38,24 +54,39 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
   });
 
   useEffect(() => {
-    if (room.lastClaim) {
-      const c = room.lastClaim;
-      setToast(
-        c.accepted
-          ? `🎉 ${c.alias} cantó ${c.type === 'LINE' ? '¡LÍNEA!' : '¡BINGO!'}`
-          : c.participantId === participantId
-            ? `❌ ${c.reason ?? 'Reclamación rechazada'}`
-            : null,
-      );
-      const t = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(t);
+    if (!room.lastClaim) return;
+    const c = room.lastClaim;
+    const mine = c.participantId === participantId;
+    let next: Toast | null = null;
+    if (c.accepted) {
+      next = {
+        text: mine
+          ? `¡Has cantado ${c.type === 'LINE' ? 'LÍNEA' : 'BINGO'}!`
+          : `${c.alias} ha cantado ${c.type === 'LINE' ? 'línea' : 'BINGO'}`,
+        tone: 'success',
+      };
+    } else if (mine) {
+      next = { text: c.reason ?? 'Reclamación rechazada', tone: 'error' };
     }
+    if (!next) return;
+    setToast(next);
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
   }, [room.lastClaim, participantId]);
 
   const myEntry = useMemo(
     () => room.leaderboard.find((e) => e.participantId === participantId),
     [room.leaderboard, participantId],
   );
+
+  /** Filas y bingo confirmados por el servidor para este jugador. */
+  const { myLineRows, myBingo } = useMemo(() => {
+    const mine = room.acceptedClaims.filter((c) => c.participantId === participantId);
+    return {
+      myLineRows: mine.filter((c) => c.type === 'LINE').flatMap((c) => c.rows ?? []),
+      myBingo: mine.some((c) => c.type === 'BINGO'),
+    };
+  }, [room.acceptedClaims, participantId]);
 
   if (noSession) {
     return (
@@ -90,6 +121,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
   }
 
   const state = room.state;
+  const players = state?.participants.filter((p) => p.role === 'PLAYER') ?? [];
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-6">
@@ -100,12 +132,13 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
         </div>
         <div className="flex items-center gap-2 text-sm">
           {!room.connected && (
-            <span className="animate-pulse rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900 dark:text-amber-200">
+            <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900 dark:text-amber-200">
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
               Reconectando…
             </span>
           )}
           {myEntry && (
-            <span className="rounded-full bg-brand-100 px-3 py-1 font-mono font-bold text-brand-700 dark:bg-brand-900 dark:text-brand-300">
+            <span className="rounded-full bg-brand-100 px-3 py-1 font-mono font-bold tabular-nums text-brand-700 dark:bg-brand-900 dark:text-brand-300">
               {myEntry.score}
             </span>
           )}
@@ -115,40 +148,56 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
       {toast && (
         <div
           role="status"
-          className="rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white dark:bg-white dark:text-slate-900"
+          className={`animate-toast flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-center text-sm font-medium text-white ${
+            toast.tone === 'success'
+              ? 'bg-emerald-600'
+              : toast.tone === 'error'
+                ? 'bg-accent-500'
+                : 'bg-slate-900 dark:bg-slate-700'
+          }`}
         >
-          {toast}
+          {toast.tone === 'success' ? (
+            <PartyPopper className="h-4 w-4" aria-hidden />
+          ) : (
+            <XCircle className="h-4 w-4" aria-hidden />
+          )}
+          {toast.text}
         </div>
       )}
 
       {state?.status === 'LOBBY' && (
         <div className="card flex flex-col items-center gap-4 p-8 text-center">
-          <p className="text-4xl" aria-hidden>
-            🕺💃
-          </p>
+          <PartyPopper className="h-10 w-10 text-brand-500" aria-hidden />
           <p className="font-semibold">Esperando a que el anfitrión empiece…</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {state.participants.filter((p) => p.role === 'PLAYER').length} jugadores en la sala
+            {players.length} jugadores en la sala
           </p>
           {isRemote && !audioEnabled && (
             <button
               onClick={() => {
-                // Desbloquear autoplay con una reproducción silenciosa
-                const a = new Audio(
-                  'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=',
-                );
-                void a.play().catch(() => undefined);
+                void new Audio(SILENT_WAV).play().catch(() => undefined);
                 setAudioEnabled(true);
                 room.socket?.emit('audio:enabled');
               }}
               className="btn-primary text-lg"
             >
-              🔊 Activar sonido
+              <Volume2 className="h-5 w-5" aria-hidden />
+              Activar sonido
             </button>
           )}
           {(audioEnabled || !isRemote) && (
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">
-              {isRemote ? '✅ Sonido listo' : '📽️ El audio suena en el proyector'}
+            <p className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+              {isRemote ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4" aria-hidden />
+                  Sonido listo
+                </>
+              ) : (
+                <>
+                  <MonitorPlay className="h-4 w-4" aria-hidden />
+                  El audio suena en el proyector
+                </>
+              )}
             </p>
           )}
         </div>
@@ -168,6 +217,8 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
             <BingoCardGrid
               card={state.card}
               disabled={!room.connected || room.paused}
+              lineRows={myLineRows}
+              bingo={myBingo}
               onMark={(cellId) => void room.markCell(cellId)}
             />
           )}
@@ -177,7 +228,8 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
                 onClick={() => void room.claim('LINE')}
                 className="btn-secondary flex-1 text-base"
               >
-                📣 ¡Línea!
+                <Megaphone className="h-4 w-4" aria-hidden />
+                ¡Línea!
               </button>
             )}
             {state.settings.bingoEnabled && (
@@ -185,7 +237,8 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
                 onClick={() => void room.claim('BINGO')}
                 className="btn-primary flex-1 text-base"
               >
-                🏆 ¡Bingo!
+                <Trophy className="h-4 w-4" aria-hidden />
+                ¡Bingo!
               </button>
             )}
           </div>
