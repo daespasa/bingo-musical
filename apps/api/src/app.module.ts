@@ -6,6 +6,7 @@ import { CollectionsModule } from './collections/collections.module';
 import { GamesModule } from './games/games.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { SpotifyModule } from './spotify/spotify.module';
 import { HealthController } from './health/health.controller';
 import { PrismaService } from './prisma.service';
 
@@ -17,6 +18,7 @@ import { PrismaService } from './prisma.service';
     GamesModule,
     RoomsModule,
     RealtimeModule,
+    SpotifyModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
