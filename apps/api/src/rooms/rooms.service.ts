@@ -146,6 +146,33 @@ export class RoomsService {
     return { participantId: participant.id, roomId: room.id, alias, token };
   }
 
+  async result(code: string): Promise<Record<string, unknown>> {
+    const room = await this.prisma.room.findUnique({
+      where: { code: code.toUpperCase() },
+      include: {
+        game: { select: { name: true } },
+        result: { include: { winner: { select: { alias: true } } } },
+        highlights: { include: { participant: { select: { alias: true } } } },
+      },
+    });
+    if (!room?.result) throw new NotFoundException('Resultados no disponibles');
+    return {
+      gameName: room.game.name,
+      code: room.code,
+      finishedAt: room.result.finishedAt.toISOString(),
+      durationMs: room.result.durationMs,
+      totalRounds: room.result.totalRounds,
+      winnerAlias: room.result.winner?.alias ?? null,
+      summary: room.result.summary,
+      highlights: room.highlights.map((h) => ({
+        type: h.type,
+        alias: h.participant?.alias ?? '???',
+        roundIndex: h.roundIndex,
+        data: h.data,
+      })),
+    };
+  }
+
   /** Genera un token efímero de host para el handshake del WebSocket. */
   hostSocketToken(roomId: string, hostParticipantId: string): string {
     return this.guestTokens.sign({
