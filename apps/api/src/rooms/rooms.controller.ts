@@ -33,6 +33,12 @@ export class RoomsController {
     return this.rooms.join(code, dto.alias, userAgent);
   }
 
+  @Get(':code/result')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  result(@Param('code') code: string): Promise<Record<string, unknown>> {
+    return this.rooms.result(code);
+  }
+
   @Post(':code/host-session')
   @UseGuards(AuthGuard)
   async hostSession(@CurrentUser() user: User, @Param('code') code: string) {
