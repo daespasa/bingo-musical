@@ -26,6 +26,17 @@ Tipos: `feat`, `fix`, `chore`, `refactor`, `test`, `docs`, `style`, `perf`, `bui
 
 Un commit = una intención. No mezclar refactors con features ni formateo masivo con lógica. commitlint lo valida en el hook `commit-msg`.
 
+## Variables de entorno y Turborepo
+
+Turborepo 2 ejecuta las tareas en **modo de entorno estricto**: una tarea solo
+recibe las variables declaradas en su clave `env` de `turbo.json` (más
+`globalEnv`). Si añades una variable nueva que necesite `dev`, `build` o `test`,
+decláralas ahí o la tarea la verá como `undefined`.
+
+Los tests unitarios son herméticos: `apps/api/vitest.setup.ts` fija valores
+deterministas y deja Spotify y Google sin configurar, de modo que no dependen
+de que exista un `.env` en disco ni de credenciales reales.
+
 ## Validaciones antes de commit
 
 Los hooks de Husky ejecutan automáticamente:
