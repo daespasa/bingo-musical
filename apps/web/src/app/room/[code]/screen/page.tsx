@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Music, Pause, Users, Volume2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRoom } from '@/hooks/use-room';
 import { useRoundAudio } from '@/hooks/use-round-audio';
@@ -64,8 +65,9 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
               <p className="text-8xl font-black tracking-[0.15em] text-brand-600 dark:text-brand-400">
                 {code}
               </p>
-              <p className="mt-4 text-3xl">
-                👥 {players.length} jugador{players.length === 1 ? '' : 'es'}
+              <p className="mt-4 flex items-center justify-center gap-2 text-3xl">
+                <Users className="h-7 w-7" aria-hidden />
+                {players.length} jugador{players.length === 1 ? '' : 'es'}
               </p>
             </div>
           </div>
@@ -77,14 +79,15 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
               }}
               className="btn-primary text-2xl"
             >
-              🔊 Activar sonido del proyector
+              <Volume2 className="h-6 w-6" aria-hidden />
+              Activar sonido del proyector
             </button>
           )}
           <div className="flex max-w-3xl flex-wrap justify-center gap-3">
             {players.map((p) => (
               <span
                 key={p.id}
-                className="rounded-full bg-brand-100 px-4 py-2 text-xl font-semibold text-brand-800 dark:bg-brand-900 dark:text-brand-200"
+                className="animate-rise rounded-full bg-brand-100 px-4 py-2 text-xl font-semibold text-brand-800 dark:bg-brand-900 dark:text-brand-200"
               >
                 {p.alias}
               </span>
@@ -96,7 +99,7 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
       {state && state.status !== 'LOBBY' && (
         <>
           {room.revealed ? (
-            <div>
+            <div className="animate-rise">
               <p className="text-2xl uppercase tracking-widest text-slate-400">La canción era</p>
               <p className="mt-2 text-7xl font-black">{room.revealed.title}</p>
               <p className="mt-2 text-4xl text-slate-500 dark:text-slate-300">
@@ -108,7 +111,14 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
               <p className="text-3xl uppercase tracking-widest text-slate-400">
                 Ronda {(room.prepare?.index ?? 0) + 1} / {room.prepare?.totalRounds ?? '…'}
               </p>
-              <p className="mt-6 text-8xl">{room.paused ? '⏸️' : '🎵'}</p>
+              {room.paused ? (
+                <Pause className="mx-auto mt-6 h-24 w-24 text-slate-400" aria-hidden />
+              ) : (
+                <Music
+                  className="mx-auto mt-6 h-24 w-24 animate-pulse text-brand-500"
+                  aria-hidden
+                />
+              )}
               <p className="mt-4 text-3xl font-semibold">
                 {room.paused ? 'Pausa' : '¿Qué canción suena?'}
               </p>

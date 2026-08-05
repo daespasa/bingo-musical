@@ -26,8 +26,12 @@ export type RoomConnection = {
   revealed: RoundRevealedPayload | null;
   finished: GameFinishedPayload | null;
   lastClaim: ClaimResultPayload | null;
+  /** Reclamaciones aceptadas de la partida, en orden de llegada. */
+  acceptedClaims: ClaimResultPayload[];
   highlights: HighlightPayload[];
   paused: boolean;
+  /** El fragmento terminó y el anfitrión aún no ha revelado (modo manual). */
+  awaitingReveal: boolean;
   socket: Socket | null;
   markCell: (cellId: string) => Promise<MarkCellAck>;
   claim: (type: 'LINE' | 'BINGO') => Promise<{ accepted: boolean; reason?: string }>;
@@ -48,8 +52,10 @@ export function useRoom(token: string | null): RoomConnection {
   const [revealed, setRevealed] = useState<RoundRevealedPayload | null>(null);
   const [finished, setFinished] = useState<GameFinishedPayload | null>(null);
   const [lastClaim, setLastClaim] = useState<ClaimResultPayload | null>(null);
+  const [acceptedClaims, setAcceptedClaims] = useState<ClaimResultPayload[]>([]);
   const [highlights, setHighlights] = useState<HighlightPayload[]>([]);
   const [paused, setPaused] = useState(false);
+  const [awaitingReveal, setAwaitingReveal] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -84,6 +90,7 @@ export function useRoom(token: string | null): RoomConnection {
         setRevealed(null);
         setSchedule(null);
         setLastClaim(null);
+        setAwaitingReveal(false);
       }),
     );
     socket.on(
@@ -92,8 +99,12 @@ export function useRoom(token: string | null): RoomConnection {
     );
     socket.on(
       'round:revealed',
-      p<RoundRevealedPayload>((d) => setRevealed(d)),
+      p<RoundRevealedPayload>((d) => {
+        setRevealed(d);
+        setAwaitingReveal(false);
+      }),
     );
+    socket.on('round:awaiting-reveal', () => setAwaitingReveal(true));
     socket.on('round:skipped', () => setSchedule(null));
     socket.on(
       'game:finished',
@@ -103,7 +114,10 @@ export function useRoom(token: string | null): RoomConnection {
     socket.on('game:resumed', () => setPaused(false));
     socket.on(
       'claim:accepted',
-      p<ClaimResultPayload>((d) => setLastClaim(d)),
+      p<ClaimResultPayload>((d) => {
+        setLastClaim(d);
+        setAcceptedClaims((prev) => [...prev, d]);
+      }),
     );
     socket.on(
       'claim:rejected',
@@ -187,8 +201,10 @@ export function useRoom(token: string | null): RoomConnection {
     revealed,
     finished,
     lastClaim,
+    acceptedClaims,
     highlights,
     paused,
+    awaitingReveal,
     socket: socketRef.current,
     markCell,
     claim,

@@ -39,6 +39,29 @@ export class GameSettingsDto {
   @Max(60000)
   answerWindowMs?: number;
 
+  @ApiPropertyOptional({
+    default: true,
+    description: 'Revela la canción automáticamente al cerrarse la ventana de respuesta',
+  })
+  @IsOptional()
+  @IsBoolean()
+  autoReveal?: boolean;
+
+  @ApiPropertyOptional({
+    default: true,
+    description: 'Encadena la siguiente ronda automáticamente tras los resultados',
+  })
+  @IsOptional()
+  @IsBoolean()
+  autoAdvance?: boolean;
+
+  @ApiPropertyOptional({ default: 6000, minimum: 2000, maximum: 30000 })
+  @IsOptional()
+  @IsInt()
+  @Min(2000)
+  @Max(30000)
+  roundResultsMs?: number;
+
   @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()

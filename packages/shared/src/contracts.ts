@@ -70,6 +70,8 @@ export type RoomStatePayload = {
     cardSize: number;
     snippetDurationMs: number;
     answerWindowMs: number;
+    autoReveal: boolean;
+    autoAdvance: boolean;
     lineEnabled: boolean;
     bingoEnabled: boolean;
     showLeaderboard: boolean;

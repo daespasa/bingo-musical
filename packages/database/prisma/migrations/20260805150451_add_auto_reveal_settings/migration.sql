@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "GameSettings" ADD COLUMN     "autoAdvance" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "autoReveal" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "roundResultsMs" INTEGER NOT NULL DEFAULT 6000;

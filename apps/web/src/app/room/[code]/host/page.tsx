@@ -3,6 +3,27 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
+import {
+  ArrowRight,
+  Circle,
+  Eye,
+  Flag,
+  Loader2,
+  Lock,
+  LockOpen,
+  MonitorPlay,
+  Pause,
+  Play,
+  Repeat,
+  Rocket,
+  SkipForward,
+  TimerReset,
+  UserX,
+  Volume2,
+  VolumeX,
+  Wand2,
+} from 'lucide-react';
+import clsx from 'clsx';
 import { api, ApiError } from '@/lib/api';
 import { useRoom } from '@/hooks/use-room';
 import { useRoundAudio } from '@/hooks/use-round-audio';
@@ -17,6 +38,16 @@ type HostSession = {
   participantId: string;
   token: string;
 };
+
+function AudioBadge({ status }: { status: string }) {
+  if (status === 'READY') {
+    return <Volume2 className="h-3.5 w-3.5 text-emerald-500" aria-label="Sonido listo" />;
+  }
+  if (status === 'ERROR') {
+    return <VolumeX className="h-3.5 w-3.5 text-accent-500" aria-label="Error de sonido" />;
+  }
+  return <Volume2 className="h-3.5 w-3.5 text-slate-300" aria-label="Sonido sin activar" />;
+}
 
 export default function HostPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
@@ -63,6 +94,7 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
     typeof window !== 'undefined' ? `${window.location.origin}/join/${code}` : `/join/${code}`;
   const players = state?.participants.filter((p) => p.role === 'PLAYER') ?? [];
   const inLobby = state?.status === 'LOBBY';
+  const autoReveal = state?.settings.autoReveal ?? true;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-6">
@@ -73,10 +105,12 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/room/${code}/screen`} target="_blank" className="btn-secondary text-xs">
-            📽️ Abrir pantalla proyector
+            <MonitorPlay className="h-4 w-4" aria-hidden />
+            Abrir pantalla proyector
           </Link>
           {!room.connected && (
-            <span className="animate-pulse rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900 dark:text-amber-200">
+            <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900 dark:text-amber-200">
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
               Reconectando…
             </span>
           )}
@@ -93,6 +127,14 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
             <div className="rounded-xl bg-white p-3">
               <QRCodeSVG value={joinUrl} size={180} />
             </div>
+            <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <Wand2 className="h-3.5 w-3.5" aria-hidden />
+              {autoReveal
+                ? state?.settings.autoAdvance
+                  ? 'Revelado y avance automáticos'
+                  : 'Revelado automático'
+                : 'Revelado manual'}
+            </p>
             {isProjector && !audioEnabled && (
               <button
                 onClick={() => {
@@ -101,7 +143,8 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
                 }}
                 className="btn-primary"
               >
-                🔊 Activar sonido en este dispositivo
+                <Volume2 className="h-4 w-4" aria-hidden />
+                Activar sonido en este dispositivo
               </button>
             )}
           </div>
@@ -112,7 +155,17 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
                 onClick={() => emit('host:lock', { locked: !state?.locked })}
                 className="btn-secondary px-3 py-1 text-xs"
               >
-                {state?.locked ? '🔓 Desbloquear sala' : '🔒 Bloquear sala'}
+                {state?.locked ? (
+                  <>
+                    <LockOpen className="h-3.5 w-3.5" aria-hidden />
+                    Desbloquear sala
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-3.5 w-3.5" aria-hidden />
+                    Bloquear sala
+                  </>
+                )}
               </button>
             </div>
             {players.length === 0 && (
@@ -124,18 +177,24 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
               {players.map((p) => (
                 <li
                   key={p.id}
-                  className="flex items-center justify-between rounded-lg bg-slate-100/60 px-3 py-2 text-sm dark:bg-slate-800/60"
+                  className="animate-toast flex items-center justify-between rounded-lg bg-slate-100/60 px-3 py-2 text-sm dark:bg-slate-800/60"
                 >
-                  <span>
-                    {p.connected ? '🟢' : '⚪'} {p.alias}{' '}
-                    <span title="Estado del audio">
-                      {p.audioStatus === 'READY' ? '🔊' : p.audioStatus === 'ERROR' ? '🔇' : '…'}
-                    </span>
+                  <span className="flex items-center gap-2">
+                    <Circle
+                      className={clsx(
+                        'h-2.5 w-2.5',
+                        p.connected ? 'fill-emerald-500 text-emerald-500' : 'text-slate-300',
+                      )}
+                      aria-label={p.connected ? 'Conectado' : 'Desconectado'}
+                    />
+                    {p.alias}
+                    <AudioBadge status={p.audioStatus} />
                   </span>
                   <button
                     onClick={() => emit('host:kick', { participantId: p.id })}
-                    className="text-xs text-accent-500 hover:underline"
+                    className="flex items-center gap-1 text-xs text-accent-500 hover:underline"
                   >
+                    <UserX className="h-3.5 w-3.5" aria-hidden />
                     Expulsar
                   </button>
                 </li>
@@ -146,7 +205,8 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
               disabled={players.length === 0}
               className="btn-primary mt-4 w-full text-lg"
             >
-              🚀 Empezar partida
+              <Rocket className="h-5 w-5" aria-hidden />
+              Empezar partida
             </button>
           </div>
         </div>
@@ -165,30 +225,43 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
           <div className="card flex flex-wrap justify-center gap-2 p-4">
             {room.paused ? (
               <button onClick={() => emit('host:resume')} className="btn-primary">
-                ▶️ Reanudar
+                <Play className="h-4 w-4" aria-hidden />
+                Reanudar
               </button>
             ) : (
               <button onClick={() => emit('host:pause')} className="btn-secondary">
-                ⏸️ Pausar
+                <Pause className="h-4 w-4" aria-hidden />
+                Pausar
               </button>
             )}
             <button onClick={() => emit('host:replay')} className="btn-secondary">
-              🔁 Repetir fragmento
+              <Repeat className="h-4 w-4" aria-hidden />
+              Repetir fragmento
             </button>
             <button
               onClick={() => emit('host:add-time', { extraMs: 10000 })}
               className="btn-secondary"
             >
-              ⏱️ +10 s
+              <TimerReset className="h-4 w-4" aria-hidden />
+              +10 s
             </button>
-            <button onClick={() => emit('host:reveal')} className="btn-secondary">
-              👁️ Revelar
+            <button
+              onClick={() => emit('host:reveal')}
+              className={clsx(
+                'btn-secondary',
+                room.awaitingReveal && 'animate-line border-amber-400 text-amber-600',
+              )}
+            >
+              <Eye className="h-4 w-4" aria-hidden />
+              Revelar
             </button>
             <button onClick={() => emit('host:skip')} className="btn-secondary">
-              ⏭️ Omitir canción
+              <SkipForward className="h-4 w-4" aria-hidden />
+              Omitir canción
             </button>
             <button onClick={() => emit('host:next')} className="btn-primary">
-              ➡️ Siguiente canción
+              <ArrowRight className="h-4 w-4" aria-hidden />
+              Siguiente canción
             </button>
             <button
               onClick={() => {
@@ -196,9 +269,16 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
               }}
               className="btn-danger"
             >
-              🏁 Finalizar
+              <Flag className="h-4 w-4" aria-hidden />
+              Finalizar
             </button>
           </div>
+          {room.awaitingReveal && (
+            <p className="animate-toast text-center text-sm text-amber-600 dark:text-amber-400">
+              El fragmento ha terminado. Pulsa <strong>Revelar</strong> cuando quieras mostrar la
+              canción.
+            </p>
+          )}
           <div className="grid gap-6 md:grid-cols-2">
             <section className="card p-4">
               <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -213,13 +293,21 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
               <ul className="flex flex-col gap-1 text-sm">
                 {players.map((p) => (
                   <li key={p.id} className="flex items-center justify-between px-2 py-1">
-                    <span>
-                      {p.connected ? '🟢' : '⚪'} {p.alias}
+                    <span className="flex items-center gap-2">
+                      <Circle
+                        className={clsx(
+                          'h-2.5 w-2.5',
+                          p.connected ? 'fill-emerald-500 text-emerald-500' : 'text-slate-300',
+                        )}
+                        aria-label={p.connected ? 'Conectado' : 'Desconectado'}
+                      />
+                      {p.alias}
                     </span>
                     <button
                       onClick={() => emit('host:kick', { participantId: p.id })}
-                      className="text-xs text-accent-500 hover:underline"
+                      className="flex items-center gap-1 text-xs text-accent-500 hover:underline"
                     >
+                      <UserX className="h-3.5 w-3.5" aria-hidden />
                       Expulsar
                     </button>
                   </li>

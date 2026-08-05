@@ -4,9 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import clsx from 'clsx';
+import { Gift, ListMusic, Wand2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import type { CollectionSummary } from '@/lib/types';
-import clsx from 'clsx';
 
 type FormData = {
   name: string;
@@ -15,11 +16,22 @@ type FormData = {
   freeCenter: boolean;
   snippetDurationMs: number;
   answerWindowMs: number;
+  autoReveal: boolean;
+  autoAdvance: boolean;
+  roundResultsMs: number;
   lineEnabled: boolean;
   bingoEnabled: boolean;
   showLeaderboard: boolean;
   shuffleTracks: boolean;
 };
+
+const RULE_TOGGLES = [
+  ['freeCenter', 'Centro libre', 'La casilla central cuenta como acertada (3×3 y 5×5).'],
+  ['lineEnabled', 'Premio por línea', 'Los jugadores pueden cantar línea.'],
+  ['bingoEnabled', 'Premio por bingo', 'Los jugadores pueden cantar bingo (termina la partida).'],
+  ['showLeaderboard', 'Ranking entre rondas', 'Muestra la clasificación tras cada canción.'],
+  ['shuffleTracks', 'Orden aleatorio', 'Baraja las canciones al empezar.'],
+] as const;
 
 export default function NewGamePage() {
   const router = useRouter();
@@ -41,6 +53,9 @@ export default function NewGamePage() {
       freeCenter: false,
       snippetDurationMs: 15000,
       answerWindowMs: 10000,
+      autoReveal: true,
+      autoAdvance: true,
+      roundResultsMs: 6000,
       lineEnabled: true,
       bingoEnabled: true,
       showLeaderboard: true,
@@ -49,6 +64,7 @@ export default function NewGamePage() {
   });
   const selectedCollection = watch('collectionId');
   const cardSize = watch('cardSize');
+  const autoReveal = watch('autoReveal');
 
   const onSubmit = async (data: FormData) => {
     setError(null);
@@ -63,6 +79,9 @@ export default function NewGamePage() {
             freeCenter: data.freeCenter,
             snippetDurationMs: Number(data.snippetDurationMs),
             answerWindowMs: Number(data.answerWindowMs),
+            autoReveal: data.autoReveal,
+            autoAdvance: data.autoAdvance,
+            roundResultsMs: Number(data.roundResultsMs),
             lineEnabled: data.lineEnabled,
             bingoEnabled: data.bingoEnabled,
             showLeaderboard: data.showLeaderboard,
@@ -110,8 +129,12 @@ export default function NewGamePage() {
                     : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
                 )}
               >
-                <p className="font-semibold">
-                  {c.isDemo ? '🎁 ' : '🎵 '}
+                <p className="flex items-center gap-2 font-semibold">
+                  {c.isDemo ? (
+                    <Gift className="h-4 w-4 text-brand-500" aria-hidden />
+                  ) : (
+                    <ListMusic className="h-4 w-4 text-brand-500" aria-hidden />
+                  )}
                   {c.name}
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -173,19 +196,74 @@ export default function NewGamePage() {
               </select>
             </div>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {(
-              [
-                ['freeCenter', 'Centro libre'],
-                ['lineEnabled', 'Premio por línea'],
-                ['bingoEnabled', 'Premio por bingo'],
-                ['showLeaderboard', 'Ranking entre rondas'],
-                ['shuffleTracks', 'Orden aleatorio de canciones'],
-              ] as const
-            ).map(([key, label]) => (
-              <label key={key} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" className="h-4 w-4 accent-brand-600" {...register(key)} />
-                {label}
+        </div>
+
+        <div className="card p-6">
+          <p className="label flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-brand-500" aria-hidden />
+            Ritmo de la partida
+          </p>
+          <div className="flex flex-col gap-3">
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-brand-600"
+                {...register('autoReveal')}
+              />
+              <span>
+                <span className="font-medium">Revelar la canción automáticamente</span>
+                <span className="block text-slate-500 dark:text-slate-400">
+                  Al cerrarse la ventana de respuesta se muestra el título y el artista sin que el
+                  anfitrión tenga que pulsar nada. Desactívalo para revelar a mano.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-brand-600"
+                {...register('autoAdvance')}
+                disabled={!autoReveal}
+              />
+              <span className={clsx(!autoReveal && 'opacity-50')}>
+                <span className="font-medium">Encadenar rondas automáticamente</span>
+                <span className="block text-slate-500 dark:text-slate-400">
+                  Tras mostrar los resultados salta sola a la siguiente canción.
+                </span>
+              </span>
+            </label>
+            <div>
+              <label className="label" htmlFor="results">
+                Pausa de resultados entre rondas (s)
+              </label>
+              <select
+                id="results"
+                className="input"
+                {...register('roundResultsMs', { valueAsNumber: true })}
+              >
+                <option value={3000}>3</option>
+                <option value={6000}>6</option>
+                <option value={10000}>10</option>
+                <option value={15000}>15</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <p className="label">Reglas</p>
+          <div className="flex flex-col gap-3">
+            {RULE_TOGGLES.map(([key, label, help]) => (
+              <label key={key} className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-brand-600"
+                  {...register(key)}
+                />
+                <span>
+                  <span className="font-medium">{label}</span>
+                  <span className="block text-slate-500 dark:text-slate-400">{help}</span>
+                </span>
               </label>
             ))}
           </div>
