@@ -1,0 +1,47 @@
+{
+  "name": "@bingo/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "dotenv -c -e ../../.env -- ts-node-dev --transpile-only --respawn --rs src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --no-warn-ignored",
+    "test": "dotenv -c -e ../../.env -- vitest run"
+  },
+  "dependencies": {
+    "@bingo/database": "workspace:*",
+    "@bingo/music-providers": "workspace:*",
+    "@bingo/shared": "workspace:*",
+    "@nestjs/common": "^11.0.5",
+    "@nestjs/core": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.5",
+    "@nestjs/platform-socket.io": "^11.0.5",
+    "@nestjs/swagger": "^11.0.3",
+    "@nestjs/throttler": "^6.4.0",
+    "@nestjs/websockets": "^11.0.5",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "argon2": "^0.41.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "cookie-parser": "^1.4.7",
+    "ioredis": "^5.4.2",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.0",
+    "@types/node": "^20",
+    "@types/qrcode": "^1.5.5",
+    "dotenv-cli": "^11.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}
