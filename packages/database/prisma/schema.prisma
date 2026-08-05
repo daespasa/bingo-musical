@@ -1,0 +1,548 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum RoomMode {
+  PROJECTOR
+  REMOTE
+  HYBRID
+}
+
+enum RoomStatus {
+  DRAFT
+  LOBBY
+  COUNTDOWN
+  PLAYING
+  PAUSED
+  ROUND_RESULTS
+  FINISHED
+  CANCELLED
+  EXPIRED
+}
+
+enum RoundStatus {
+  WAITING
+  PREPARING_AUDIO
+  WAITING_FOR_CLIENTS
+  SCHEDULED
+  PLAYING
+  ANSWER_WINDOW
+  REVEALING
+  SCORING
+  ROUND_RESULTS
+  SKIPPED
+  FINISHED
+}
+
+enum GameStatus {
+  DRAFT
+  READY
+  ARCHIVED
+}
+
+enum ParticipantRole {
+  HOST
+  PLAYER
+  SCREEN
+}
+
+enum CellStatus {
+  UNMARKED
+  PENDING
+  VALID
+  INVALID
+}
+
+enum AudioReadinessStatus {
+  NOT_ENABLED
+  TESTING
+  READY
+  PRELOADING
+  ERROR
+}
+
+enum TrackSource {
+  DEMO
+  SPOTIFY
+}
+
+enum ExternalProvider {
+  SPOTIFY
+}
+
+enum PreviewProviderKind {
+  DEMO_LOCAL
+  SPOTIFY_PREVIEW_FINDER
+}
+
+enum PreviewStatus {
+  AVAILABLE
+  NOT_FOUND
+  RATE_LIMITED
+  INVALID_RESPONSE
+  UNREACHABLE
+  ERROR
+}
+
+enum ClaimType {
+  LINE
+  BINGO
+}
+
+enum ClaimStatus {
+  ACCEPTED
+  REJECTED
+}
+
+enum ScoreEventType {
+  CORRECT_MARK
+  SPEED_BONUS
+  STREAK_BONUS
+  LINE_BONUS
+  BINGO_BONUS
+  WRONG_MARK
+  WRONG_CLAIM
+}
+
+enum HighlightType {
+  FASTEST_ANSWER
+  LEADER_CHANGE
+  BEST_STREAK
+  FIRST_LINE
+  BINGO
+  BIGGEST_COMEBACK
+}
+
+enum AuditActorType {
+  USER
+  GUEST
+  SYSTEM
+}
+
+// ---------- Identity ----------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions     Session[]
+  games        Game[]
+  rooms        Room[]
+  participants RoomParticipant[]
+  collections  MusicCollection[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ---------- Music ----------
+
+model Artist {
+  id             String  @id @default(uuid())
+  name           String
+  normalizedName String
+  tracks         Track[]
+
+  @@unique([normalizedName])
+}
+
+model Album {
+  id       String  @id @default(uuid())
+  title    String
+  coverUrl String?
+  tracks   Track[]
+}
+
+model Track {
+  id              String      @id @default(uuid())
+  title           String
+  normalizedTitle String
+  artistId        String
+  artist          Artist      @relation(fields: [artistId], references: [id])
+  albumId         String?
+  album           Album?      @relation(fields: [albumId], references: [id])
+  durationMs      Int?
+  source          TrackSource @default(DEMO)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  externalRefs     ExternalTrackReference[]
+  previews         TrackPreview[]
+  collectionTracks MusicCollectionTrack[]
+  rounds           GameRound[]
+  cells            BingoCardCell[]
+
+  @@index([normalizedTitle])
+  @@index([artistId])
+}
+
+model ExternalTrackReference {
+  id         String           @id @default(uuid())
+  trackId    String
+  track      Track            @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  provider   ExternalProvider
+  externalId String
+  url        String?
+  createdAt  DateTime         @default(now())
+
+  @@unique([provider, externalId])
+  @@index([trackId])
+}
+
+model TrackPreview {
+  id              String              @id @default(uuid())
+  trackId         String
+  track           Track               @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  provider        PreviewProviderKind
+  status          PreviewStatus
+  url             String?
+  durationMs      Int?
+  confidence      Float               @default(0)
+  resolvedAt      DateTime            @default(now())
+  lastValidatedAt DateTime?
+
+  @@unique([trackId, provider])
+  @@index([status])
+}
+
+model MusicCollection {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isDemo      Boolean  @default(false)
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tracks MusicCollectionTrack[]
+  games  Game[]
+
+  @@index([ownerId])
+}
+
+model MusicCollectionTrack {
+  id           String          @id @default(uuid())
+  collectionId String
+  collection   MusicCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  trackId      String
+  track        Track           @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  position     Int
+
+  @@unique([collectionId, trackId])
+  @@unique([collectionId, position])
+}
+
+// ---------- Games ----------
+
+model Game {
+  id           String          @id @default(uuid())
+  name         String
+  status       GameStatus      @default(DRAFT)
+  ownerId      String
+  owner        User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  collectionId String
+  collection   MusicCollection @relation(fields: [collectionId], references: [id])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  settings GameSettings?
+  rooms    Room[]
+
+  @@index([ownerId])
+}
+
+model GameSettings {
+  id                String  @id @default(uuid())
+  gameId            String  @unique
+  game              Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  cardSize          Int     @default(3)
+  freeCenter        Boolean @default(false)
+  snippetDurationMs Int     @default(15000)
+  answerWindowMs    Int     @default(10000)
+  lineEnabled       Boolean @default(true)
+  bingoEnabled      Boolean @default(true)
+  showLeaderboard   Boolean @default(true)
+  shuffleTracks     Boolean @default(true)
+  correctMarkPoints Int     @default(100)
+  speedBonusMax     Int     @default(50)
+  streakBonusPoints Int     @default(50)
+  linePoints        Int     @default(500)
+  bingoPoints       Int     @default(1500)
+  wrongMarkPenalty  Int     @default(-50)
+  wrongClaimPenalty Int     @default(-100)
+}
+
+// ---------- Rooms ----------
+
+model Room {
+  id                   String     @id @default(uuid())
+  code                 String     @unique
+  gameId               String
+  game                 Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  hostId               String
+  host                 User       @relation(fields: [hostId], references: [id])
+  mode                 RoomMode   @default(REMOTE)
+  status               RoomStatus @default(LOBBY)
+  cardAlgorithmVersion Int        @default(1)
+  lockedAt             DateTime?
+  startedAt            DateTime?
+  finishedAt           DateTime?
+  expiresAt            DateTime
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  participants RoomParticipant[]
+  rounds       GameRound[]
+  cards        BingoCard[]
+  claims       Claim[]
+  scoreEvents  ScoreEvent[]
+  snapshots    LeaderboardSnapshot[]
+  highlights   Highlight[]
+  result       GameResult?
+  auditLogs    AuditLog[]
+
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model RoomParticipant {
+  id              String          @id @default(uuid())
+  roomId          String
+  room            Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  role            ParticipantRole @default(PLAYER)
+  alias           String
+  aliasNormalized String
+  userId          String?
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  joinedAt        DateTime        @default(now())
+  leftAt          DateTime?
+  kickedAt        DateTime?
+
+  playerSessions PlayerSession[]
+  devices        PlayerDevice[]
+  audioReadiness AudioReadiness?
+  card           BingoCard?
+  marks          PlayerMark[]
+  claims         Claim[]
+  scoreEvents    ScoreEvent[]
+  highlights     Highlight[]
+  wonResults     GameResult[]
+
+  @@unique([roomId, aliasNormalized])
+  @@index([roomId])
+}
+
+model PlayerSession {
+  id            String          @id @default(uuid())
+  participantId String
+  participant   RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  tokenHash     String          @unique
+  expiresAt     DateTime
+  createdAt     DateTime        @default(now())
+
+  @@index([participantId])
+}
+
+model PlayerDevice {
+  id            String          @id @default(uuid())
+  participantId String
+  participant   RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  userAgent     String?
+  lastSeenAt    DateTime        @default(now())
+
+  @@index([participantId])
+}
+
+model AudioReadiness {
+  id            String               @id @default(uuid())
+  participantId String               @unique
+  participant   RoomParticipant      @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  status        AudioReadinessStatus @default(NOT_ENABLED)
+  errorMessage  String?
+  updatedAt     DateTime             @updatedAt
+}
+
+// ---------- Cards ----------
+
+model BingoCard {
+  id               String          @id @default(uuid())
+  roomId           String
+  room             Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId    String          @unique
+  participant      RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  size             Int
+  seed             String
+  algorithmVersion Int             @default(1)
+  createdAt        DateTime        @default(now())
+
+  cells BingoCardCell[]
+
+  @@index([roomId])
+}
+
+model BingoCardCell {
+  id            String     @id @default(uuid())
+  cardId        String
+  card          BingoCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  position      Int
+  trackId       String?
+  track         Track?     @relation(fields: [trackId], references: [id])
+  displayTitle  String
+  displayArtist String
+  isFree        Boolean    @default(false)
+  status        CellStatus @default(UNMARKED)
+  markedAt      DateTime?
+  validatedAt   DateTime?
+
+  marks PlayerMark[]
+
+  @@unique([cardId, position])
+  @@index([trackId])
+}
+
+// ---------- Rounds & scoring ----------
+
+model GameRound {
+  id         String      @id @default(uuid())
+  roomId     String
+  room       Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  index      Int
+  trackId    String
+  track      Track       @relation(fields: [trackId], references: [id])
+  status     RoundStatus @default(WAITING)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  revealedAt DateTime?
+  createdAt  DateTime    @default(now())
+
+  marks  PlayerMark[]
+  claims Claim[]
+  scores ScoreEvent[]
+
+  @@unique([roomId, index])
+  @@index([roomId, status])
+}
+
+model PlayerMark {
+  id            String          @id @default(uuid())
+  roundId       String
+  round         GameRound       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  cellId        String
+  cell          BingoCardCell   @relation(fields: [cellId], references: [id], onDelete: Cascade)
+  isCorrect     Boolean
+  latencyMs     Int?
+  markedAt      DateTime        @default(now())
+
+  @@unique([roundId, cellId])
+  @@index([participantId])
+}
+
+model Claim {
+  id             String          @id @default(uuid())
+  roomId         String
+  room           Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  roundId        String?
+  round          GameRound?      @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  type           ClaimType
+  status         ClaimStatus
+  detail         String?
+  idempotencyKey String?         @unique
+  createdAt      DateTime        @default(now())
+
+  @@index([roomId, type, status])
+}
+
+model ScoreEvent {
+  id             String          @id @default(uuid())
+  roomId         String
+  room           Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  roundId        String?
+  round          GameRound?      @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  type           ScoreEventType
+  points         Int
+  idempotencyKey String?         @unique
+  createdAt      DateTime        @default(now())
+
+  @@index([roomId, participantId])
+}
+
+model LeaderboardSnapshot {
+  id         String   @id @default(uuid())
+  roomId     String
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roundIndex Int
+  // Snapshot inmutable del ranking al cierre de la ronda; JSON justificado
+  entries    Json
+  createdAt  DateTime @default(now())
+
+  @@unique([roomId, roundIndex])
+}
+
+model Highlight {
+  id            String           @id @default(uuid())
+  roomId        String
+  room          Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId String?
+  participant   RoomParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  type          HighlightType
+  roundIndex    Int?
+  // Datos específicos del highlight (latencia, racha...); JSON justificado
+  data          Json?
+  createdAt     DateTime         @default(now())
+
+  @@index([roomId])
+}
+
+model GameResult {
+  id                  String           @id @default(uuid())
+  roomId              String           @unique
+  room                Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  winnerParticipantId String?
+  winner              RoomParticipant? @relation(fields: [winnerParticipantId], references: [id], onDelete: SetNull)
+  totalRounds         Int
+  durationMs          Int
+  // Resumen final: ranking, líneas, bingos; snapshot inmutable, JSON justificado
+  summary             Json
+  finishedAt          DateTime         @default(now())
+}
+
+model AuditLog {
+  id        String         @id @default(uuid())
+  actorType AuditActorType
+  actorId   String?
+  roomId    String?
+  room      Room?          @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  action    String
+  data      Json?
+  createdAt DateTime       @default(now())
+
+  @@index([roomId])
+  @@index([createdAt])
+}
