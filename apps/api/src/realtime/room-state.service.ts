@@ -43,6 +43,8 @@ export class RoomStateService {
         cardSize: settings?.cardSize ?? 3,
         snippetDurationMs: settings?.snippetDurationMs ?? 15000,
         answerWindowMs: settings?.answerWindowMs ?? 10000,
+        autoReveal: settings?.autoReveal ?? true,
+        autoAdvance: settings?.autoAdvance ?? true,
         lineEnabled: settings?.lineEnabled ?? true,
         bingoEnabled: settings?.bingoEnabled ?? true,
         showLeaderboard: settings?.showLeaderboard ?? true,

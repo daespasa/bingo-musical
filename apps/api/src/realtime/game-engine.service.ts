@@ -348,7 +348,14 @@ export class GameEngineService {
     this.after(
       rt,
       SCHEDULE_LEAD_MS + rt.settings.snippetDurationMs + rt.settings.answerWindowMs,
-      () => void this.reveal(rt.roomId),
+      () => {
+        if (rt.settings.autoReveal) {
+          void this.reveal(rt.roomId);
+        } else {
+          // El anfitrión decide cuándo revelar: la ventana sigue abierta.
+          this.emitRoom(rt, 'round:awaiting-reveal', { roundId: r.roundId, index: r.index });
+        }
+      },
     );
   }
 
@@ -395,6 +402,10 @@ export class GameEngineService {
       create: { roomId, roundIndex: r.index, entries: leaderboard },
     });
     this.emitRoom(rt, 'leaderboard:updated', { leaderboard });
+
+    if (rt.settings.autoAdvance) {
+      this.after(rt, rt.settings.roundResultsMs, () => void this.next(roomId));
+    }
   }
 
   async next(roomId: string): Promise<void> {
