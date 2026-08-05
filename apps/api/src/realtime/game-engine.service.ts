@@ -160,6 +160,23 @@ export class GameEngineService {
     });
   }
 
+  private emitParticipant(
+    rt: RoomRuntime,
+    participantId: string,
+    event: string,
+    payload: unknown,
+  ): void {
+    this.emitter?.toParticipant(participantId, event, {
+      eventId: randomUUID(),
+      roomId: rt.roomId,
+      gameId: rt.gameId,
+      sequenceNumber: ++rt.seq,
+      serverTimestamp: Date.now(),
+      contractVersion: 1,
+      payload,
+    });
+  }
+
   private clearTimers(rt: RoomRuntime): void {
     for (const t of rt.timers) clearTimeout(t);
     rt.timers = [];
@@ -666,6 +683,14 @@ export class GameEngineService {
     });
 
     rt.scores.set(participantId, (rt.scores.get(participantId) ?? 0) + points);
+
+    // El cliente nunca decide la validez: le enviamos el veredicto del servidor
+    this.emitParticipant(rt, participantId, 'card:updated', {
+      cellId,
+      status: isCorrect ? 'VALID' : 'INVALID',
+      pointsAwarded: points,
+    });
+
     const leaderboard = await this.leaderboard(roomId);
     this.emitRoom(rt, 'leaderboard:updated', { leaderboard });
 

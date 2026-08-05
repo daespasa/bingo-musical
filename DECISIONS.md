@@ -46,3 +46,49 @@
 - **Decisión**: los componentes UI viven en `apps/web`; los presets TS en `tsconfig.base.json` raíz.
 - **Contexto**: un paquete UI separado no aporta valor con una sola app web en el MVP.
 - **Consecuencias**: menos indirección; extraer paquete UI cuando exista una segunda superficie.
+
+## 2026-08-05 — Iconografía con lucide-react en lugar de emojis
+
+- **Decisión**: sustituir todos los emoji-icono por componentes de `lucide-react`.
+- **Contexto**: los emoji se renderizan distinto en cada sistema, no heredan el color del tema y no admiten `aria-label` propio.
+- **Alternativas**: Heroicons, Phosphor, SVG propios.
+- **Elección**: lucide-react (tree-shakeable, sin dependencias, licencia ISC).
+- **Consecuencias**: iconos coherentes en claro y oscuro y accesibles; los emoji quedan reservados a texto de contenido, no a interfaz.
+
+## 2026-08-05 — Revelado y avance de ronda configurables por partida
+
+- **Decisión**: añadir `autoReveal`, `autoAdvance` y `roundResultsMs` a `GameSettings`.
+- **Contexto**: hay dos formas de conducir una partida: automática tipo Kahoot o guiada por un presentador que comenta cada canción.
+- **Alternativas**: dejarlo fijo en automático, o una sola bandera.
+- **Elección**: dos banderas independientes; con `autoReveal` desactivado el motor emite `round:awaiting-reveal` y espera al anfitrión.
+- **Consecuencias**: el motor no asume ritmo; el panel del anfitrión resalta «Revelar» cuando toca actuar.
+
+## 2026-08-05 — El servidor devuelve el veredicto de cada marca
+
+- **Decisión**: al validar una marca, el motor emite `card:updated` al participante además de responder el ack.
+- **Contexto**: el cliente pintaba la celda solo al recargar, porque nunca recibía el resultado de la validación.
+- **Alternativas**: marcado optimista en el cliente.
+- **Elección**: el navegador nunca decide la validez; solo refleja lo que dice el servidor, y lo hace por dos vías (ack y evento) para cubrir varios dispositivos del mismo jugador.
+- **Consecuencias**: imposible falsear una casilla desde el cliente; la interfaz responde al instante.
+
+## 2026-08-05 — Google OAuth implementado a mano
+
+- **Decisión**: implementar el flujo Authorization Code con `fetch`, sin Passport ni SDK.
+- **Contexto**: solo se necesita un proveedor y el flujo son dos endpoints; Passport arrastra sesiones y estrategias que no usamos.
+- **Alternativas**: `passport-google-oauth20`, Auth.js.
+- **Elección**: implementación propia con `state` firmado con HMAC y caducidad de 10 minutos como protección CSRF.
+- **Consecuencias**: menos dependencias y control total; si se añaden más proveedores conviene revisar la decisión.
+
+## 2026-08-05 — Iconos PNG generados con un codificador propio
+
+- **Decisión**: generar los iconos de la PWA con un script que escribe PNG usando el `zlib` de Node.
+- **Contexto**: la PWA necesita PNG de 192, 512 y maskable; añadir `sharp` o `canvas` implica binarios nativos pesados solo para esto.
+- **Alternativas**: sharp, canvas, iconos SVG en el manifest, PNG versionados en el repositorio.
+- **Elección**: codificador propio (~40 líneas) invocado por `pnpm demo:assets`; los PNG no se versionan.
+- **Consecuencias**: cero dependencias nativas; si el icono cambia hay que reejecutar el script.
+
+## 2026-08-05 — El service worker nunca cachea la API
+
+- **Decisión**: cachear solo estáticos y audio demo; la API y el WebSocket van siempre a red.
+- **Contexto**: es un juego en tiempo real, servir estado de partida obsoleto sería peor que un error de red.
+- **Consecuencias**: sin conexión se muestra una página offline y la partida se reanuda al recuperar red, con el estado que mande el servidor.

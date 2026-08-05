@@ -1,0 +1,41 @@
+import { defineConfig, devices } from '@playwright/test';
+
+/**
+ * Los E2E asumen que PostgreSQL y Redis están levantados (docker compose)
+ * y arrancan la API y la web por su cuenta. No dependen de Internet ni de
+ * credenciales de Spotify: la partida usa la colección demo local.
+ */
+export default defineConfig({
+  testDir: './e2e',
+  timeout: 120_000,
+  expect: { timeout: 15_000 },
+  fullyParallel: false,
+  workers: 1,
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
+    // El navegador debe poder reproducir audio sin gesto para el test remoto
+    launchOptions: {
+      args: ['--autoplay-policy=no-user-gesture-required', '--mute-audio'],
+    },
+  },
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  webServer: [
+    {
+      command: 'pnpm --filter @bingo/api dev',
+      url: 'http://localhost:3001/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      stdout: 'pipe',
+    },
+    {
+      command: 'pnpm --filter @bingo/web dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
+});

@@ -4,11 +4,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import type {
   BaseRealtimeEvent,
+  CardUpdatedPayload,
   ClaimResultPayload,
   GameFinishedPayload,
   HighlightPayload,
   LeaderboardEntry,
   MarkCellAck,
+  CellView,
   RoomStatePayload,
   RoundPreparePayload,
   RoundRevealedPayload,
@@ -105,6 +107,24 @@ export function useRoom(token: string | null): RoomConnection {
       }),
     );
     socket.on('round:awaiting-reveal', () => setAwaitingReveal(true));
+    socket.on(
+      'card:updated',
+      p<CardUpdatedPayload>((d) => {
+        setState((prev) =>
+          prev?.card
+            ? {
+                ...prev,
+                card: {
+                  ...prev.card,
+                  cells: prev.card.cells.map((c) =>
+                    c.id === d.cellId ? { ...c, status: d.status } : c,
+                  ),
+                },
+              }
+            : prev,
+        );
+      }),
+    );
     socket.on('round:skipped', () => setSchedule(null));
     socket.on(
       'game:finished',
@@ -168,15 +188,35 @@ export function useRoom(token: string | null): RoomConnection {
     };
   }, [token]);
 
-  const markCell = useCallback((cellId: string): Promise<MarkCellAck> => {
-    return new Promise((resolve) => {
-      const socket = socketRef.current;
-      if (!socket) return resolve({ ok: false, message: 'Sin conexión' });
-      socket.timeout(5000).emit('card:mark', { cellId }, (err: unknown, ack: MarkCellAck) => {
-        resolve(err ? { ok: false, message: 'Tiempo agotado' } : ack);
-      });
-    });
+  const applyCellStatus = useCallback((cellId: string, status: CellView['status']) => {
+    setState((prev) =>
+      prev?.card
+        ? {
+            ...prev,
+            card: {
+              ...prev.card,
+              cells: prev.card.cells.map((c) => (c.id === cellId ? { ...c, status } : c)),
+            },
+          }
+        : prev,
+    );
   }, []);
+
+  const markCell = useCallback(
+    (cellId: string): Promise<MarkCellAck> => {
+      return new Promise((resolve) => {
+        const socket = socketRef.current;
+        if (!socket) return resolve({ ok: false, message: 'Sin conexión' });
+        socket.timeout(5000).emit('card:mark', { cellId }, (err: unknown, ack: MarkCellAck) => {
+          const result: MarkCellAck = err ? { ok: false, message: 'Tiempo agotado' } : ack;
+          // El servidor decide; el cliente solo refleja su veredicto
+          if (result.ok && result.status) applyCellStatus(cellId, result.status);
+          resolve(result);
+        });
+      });
+    },
+    [applyCellStatus],
+  );
 
   const claim = useCallback((type: 'LINE' | 'BINGO') => {
     return new Promise<{ accepted: boolean; reason?: string }>((resolve) => {
