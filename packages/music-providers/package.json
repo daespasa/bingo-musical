@@ -12,7 +12,12 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
+    "@types/node": "^20",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "@bingo/shared": "workspace:*",
+    "spotify-preview-finder": "^2.1.0"
   }
 }
