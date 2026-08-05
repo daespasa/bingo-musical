@@ -54,3 +54,4 @@ Thumbs.db
 # Commercial audio (never commit copyrighted audio)
 public/audio/commercial/
 **/*.mp3
+apps/web/public/audio/*.wav
