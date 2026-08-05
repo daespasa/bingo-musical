@@ -31,4 +31,13 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   return res.json() as Promise<T>;
 }
 
-export type PublicUser = { id: string; email: string; displayName: string };
+export type PublicUser = {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarUrl: string | null;
+  hasPassword: boolean;
+  linkedGoogle: boolean;
+};
+
+export type AuthProviders = { password: boolean; google: boolean };

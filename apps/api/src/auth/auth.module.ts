@@ -3,11 +3,12 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
+import { GoogleOAuthService } from './google-oauth.service';
 import { PrismaService } from '../prisma.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, SessionService, PrismaService],
+  providers: [AuthService, PasswordService, SessionService, GoogleOAuthService, PrismaService],
   exports: [SessionService, PrismaService],
 })
 export class AuthModule {}

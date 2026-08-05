@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { api, ApiError, type PublicUser } from '@/lib/api';
+import { GoogleButton } from '@/components/google-button';
 
 type FormData = { displayName: string; email: string; password: string };
 
@@ -85,6 +86,9 @@ export default function RegisterPage() {
             {isSubmitting ? 'Creando…' : 'Crear cuenta'}
           </button>
         </form>
+
+        <GoogleButton label="Registrarme con Google" />
+
         <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
           ¿Ya tienes cuenta?{' '}
           <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/login">

@@ -129,12 +129,17 @@ enum AuditActorType {
 // ---------- Identity ----------
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  displayName  String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String    @id @default(uuid())
+  email         String    @unique
+  // Nulo en cuentas creadas con Google: no tienen contraseña local
+  passwordHash  String?
+  displayName   String
+  avatarUrl     String?
+  googleId      String?   @unique
+  emailVerified Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   sessions     Session[]
   games        Game[]
@@ -144,12 +149,15 @@ model User {
 }
 
 model Session {
-  id        String   @id @default(uuid())
-  tokenHash String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id             String   @id @default(uuid())
+  tokenHash      String   @unique
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt      DateTime
+  lastSeenAt     DateTime @default(now())
+  userAgent      String?
+  ipHash         String?
+  createdAt      DateTime @default(now())
 
   @@index([userId])
   @@index([expiresAt])

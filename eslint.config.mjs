@@ -29,5 +29,20 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
+  {
+    // El service worker corre fuera del DOM: declara sus globales propias
+    files: ['**/public/sw.js'],
+    languageOptions: {
+      globals: {
+        self: 'readonly',
+        caches: 'readonly',
+        fetch: 'readonly',
+        Response: 'readonly',
+        Request: 'readonly',
+        URL: 'readonly',
+        Promise: 'readonly',
+      },
+    },
+  },
   prettier,
 );

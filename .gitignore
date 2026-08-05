@@ -55,4 +55,5 @@ Thumbs.db
 public/audio/commercial/
 **/*.mp3
 apps/web/public/audio/*.wav
+apps/web/public/icons/*.png
 apps/web/next-env.d.ts
