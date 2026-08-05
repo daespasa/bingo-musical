@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { RedisIoAdapter } from './realtime/redis.adapter';
 import { loadEnv, isProduction } from './config/env';
 
 async function bootstrap(): Promise<void> {
@@ -24,6 +25,10 @@ async function bootstrap(): Promise<void> {
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
   );
+
+  const redisAdapter = new RedisIoAdapter(app);
+  await redisAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisAdapter);
 
   const swagger = new DocumentBuilder()
     .setTitle('Bingo Musical API')
