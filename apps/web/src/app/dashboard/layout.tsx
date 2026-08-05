@@ -19,6 +19,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Partidas
             </Link>
             <Link
+              href="/dashboard/music"
+              className="text-sm text-slate-600 hover:text-brand-600 dark:text-slate-300"
+            >
+              Música
+            </Link>
+            <Link
               href="/dashboard/history"
               className="text-sm text-slate-600 hover:text-brand-600 dark:text-slate-300"
             >
