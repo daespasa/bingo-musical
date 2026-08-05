@@ -1,0 +1,94 @@
+name: bingo-musical
+
+services:
+  bingo-postgres:
+    image: postgres:16-alpine
+    container_name: bingo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bingo
+      POSTGRES_PASSWORD: bingo
+      POSTGRES_DB: bingo
+    ports:
+      - '5432:5432'
+    volumes:
+      - bingo-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bingo -d bingo']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - bingo-net
+
+  bingo-redis:
+    image: redis:7-alpine
+    container_name: bingo-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - bingo-redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - bingo-net
+
+  bingo-api:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: bingo-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://bingo:bingo@bingo-postgres:5432/bingo
+      REDIS_URL: redis://bingo-redis:6379
+      API_PORT: 3001
+      WEB_URL: ${WEB_URL:-http://localhost:3000}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET required}
+      GUEST_TOKEN_SECRET: ${GUEST_TOKEN_SECRET:?GUEST_TOKEN_SECRET required}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+    ports:
+      - '3001:3001'
+    depends_on:
+      bingo-postgres:
+        condition: service_healthy
+      bingo-redis:
+        condition: service_healthy
+    networks:
+      - bingo-net
+
+  bingo-web:
+    profiles: ['full']
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
+    container_name: bingo-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      - bingo-api
+    networks:
+      - bingo-net
+
+networks:
+  bingo-net:
+    driver: bridge
+
+volumes:
+  bingo-pgdata:
+  bingo-redisdata:
