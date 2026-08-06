@@ -63,9 +63,10 @@ test.describe('Partida completa con dos jugadores', () => {
     await page.getByRole('button', { name: 'Siguiente canción' }).click();
     await expect(page.getByText(/Ronda 2 de/)).toBeVisible();
 
-    // 15. El anfitrión finaliza y aparece el podio en todos los dispositivos
-    page.once('dialog', (dialog) => void dialog.accept());
+    // 15. El anfitrión finaliza, confirma, y aparece el podio en todos lados
     await page.getByRole('button', { name: 'Finalizar' }).click();
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+    await page.getByRole('button', { name: 'Terminar y ver resultados' }).click();
 
     await expect(page.getByText('¡Fin de la partida!')).toBeVisible();
     await expect(marta.page.getByText('¡Fin de la partida!')).toBeVisible();
@@ -85,15 +86,27 @@ test.describe('Partida completa con dos jugadores', () => {
 
     const before = await readCardTitles(ana.page);
     await waitForRoundAcceptingMarks(ana.page);
-    await ana.page.getByRole('gridcell').first().click();
-    await expect(ana.page.getByRole('gridcell').first()).toBeDisabled();
+    const firstCell = ana.page.getByRole('gridcell').first();
+    await firstCell.click();
+    await expect(firstCell).toHaveAttribute('aria-label', /\((fallada|acertada)\)/);
+    const wasWrong = ((await firstCell.getAttribute('aria-label')) ?? '').includes('(fallada)');
+    const score = await ana.page.getByLabel('Tu puntuación').innerText();
 
     // Recarga completa: la sesión de invitado vive en localStorage
     await ana.page.reload();
     const after = await readCardTitles(ana.page);
     expect(after).toEqual(before);
-    // La casilla marcada sigue marcada tras la recarga
-    await expect(ana.page.getByRole('gridcell').first()).toBeDisabled();
+    // La puntuación la manda el servidor, así que sobrevive a la recarga
+    await expect(ana.page.getByLabel('Tu puntuación')).toHaveText(score);
+
+    const firstAfterReload = ana.page.getByRole('gridcell').first();
+    if (wasWrong) {
+      // Un fallo es de su ronda: la casilla vuelve a estar en juego
+      await expect(firstAfterReload).toBeEnabled();
+    } else {
+      // Un acierto es definitivo
+      await expect(firstAfterReload).toBeDisabled();
+    }
 
     await ana.context.close();
   });

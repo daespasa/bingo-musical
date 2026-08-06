@@ -1,6 +1,6 @@
 # Progreso
 
-- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.3.0`.
+- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.3.1`.
 - **Épica actual**: ninguna — release cerrada con CI y E2E en verde.
 - **Rama actual**: `main`.
 
@@ -25,6 +25,7 @@
 | Quality          | 71 tests unitarios, 12 E2E con Playwright, CI en GitHub Actions, documentación             |
 | Visual identity  | Sistema de funda de disco: papel y tinta, tipografía propia, el disco indica la ronda      |
 | Stitch           | Código de sala en casillas, escaneo del QR, contrato del código en `@bingo/shared`         |
+| Game rules       | Fallo recuperable entre rondas, confirmación propia al terminar, sonda de partida real     |
 
 ## Validaciones ejecutadas
 
@@ -34,7 +35,7 @@
 | `pnpm typecheck` | 8/8 paquetes sin errores                                       |
 | `pnpm test`      | 71 tests en 7 archivos (shared 34, music-providers 24, api 13) |
 | `pnpm build`     | 5/5 paquetes compilados                                        |
-| `pnpm test:e2e`  | 12 tests Playwright en verde, con Spotify configurado          |
+| `pnpm test:e2e`  | 14 tests Playwright en verde, con Spotify configurado          |
 | Docker           | `bingo-postgres` y `bingo-redis` en estado `Up (healthy)`      |
 | Migraciones      | 3 migraciones aplicadas correctamente                          |
 | GitHub Actions   | Workflows `CI` y `E2E` en verde en `main`                      |
@@ -58,12 +59,13 @@ borrado, que es el estado de un checkout limpio como el de CI.
 
 ## Próximo bloque recomendado
 
-1. Persistir el runtime de la partida en Redis para sobrevivir a reinicios.
-2. Patrones de línea configurables (columnas y diagonales).
-3. Reordenación y edición de colecciones importadas de Spotify.
+1. Épica 2: colecciones y Spotify (importar listas enteras, gestionarlas, crear
+   listas canción a canción y colecciones temáticas propias).
+2. Persistir el runtime de la partida en Redis para sobrevivir a reinicios.
+3. Patrones de línea configurables (columnas y diagonales).
 4. Modo oscuro «laca» revisado pantalla a pantalla, que es lo que sugería Stitch
    como siguiente variante.
 
 ## Último commit relevante
 
-`chore(release): integrate epic/stitch-refinements`
+`chore(release): integrate epic/game-rules`

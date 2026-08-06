@@ -7,6 +7,9 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  // Las sondas exploran y anotan lo que encuentran, no afirman: se ejecutan a
+  // mano con `pnpm exec playwright test e2e/<nombre>.probe.spec.ts`.
+  testIgnore: ['**/*.probe.spec.ts'],
   timeout: 120_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,

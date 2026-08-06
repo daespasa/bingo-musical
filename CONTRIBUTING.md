@@ -60,6 +60,20 @@ desarrollo de Next falla al inyectar su recarga en caliente
 paquete algo que no sea un tipo. Durante mucho tiempo no se notó porque todas
 las importaciones desde la web eran `import type`, que desaparecen al compilar.
 
+## Sondas de partida
+
+`e2e/*.probe.spec.ts` no son pruebas: juegan una partida completa ejercitando
+todos los controles y **anotan** lo que se rompe (errores de consola,
+peticiones fallidas, toques sin respuesta). No entran en `pnpm test:e2e`
+porque no pueden fallar de forma útil. Se ejecutan a mano antes de tocar el
+motor de partida:
+
+```bash
+pnpm exec playwright test e2e/real-game.probe.spec.ts --reporter=list
+```
+
+Si una sonda encuentra algo real, lo que se escribe es una prueba de verdad.
+
 ## Validaciones antes de commit
 
 Los hooks de Husky ejecutan automáticamente:

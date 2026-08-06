@@ -2,6 +2,29 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [0.3.1] - 2026-08-06
+
+### Fixed
+
+- **Fallar una casilla ya no la inutiliza el resto de la partida.** Al fallar se
+  escribía el fallo en la casilla, y la guarda de entrada rechaza cualquier
+  casilla que no esté sin marcar: tocar una antes de que sonara su canción
+  impedía marcarla cuando por fin sonaba. El fallo pasa a vivir solo en la
+  marca de la ronda y se limpia al empezar la siguiente.
+- Terminar la partida pedía confirmación con un aviso del navegador, que rompe
+  el diseño y en la aplicación instalada se ve como algo ajeno. Ahora la
+  confirmación es propia y sus botones dicen lo que hacen.
+- La prueba de reconexión comprobaba que una casilla fallada seguía bloqueada
+  tras recargar, es decir, daba el defecto por bueno. Ahora comprueba que el
+  cartón y la puntuación sobreviven a la recarga.
+
+### Added
+
+- Sonda de partida real (`e2e/real-game.probe.spec.ts`), fuera de la suite:
+  juega con tres jugadores, ejercita todos los controles del anfitrión y anota
+  errores de consola, peticiones fallidas y toques sin respuesta.
+- Etiqueta accesible en el marcador de puntos.
+
 ## [0.3.0] - 2026-08-06
 
 Refinamientos sobre el sistema visual, a partir de las variantes generadas con

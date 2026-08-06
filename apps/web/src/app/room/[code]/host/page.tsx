@@ -54,6 +54,7 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
   const [session, setSession] = useState<HostSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   useEffect(() => {
     api<HostSession>(`/rooms/${code}/host-session`, { method: 'POST' })
@@ -263,16 +264,45 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
               <ArrowRight className="h-4 w-4" aria-hidden />
               Siguiente canción
             </button>
-            <button
-              onClick={() => {
-                if (confirm('¿Terminar la partida para todos?')) emit('host:end');
-              }}
-              className="btn-danger"
-            >
+            <button onClick={() => setConfirmEnd(true)} className="btn-danger">
               <Flag className="h-4 w-4" aria-hidden />
               Finalizar
             </button>
           </div>
+
+          {/*
+           * Confirmación dentro de la aplicación: el `confirm()` del navegador
+           * rompe el diseño y en la aplicación instalada se ve como un aviso
+           * ajeno, justo en el momento más delicado de la partida.
+           */}
+          {confirmEnd && (
+            <div
+              role="alertdialog"
+              aria-labelledby="fin-titulo"
+              className="animate-toast card flex flex-col gap-3 p-4 text-center"
+            >
+              <p id="fin-titulo" className="font-display text-lg leading-tight">
+                ¿Terminamos la partida?
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Se acabará para todo el mundo y se mostrará la clasificación final.
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                <button onClick={() => setConfirmEnd(false)} className="btn-secondary">
+                  Seguir jugando
+                </button>
+                <button
+                  onClick={() => {
+                    setConfirmEnd(false);
+                    emit('host:end');
+                  }}
+                  className="btn-danger"
+                >
+                  Terminar y ver resultados
+                </button>
+              </div>
+            </div>
+          )}
           {room.awaitingReveal && (
             <p className="animate-toast text-center text-sm text-amber-600 dark:text-amber-400">
               El fragmento ha terminado. Pulsa <strong>Revelar</strong> cuando quieras mostrar la
