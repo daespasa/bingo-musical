@@ -1,13 +1,23 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Headphones } from 'lucide-react';
+import { isCompleteRoomCode } from '@bingo/shared';
+import { RoomCodeInput } from '@/components/room-code-input';
+import { QrScanButton } from '@/components/qr-scan-button';
 
 export default function JoinPage() {
   const router = useRouter();
   const [code, setCode] = useState('');
+
+  const enter = useCallback(
+    (value: string) => {
+      if (isCompleteRoomCode(value)) router.push(`/join/${value}`);
+    },
+    [router],
+  );
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-20 sm:px-6">
@@ -23,29 +33,23 @@ export default function JoinPage() {
           <Headphones className="h-7 w-7" aria-hidden />
         </span>
         <h1 className="font-display text-3xl leading-tight tracking-tight">Entra en la sala</h1>
-        <p className="mb-6 mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Escribe el código que te ha dado el anfitrión.
+        <p className="mb-6 mt-2 text-sm text-slate-600 dark:text-slate-300">
+          Escribe el código de seis caracteres que te ha dado el anfitrión.
         </p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (code.trim().length >= 4) router.push(`/join/${code.trim().toUpperCase()}`);
+            enter(code);
           }}
           className="flex flex-col gap-4"
         >
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="CÓDIGO"
-            maxLength={6}
-            autoFocus
-            className="input text-center font-mono text-2xl uppercase tracking-[0.28em] sm:text-3xl sm:tracking-[0.4em]"
-            aria-label="Código de sala"
-          />
-          <button type="submit" disabled={code.trim().length < 4} className="btn-primary text-lg">
+          <RoomCodeInput value={code} onChange={setCode} onComplete={enter} autoFocus />
+          <button type="submit" disabled={!isCompleteRoomCode(code)} className="btn-primary">
             Continuar
           </button>
         </form>
+
+        <QrScanButton onCode={enter} />
       </div>
     </main>
   );

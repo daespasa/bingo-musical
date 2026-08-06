@@ -117,19 +117,22 @@ export default function HomePage() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5">
-                {SLEEVE_TRACKS.map((track, index) => (
-                  <div
-                    key={track}
-                    className={`flex aspect-square items-center justify-center rounded border-2 p-1.5 text-center text-[11px] font-semibold leading-tight ${
-                      SLEEVE_MARKED.includes(index)
-                        ? 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
-                        : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
-                    }`}
-                  >
-                    {track}
-                  </div>
-                ))}
+              {/* La carátula va enmarcada dentro de la funda, como una lámina pegada */}
+              <div className="rounded border-2 border-slate-900 bg-slate-100 p-2 dark:border-slate-700 dark:bg-slate-950">
+                <div className="grid grid-cols-3 gap-1.5">
+                  {SLEEVE_TRACKS.map((track, index) => (
+                    <div
+                      key={track}
+                      className={`flex aspect-square items-center justify-center rounded border-2 p-1.5 text-center text-[11px] font-semibold leading-tight ${
+                        SLEEVE_MARKED.includes(index)
+                          ? 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
+                          : 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                      }`}
+                    >
+                      {track}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2">
