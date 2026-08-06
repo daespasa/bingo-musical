@@ -40,13 +40,33 @@ test.describe('Autenticación y protección de rutas', () => {
     await expect(page).toHaveURL(/\/dashboard/);
   });
 
-  test('la web funciona sin credenciales de Spotify', async ({ page }) => {
+  /**
+   * La colección demo es el camino que siempre tiene que funcionar, haya o no
+   * credenciales de Spotify. El test no puede dar por hecho ninguno de los dos
+   * estados: en CI no hay credenciales y en la máquina de quien desarrolla
+   * puede haberlas. Se pregunta al servidor y se comprueba que la pantalla
+   * cuenta lo mismo, sin salir a Internet en ningún caso.
+   */
+  test('la música demo funciona con y sin credenciales de Spotify', async ({ page, request }) => {
     await loginAsHost(page);
+
+    const status = await request.get('http://localhost:3001/spotify/status');
+    const { configured } = (await status.json()) as { configured: boolean };
+
     await page.goto('/dashboard/music');
-    await expect(page.getByText('Spotify no está configurado')).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Crear partida con la colección demo' }),
-    ).toBeVisible();
+    if (configured) {
+      await expect(page.getByText('Spotify no está configurado')).toBeHidden();
+      await expect(page.getByLabel('Buscar en Spotify')).toBeVisible();
+    } else {
+      await expect(page.getByText('Spotify no está configurado')).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Crear partida con la colección demo' }),
+      ).toBeVisible();
+    }
+
+    // La colección demo está disponible en ambos casos
+    await page.goto('/dashboard/games/new');
+    await expect(page.getByRole('button', { name: /Colección Demo/ })).toBeVisible();
   });
 });
 
