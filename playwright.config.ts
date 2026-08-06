@@ -25,17 +25,18 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      // `@bingo/shared` se consume compilado: hay que construirlo antes de
-      // arrancar la API, porque este comando no pasa por Turborepo y en un
-      // checkout limpio `packages/shared/dist` todavía no existe.
-      command: 'pnpm --filter @bingo/shared build && pnpm --filter @bingo/api dev',
+      // Los paquetes del workspace se consumen compilados: hay que construir
+      // las dependencias de la API antes de arrancarla, porque este comando no
+      // pasa por Turborepo y en un checkout limpio no existe ningún `dist`.
+      // `@bingo/api^...` selecciona sus dependencias sin incluirla a ella.
+      command: 'pnpm --filter "@bingo/api^..." build && pnpm --filter @bingo/api dev',
       url: 'http://localhost:3001/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       stdout: 'pipe',
     },
     {
-      command: 'pnpm --filter @bingo/web dev',
+      command: 'pnpm --filter "@bingo/web^..." build && pnpm --filter @bingo/web dev',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
