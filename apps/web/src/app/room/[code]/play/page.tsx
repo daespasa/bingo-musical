@@ -140,7 +140,10 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
             </span>
           )}
           {myEntry && (
-            <span className="data rounded border-2 border-slate-900 bg-brand-600 px-3 py-1 font-medium text-slate-50 dark:border-slate-100">
+            <span
+              aria-label="Tu puntuación"
+              className="data rounded border-2 border-slate-900 bg-brand-600 px-3 py-1 font-medium text-slate-50 dark:border-slate-100"
+            >
               {myEntry.score}
             </span>
           )}
