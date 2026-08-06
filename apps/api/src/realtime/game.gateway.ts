@@ -11,7 +11,11 @@ import {
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import { randomUUID } from 'node:crypto';
+import { REACTIONS } from '@bingo/shared';
 import type { MarkCellAck, MarkCellRequest } from '@bingo/shared';
+
+/** Una reacción por jugador cada tres segundos: anima, no inunda. */
+const REACTION_COOLDOWN_MS = 3000;
 import { PrismaService } from '../prisma.service';
 import { GuestTokenService } from '../rooms/guest-token.service';
 import { GameEngineService } from './game-engine.service';
@@ -136,6 +140,9 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   // ---------- Audio ----------
 
+  /** Última reacción de cada jugador, para el enfriamiento. */
+  private readonly lastReactionAt = new Map<string, number>();
+
   @SubscribeMessage('audio:enabled')
   async audioEnabled(@ConnectedSocket() client: Socket): Promise<void> {
     const { participantId, roomId } = this.data(client);
@@ -188,6 +195,25 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     if (role !== 'PLAYER') return { ok: false, message: 'Solo los jugadores marcan' };
     if (!body?.cellId) return { ok: false, message: 'cellId requerido' };
     return this.engine.markCell(roomId, participantId, body.cellId);
+  }
+
+  /**
+   * Reacciones. Se limitan por jugador para que nadie inunde la proyección:
+   * es una forma de animar, no un canal de mensajes.
+   */
+  @SubscribeMessage('player:react')
+  react(@ConnectedSocket() client: Socket, @MessageBody() body: { reaction?: string }): void {
+    const { participantId, roomId, role } = this.data(client);
+    if (role !== 'PLAYER') return;
+    const reaction = REACTIONS.find((r) => r === body?.reaction);
+    if (!reaction) return;
+
+    const now = Date.now();
+    const recent = this.lastReactionAt.get(participantId) ?? 0;
+    if (now - recent < REACTION_COOLDOWN_MS) return;
+    this.lastReactionAt.set(participantId, now);
+
+    this.engine.broadcastReaction(roomId, participantId, reaction);
   }
 
   @SubscribeMessage('claim:line')

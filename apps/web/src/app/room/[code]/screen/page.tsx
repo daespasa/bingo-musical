@@ -2,9 +2,11 @@
 
 import { use, useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Music, Pause, Users, Volume2 } from 'lucide-react';
+import { Pause, Users, Volume2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRoom } from '@/hooks/use-room';
+import { ReactionLayer } from '@/components/reactions';
+import { RoundSummary } from '@/components/round-summary';
 import { useRoundAudio } from '@/hooks/use-round-audio';
 import { Leaderboard } from '@/components/leaderboard';
 import { PodiumCeremony } from '@/components/podium';
@@ -50,6 +52,7 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-8 py-10 text-center">
+      <ReactionLayer incoming={room.lastReaction} />
       {state?.status === 'LOBBY' && (
         <>
           <h1 className="text-5xl font-black">{state.gameName}</h1>
@@ -114,14 +117,31 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
               {room.paused ? (
                 <Pause className="mx-auto mt-6 h-24 w-24 text-slate-400" aria-hidden />
               ) : (
-                <Music
-                  className="mx-auto mt-6 h-24 w-24 animate-pulse text-brand-500"
-                  aria-hidden
-                />
+                <div className="mx-auto mt-6 flex items-center gap-6">
+                  <div className="vinyl animate-spin-record w-28 shrink-0" aria-hidden />
+                  {/* Ecualizador: da sensación de sonido en una pantalla muda */}
+                  <div className="flex h-24 items-end gap-2" aria-hidden>
+                    {[0, 1, 2, 3, 4, 5, 6].map((bar) => (
+                      <span
+                        key={bar}
+                        className="animate-equalize w-3 rounded-sm bg-brand-600"
+                        style={{
+                          height: `${45 + ((bar * 37) % 55)}%`,
+                          animationDelay: `${bar * 90}ms`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
               )}
               <p className="mt-4 text-3xl font-semibold">
                 {room.paused ? 'Pausa' : '¿Qué canción suena?'}
               </p>
+            </div>
+          )}
+          {room.roundResults && (
+            <div className="w-full max-w-2xl text-left">
+              <RoundSummary results={room.roundResults} />
             </div>
           )}
           <div className="w-full max-w-2xl text-left text-xl">
