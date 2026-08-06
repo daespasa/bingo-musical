@@ -1,4 +1,11 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { normalizeText } from '@bingo/shared';
 import type { PreviewProvider } from '@bingo/music-providers';
 import { PREVIEW_PROVIDER } from './preview-provider.token';
@@ -111,25 +118,42 @@ export class SpotifyService {
     return { status: data.status, url: data.url, confidence: data.confidence };
   }
 
+  /** Igual que `upsertTrack`, para el constructor de temáticas. */
+  upsertPublicTrack(track: SpotifyTrack): Promise<string> {
+    return this.upsertTrack(track);
+  }
+
+  /** Igual que `resolvePreview`, para el constructor de temáticas. */
+  resolvePublicPreview(
+    trackId: string,
+    track: SpotifyTrack,
+  ): Promise<{ status: string; url: string | null; confidence: number }> {
+    return this.resolvePreview(trackId, track);
+  }
+
   async search(query: string): Promise<SpotifyTrack[]> {
     return this.spotify.searchTracks(query);
   }
 
   /**
-   * Importa una playlist pública a una colección del usuario y resuelve las
-   * previews de todas sus canciones.
+   * Importa una lista en dos fases. Primero guarda los metadatos, que son
+   * segundos, y devuelve la colección ya usable. El audio se resuelve después
+   * en segundo plano, porque tarda del orden de un segundo por canción y una
+   * lista larga convertiría esto en una petición que muere por el camino.
    */
   async importPlaylist(
     ownerId: string,
     playlistRef: string,
     collectionName: string,
-  ): Promise<{ collectionId: string; tracks: ImportedTrack[] }> {
+  ): Promise<{ collectionId: string; imported: number; skipped: number; total: number }> {
     const playlistId = SpotifyApiService.parsePlaylistId(playlistRef);
     if (!playlistId) {
-      throw new Error('No se reconoce el enlace de playlist');
+      throw new BadRequestException('Ese enlace no parece una lista de Spotify');
     }
-    const spotifyTracks = await this.spotify.playlistTracks(playlistId);
-    this.logger.log(`Importando ${spotifyTracks.length} canciones de la playlist ${playlistId}`);
+    const { tracks: spotifyTracks, total, skipped } = await this.spotify.playlistTracks(playlistId);
+    this.logger.log(
+      `Importando ${spotifyTracks.length} de ${total} canciones de la playlist ${playlistId}`,
+    );
 
     const collection = await this.prisma.musicCollection.create({
       data: {
@@ -139,29 +163,84 @@ export class SpotifyService {
       },
     });
 
-    const imported: ImportedTrack[] = [];
     let position = 0;
     for (const t of spotifyTracks) {
       const trackId = await this.upsertTrack(t);
-      const preview = await this.resolvePreview(trackId, t);
       await this.prisma.musicCollectionTrack.upsert({
         where: { collectionId_trackId: { collectionId: collection.id, trackId } },
         update: {},
         create: { collectionId: collection.id, trackId, position: position++ },
       });
-      imported.push({
-        trackId,
-        title: t.title,
-        artist: t.artists.join(', '),
-        album: t.album,
-        coverUrl: t.coverUrl,
-        durationMs: t.durationMs,
-        previewStatus: preview.status,
-        previewUrl: preview.url,
-        confidence: preview.confidence,
-      });
     }
-    return { collectionId: collection.id, tracks: imported };
+
+    void this.resolveInBackground(collection.id, ownerId);
+
+    return { collectionId: collection.id, imported: spotifyTracks.length, skipped, total };
+  }
+
+  /**
+   * Añade una canción suelta a una colección propia y resuelve su audio al
+   * momento: es una sola, así que no compensa mandarla a segundo plano.
+   */
+  async addTrackToCollection(
+    ownerId: string,
+    collectionId: string,
+    spotifyTrackId: string,
+  ): Promise<{ trackId: string; previewStatus: string }> {
+    const collection = await this.prisma.musicCollection.findFirst({
+      where: { id: collectionId, ownerId, isDemo: false },
+    });
+    if (!collection) throw new NotFoundException('Esa colección no es tuya o ya no existe');
+
+    const track = await this.spotify.trackById(spotifyTrackId);
+    if (!track) throw new NotFoundException('No se encontró esa canción en Spotify');
+
+    const trackId = await this.upsertTrack(track);
+    const already = await this.prisma.musicCollectionTrack.findUnique({
+      where: { collectionId_trackId: { collectionId, trackId } },
+    });
+    if (already) throw new ConflictException('Esa canción ya está en la colección');
+
+    const last = await this.prisma.musicCollectionTrack.findFirst({
+      where: { collectionId },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    });
+    await this.prisma.musicCollectionTrack.create({
+      data: { collectionId, trackId, position: (last?.position ?? -1) + 1 },
+    });
+
+    const preview = await this.resolvePreview(trackId, track);
+    return { trackId, previewStatus: preview.status };
+  }
+
+  /** Colecciones cuyo audio se está resolviendo ahora mismo. */
+  private readonly resolving = new Set<string>();
+
+  isResolving(collectionId: string): boolean {
+    return this.resolving.has(collectionId);
+  }
+
+  /**
+   * Resuelve el audio sin bloquear a quien importa. Si la API se reinicia a
+   * mitad, la resolución se corta: se retoma desde la pantalla de la colección
+   * o en la revalidación previa a empezar la partida.
+   */
+  async resolveInBackground(collectionId: string, ownerId: string): Promise<void> {
+    if (this.resolving.has(collectionId)) return;
+    this.resolving.add(collectionId);
+    try {
+      const resolved = await this.resolvePreviews(collectionId, ownerId);
+      const playable = resolved.filter((t) => t.previewUrl).length;
+      this.logger.log(`Colección ${collectionId}: suenan ${playable} de ${resolved.length}`);
+    } catch (error) {
+      this.logger.error(
+        `No se pudo resolver el audio de la colección ${collectionId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    } finally {
+      this.resolving.delete(collectionId);
+    }
   }
 
   /** Revalida las previews de una colección antes de empezar la partida. */
@@ -177,7 +256,7 @@ export class SpotifyService {
         },
       },
     });
-    if (!collection) throw new Error('Colección no encontrada');
+    if (!collection) throw new NotFoundException('Colección no encontrada');
 
     const results: ImportedTrack[] = [];
     for (const ct of collection.tracks) {

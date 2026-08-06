@@ -1,6 +1,7 @@
 import { Logger, Module } from '@nestjs/common';
 import { SpotifyPreviewFinderProvider } from '@bingo/music-providers';
 import { SpotifyController } from './spotify.controller';
+import { ThemesService } from './themes.service';
 import { SpotifyService } from './spotify.service';
 import { SpotifyApiService } from './spotify-api.service';
 import { PREVIEW_PROVIDER } from './preview-provider.token';
@@ -10,6 +11,7 @@ import { AuthModule } from '../auth/auth.module';
   imports: [AuthModule],
   controllers: [SpotifyController],
   providers: [
+    ThemesService,
     SpotifyService,
     SpotifyApiService,
     {

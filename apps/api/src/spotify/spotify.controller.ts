@@ -5,7 +5,7 @@ import type { User } from '@bingo/database';
 import { AuthGuard, CurrentUser } from '../auth/auth.guard';
 import { SpotifyApiService } from './spotify-api.service';
 import { SpotifyService, type ImportedTrack } from './spotify.service';
-import { ImportPlaylistDto, ResolvePreviewsDto, SearchQueryDto } from './spotify.dto';
+import { AddTrackDto, ImportPlaylistDto, ResolvePreviewsDto, SearchQueryDto } from './spotify.dto';
 
 @ApiTags('spotify')
 @Controller('spotify')
@@ -34,8 +34,18 @@ export class SpotifyController {
   importPlaylist(
     @CurrentUser() user: User,
     @Body() dto: ImportPlaylistDto,
-  ): Promise<{ collectionId: string; tracks: ImportedTrack[] }> {
+  ): Promise<{ collectionId: string; imported: number; skipped: number; total: number }> {
     return this.spotify.importPlaylist(user.id, dto.playlist, dto.name ?? 'Playlist importada');
+  }
+
+  @Post('add-track')
+  @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  addTrack(
+    @CurrentUser() user: User,
+    @Body() dto: AddTrackDto,
+  ): Promise<{ trackId: string; previewStatus: string }> {
+    return this.spotify.addTrackToCollection(user.id, dto.collectionId, dto.spotifyTrackId);
   }
 
   @Post('resolve-previews')

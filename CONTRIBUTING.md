@@ -69,8 +69,11 @@ porque no pueden fallar de forma útil. Se ejecutan a mano antes de tocar el
 motor de partida:
 
 ```bash
-pnpm exec playwright test e2e/real-game.probe.spec.ts --reporter=list
+PW_PROBE=1 pnpm exec playwright test e2e/real-game.probe.spec.ts --reporter=list
 ```
+
+`PW_PROBE=1` hace falta porque el recorrido normal las ignora, y sin esa
+variable Playwright responde «No tests found» aunque nombres el fichero.
 
 Si una sonda encuentra algo real, lo que se escribe es una prueba de verdad.
 

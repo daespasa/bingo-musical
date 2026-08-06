@@ -1,5 +1,10 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { loadEnv } from '../config/env';
+import {
+  PLAYLIST_IMPORT_MAX,
+  collectPlaylistTracks,
+  type CollectedPlaylist,
+} from './playlist-pagination';
 
 export type SpotifyTrack = {
   spotifyTrackId: string;
@@ -102,11 +107,21 @@ export class SpotifyApiService {
     };
   }
 
-  async searchTracks(query: string, limit = 20): Promise<SpotifyTrack[]> {
+  async searchTracks(query: string, limit = 20, offset = 0): Promise<SpotifyTrack[]> {
     const body = await this.get<{ tracks: { items: SpotifyApiTrack[] } }>(
-      `/search?type=track&limit=${Math.min(limit, 50)}&q=${encodeURIComponent(query)}`,
+      `/search?type=track&limit=${Math.min(limit, 50)}&offset=${offset}&q=${encodeURIComponent(query)}`,
     );
     return body.tracks.items.map((t) => this.toTrack(t));
+  }
+
+  /** Busca una canción concreta por su identificador de Spotify. */
+  async trackById(spotifyTrackId: string): Promise<SpotifyTrack | null> {
+    try {
+      const body = await this.get<SpotifyApiTrack>(`/tracks/${spotifyTrackId}`);
+      return body.id ? this.toTrack(body) : null;
+    } catch {
+      return null;
+    }
   }
 
   /** Extrae el ID de una URL, URI o ID pelado de playlist. */
@@ -117,22 +132,24 @@ export class SpotifyApiService {
     return /^[a-zA-Z0-9]{16,32}$/.test(trimmed) ? trimmed : null;
   }
 
-  async playlistTracks(playlistId: string, max = 100): Promise<SpotifyTrack[]> {
-    const tracks: SpotifyTrack[] = [];
-    let offset = 0;
-    while (tracks.length < max) {
+  async playlistTracks(
+    playlistId: string,
+    max: number = PLAYLIST_IMPORT_MAX,
+  ): Promise<CollectedPlaylist> {
+    return collectPlaylistTracks(async (offset) => {
       const body = await this.get<{
         items: Array<{ track: SpotifyApiTrack | null }>;
+        total: number;
         next: string | null;
       }>(`/playlists/${playlistId}/tracks?limit=50&offset=${offset}`);
 
-      for (const item of body.items) {
-        if (item.track?.id) tracks.push(this.toTrack(item.track));
-        if (tracks.length >= max) break;
-      }
-      if (!body.next) break;
-      offset += 50;
-    }
-    return tracks;
+      return {
+        // Una lista puede tener episodios o canciones retiradas, que vienen sin id
+        tracks: body.items.flatMap((item) => (item.track?.id ? [this.toTrack(item.track)] : [])),
+        pageSize: body.items.length,
+        total: body.total,
+        hasNext: Boolean(body.next),
+      };
+    }, max);
   }
 }

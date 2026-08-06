@@ -2,6 +2,36 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [0.4.0] - 2026-08-06
+
+Colecciones: importar listas enteras, gestionarlas y colecciones temáticas.
+
+### Added
+
+- **Importar listas enteras** hasta 500 canciones, en dos fases: la colección
+  aparece en segundos con todas las canciones y el audio se comprueba por
+  detrás mientras la pantalla va contando cuántas suenan.
+- **Gestionar colecciones**: crear, renombrar, borrar, quitar canciones,
+  reordenarlas y duplicar. Duplicar permite partir de una colección de la
+  aplicación, que es de solo lectura.
+- **Montar una colección canción a canción** buscando en Spotify y eligiendo el
+  destino en los propios resultados.
+- **Seis colecciones temáticas** que mantiene la aplicación, construidas con
+  `pnpm themes:build`. Solo entran canciones que suenan, y un refresco nunca
+  deja una temática peor: si no llega a 30 reproducibles, se conserva la
+  anterior.
+
+### Fixed
+
+- El cliente HTTP pedía JSON en toda respuesta, incluidas las 204 sin cuerpo,
+  así que cualquier operación sin respuesta fallaba en silencio.
+- Los errores de Spotify eran `Error` a secas y llegaban como «Internal server
+  error»; ahora explican qué ha pasado.
+- La pantalla de música dejaba de funcionar entera sin credenciales de Spotify,
+  aunque gestionar colecciones no las necesita.
+- La paginación de listas avanzaba contando canciones válidas en vez de
+  elementos, de modo que una lista con episodios repetía canciones.
+
 ## [0.3.1] - 2026-08-06
 
 ### Fixed

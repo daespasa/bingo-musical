@@ -28,6 +28,11 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     }
     throw new ApiError(res.status, message);
   }
+  // Las operaciones que no devuelven nada responden 204 sin cuerpo, y pedirle
+  // JSON a un cuerpo vacío revienta.
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return undefined as T;
+  }
   return res.json() as Promise<T>;
 }
 

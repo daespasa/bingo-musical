@@ -28,3 +28,15 @@ export class ResolvePreviewsDto {
   @IsUUID()
   collectionId!: string;
 }
+
+export class AddTrackDto {
+  @ApiProperty()
+  @IsUUID()
+  collectionId!: string;
+
+  @ApiProperty({ example: '11dFghVXANMlKmJXsNCbNl' })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(40)
+  spotifyTrackId!: string;
+}

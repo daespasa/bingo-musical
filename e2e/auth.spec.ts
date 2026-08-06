@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { DEMO_USER, loginAsHost } from './helpers';
+import { DEMO_USER, demoCollectionCard, loginAsHost } from './helpers';
 
 test.describe('Autenticación y protección de rutas', () => {
   test('el dashboard redirige a login sin sesión', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('Autenticación y protección de rutas', () => {
 
     // La colección demo está disponible en ambos casos
     await page.goto('/dashboard/games/new');
-    await expect(page.getByRole('button', { name: /Colección Demo/ })).toBeVisible();
+    await expect(demoCollectionCard(page)).toBeVisible();
   });
 });
 

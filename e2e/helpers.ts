@@ -1,6 +1,19 @@
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
+/**
+ * La tarjeta de la colección demo en el asistente de partida. Se descartan a
+ * propósito las copias («Colección Demo (copia)»), que aparecen en cuanto
+ * alguien duplica la colección y harían ambiguo el selector.
+ */
+export function demoCollectionCard(page: Page) {
+  return page
+    .getByRole('button')
+    .filter({ hasText: 'Colección Demo' })
+    .filter({ hasNotText: 'copia' })
+    .first();
+}
+
 export const DEMO_USER = { email: 'demo@bingo.local', password: 'Demo1234!' };
 
 /** Inicia sesión como el anfitrión demo y deja la página en el dashboard. */
@@ -24,7 +37,7 @@ export async function createGameAndOpenRoom(
 ): Promise<string> {
   await page.goto('/dashboard/games/new');
   await page.getByLabel('Nombre de la partida').fill(options.name);
-  await page.getByRole('button', { name: /Colección Demo/ }).click();
+  await demoCollectionCard(page).click();
   await page.getByLabel('Duración del fragmento (s)').selectOption(options.snippetSeconds ?? '10');
   await page.getByLabel('Tiempo extra de respuesta (s)').selectOption('5');
   await page.getByLabel('Pausa de resultados entre rondas (s)').selectOption('3');
