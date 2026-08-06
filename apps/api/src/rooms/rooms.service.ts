@@ -5,13 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
-import { sanitizeAlias, normalizeText } from '@bingo/shared';
+import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, sanitizeAlias, normalizeText } from '@bingo/shared';
 import type { Room } from '@bingo/database';
 import { PrismaService } from '../prisma.service';
 import { GuestTokenService } from './guest-token.service';
 
-// Alfabeto sin caracteres ambiguos (0/O, 1/I/L)
-const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const ROOM_TTL_MS = 1000 * 60 * 60 * 12; // 12 horas
 const GUEST_TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
 
@@ -35,8 +33,8 @@ export class RoomsService {
 
   private generateCode(): string {
     let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
+    for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
+      code += ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)];
     }
     return code;
   }

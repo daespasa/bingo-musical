@@ -52,6 +52,14 @@ Por el mismo motivo, el `webServer` de Playwright construye el paquete antes de
 levantar la API: sus comandos usan `pnpm --filter` directo y no pasan por
 Turborepo.
 
+**No declares `"type": "commonjs"` en `packages/shared/package.json.`** Sin ese
+campo Node ya trata los `.js` como CommonJS, que es lo que necesita la API,
+pero con él webpack marca el paquete como CommonJS explícito y el servidor de
+desarrollo de Next falla al inyectar su recarga en caliente
+(`Cannot use 'import.meta' outside a module`) en cuanto la web importa del
+paquete algo que no sea un tipo. Durante mucho tiempo no se notó porque todas
+las importaciones desde la web eran `import type`, que desaparecen al compilar.
+
 ## Validaciones antes de commit
 
 Los hooks de Husky ejecutan automáticamente:
