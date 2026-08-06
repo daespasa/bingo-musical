@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [0.1.1] - 2026-08-06
+
+### Fixed
+
+- `@bingo/shared` se compila antes de arrancar los servidores de desarrollo: la tarea `dev` de Turborepo depende de `^build`, el paquete pierde su script `dev` (el `tsc --watch` reescribía `dist` mientras la API arrancaba y dejaba a `ts-node-dev` reiniciando sin escuchar) y el `webServer` de Playwright lo construye porque no pasa por Turborepo. Con esto los E2E vuelven a pasar en un checkout limpio, que era el fallo del workflow E2E.
+
 ## [0.1.0] - 2026-08-05
 
 Primera versión local jugable del bingo musical.

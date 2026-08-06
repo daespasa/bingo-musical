@@ -1,7 +1,7 @@
 # Progreso
 
-- **Estado**: MVP local completo y jugable, publicado como `v0.1.0`.
-- **Épica actual**: Quality (épica 12) — cerrada con la release.
+- **Estado**: MVP local completo y jugable, publicado como `v0.1.1`.
+- **Épica actual**: ninguna — release cerrada con CI y E2E en verde.
 - **Rama actual**: `main`.
 
 ## Funcionalidades terminadas
@@ -35,6 +35,10 @@
 | `pnpm test:e2e`  | 10 tests Playwright en verde (partida completa, auth, PWA)     |
 | Docker           | `bingo-postgres` y `bingo-redis` en estado `Up (healthy)`      |
 | Migraciones      | 3 migraciones aplicadas correctamente                          |
+| GitHub Actions   | Workflows `CI` y `E2E` en verde en `main`                      |
+
+Los E2E y `pnpm dev` se han verificado además partiendo de `packages/shared/dist`
+borrado, que es el estado de un checkout limpio como el de CI.
 
 ## Funcionalidades aplazadas
 
@@ -58,4 +62,4 @@
 
 ## Último commit relevante
 
-`test(gameplay): add end-to-end coverage for a two-player game`
+`fix(tooling): build @bingo/shared before starting the dev servers`

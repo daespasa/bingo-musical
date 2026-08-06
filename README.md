@@ -82,6 +82,10 @@ pnpm demo:assets      # genera audio demo e iconos de la PWA
 pnpm format           # Prettier
 ```
 
+`pnpm dev` compila antes `packages/shared`, que la API y la web consumen desde
+`dist`. Ese paquete no tiene watcher: si lo modificas, reinicia `pnpm dev` o
+ejecuta `pnpm --filter @bingo/shared build`.
+
 ## Arquitectura
 
 ```

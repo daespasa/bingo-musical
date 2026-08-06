@@ -92,3 +92,11 @@
 - **Decisión**: cachear solo estáticos y audio demo; la API y el WebSocket van siempre a red.
 - **Contexto**: es un juego en tiempo real, servir estado de partida obsoleto sería peor que un error de red.
 - **Consecuencias**: sin conexión se muestra una página offline y la partida se reanuda al recuperar red, con el estado que mande el servidor.
+
+## 2026-08-06 — `@bingo/shared` se consume compilado y sin watcher
+
+- **Decisión**: el paquete no tiene script `dev`; la tarea `dev` de Turborepo depende de `^build` y el `webServer` de Playwright compila el paquete antes de arrancar la API.
+- **Contexto**: la API importa `dist`. Con `tsc --watch`, el paquete reescribía `dist` justo mientras la API arrancaba y `ts-node-dev` entraba en un ciclo de reinicio sin llegar a escuchar; en un checkout limpio (CI) `dist` ni siquiera existía y los E2E fallaban con `Cannot find module @bingo/shared/dist/index.js`.
+- **Alternativas**: apuntar `main` a `src` y transpilar en cada consumidor; retrasar el arranque de la API; usar `tsc --watch` con `--incremental` y un delay.
+- **Elección**: compilar una vez antes de arrancar. Es determinista y funciona igual en local y en CI.
+- **Consecuencias**: cambiar `packages/shared` obliga a recompilar o reiniciar `pnpm dev`; a cambio, el arranque es reproducible.
