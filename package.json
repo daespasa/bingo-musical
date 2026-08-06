@@ -21,7 +21,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,md,yml,yaml}\"",
     "prepare": "husky",
     "demo:icons": "node scripts/generate-icons.mjs",
-    "demo:assets": "node scripts/generate-demo-audio.mjs && node scripts/generate-icons.mjs"
+    "demo:assets": "node scripts/generate-demo-audio.mjs && node scripts/generate-icons.mjs",
+    "themes:build": "pnpm --filter @bingo/api themes:build"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",

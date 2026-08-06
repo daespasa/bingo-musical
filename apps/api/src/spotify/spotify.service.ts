@@ -118,6 +118,19 @@ export class SpotifyService {
     return { status: data.status, url: data.url, confidence: data.confidence };
   }
 
+  /** Igual que `upsertTrack`, para el constructor de temáticas. */
+  upsertPublicTrack(track: SpotifyTrack): Promise<string> {
+    return this.upsertTrack(track);
+  }
+
+  /** Igual que `resolvePreview`, para el constructor de temáticas. */
+  resolvePublicPreview(
+    trackId: string,
+    track: SpotifyTrack,
+  ): Promise<{ status: string; url: string | null; confidence: number }> {
+    return this.resolvePreview(trackId, track);
+  }
+
   async search(query: string): Promise<SpotifyTrack[]> {
     return this.spotify.searchTracks(query);
   }

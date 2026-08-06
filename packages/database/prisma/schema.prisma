@@ -238,6 +238,10 @@ model MusicCollection {
   name        String
   description String?
   isDemo      Boolean  @default(false)
+  /// Clave del tema cuando la colección la construye la aplicación
+  themeKey    String?  @unique
+  /// Última vez que el tema se reconstruyó con éxito
+  refreshedAt DateTime?
   ownerId     String?
   owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())

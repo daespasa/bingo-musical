@@ -107,9 +107,9 @@ export class SpotifyApiService {
     };
   }
 
-  async searchTracks(query: string, limit = 20): Promise<SpotifyTrack[]> {
+  async searchTracks(query: string, limit = 20, offset = 0): Promise<SpotifyTrack[]> {
     const body = await this.get<{ tracks: { items: SpotifyApiTrack[] } }>(
-      `/search?type=track&limit=${Math.min(limit, 50)}&q=${encodeURIComponent(query)}`,
+      `/search?type=track&limit=${Math.min(limit, 50)}&offset=${offset}&q=${encodeURIComponent(query)}`,
     );
     return body.tracks.items.map((t) => this.toTrack(t));
   }

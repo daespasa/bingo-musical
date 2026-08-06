@@ -79,6 +79,7 @@ pnpm db:migrate       # aplica migraciones en desarrollo
 pnpm db:deploy        # aplica migraciones en despliegue
 pnpm db:seed          # datos demo
 pnpm demo:assets      # genera audio demo e iconos de la PWA
+pnpm themes:build     # construye o refresca las colecciones temáticas
 pnpm format           # Prettier
 ```
 
@@ -124,6 +125,32 @@ Sin credenciales la aplicación funciona con la colección demo (20 pistas sinte
 3. Reinicia la API. En **Dashboard → Música** podrás buscar canciones e importar playlists públicas.
 
 Las credenciales solo se usan en el backend. Las previews se resuelven con `spotify-preview-finder`, encapsulado tras la interfaz `PreviewProvider` (timeout, caché, reintentos con backoff, concurrencia máxima de 2 y validación de que la URL viene del CDN de Spotify). Se trata como proveedor experimental y sustituible.
+
+## Colecciones temáticas
+
+Con Spotify configurado puedes tener colecciones listas para jugar sin
+preparar nada: «Éxitos en España», «Pop de ahora», «Rock de los 80», «Rock de
+los 90», «Fiesta de los 2000» y «Reguetón».
+
+```bash
+pnpm themes:build
+```
+
+El comando busca en Spotify, comprueba cuáles suenan de verdad y te dice el
+resultado de cada una:
+
+```
+  ✓ rock-80: 89 canciones (1 descartadas por no sonar)
+  · reggaeton: se conserva la anterior (solo suenan 2)
+```
+
+Se lanza a mano cuando quieras refrescarlas; no hay ningún proceso automático
+que pueda fallar en silencio. **Un refresco nunca empeora una colección**: si
+no llega a 30 canciones que suenen, se conserva la anterior y se avisa.
+
+Las temáticas se ven como cualquier otra colección pero no se pueden editar,
+porque las mantiene la aplicación. Si quieres tocar una, haz una copia desde su
+pantalla.
 
 ## Inicio de sesión con Google (opcional)
 
