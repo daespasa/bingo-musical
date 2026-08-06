@@ -37,6 +37,21 @@ Los tests unitarios son herméticos: `apps/api/vitest.setup.ts` fija valores
 deterministas y deja Spotify y Google sin configurar, de modo que no dependen
 de que exista un `.env` en disco ni de credenciales reales.
 
+## El paquete `@bingo/shared` se consume compilado
+
+La API y la web importan `@bingo/shared` desde `dist`, no desde `src`. Por eso
+la tarea `dev` de `turbo.json` declara `dependsOn: ["^build"]`: en un checkout
+limpio Turborepo compila el paquete antes de arrancar los servidores. El
+paquete **no tiene script `dev`**: un `tsc --watch` reescribía `dist` mientras
+la API arrancaba y `ts-node-dev` se quedaba reiniciando sin llegar a escuchar.
+
+Si tocas `packages/shared`, recompílalo (`pnpm --filter @bingo/shared build`)
+o reinicia `pnpm dev` para que la API vea los cambios.
+
+Por el mismo motivo, el `webServer` de Playwright construye el paquete antes de
+levantar la API: sus comandos usan `pnpm --filter` directo y no pasan por
+Turborepo.
+
 ## Validaciones antes de commit
 
 Los hooks de Husky ejecutan automáticamente:
