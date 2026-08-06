@@ -21,7 +21,7 @@ type ResultData = {
 
 const HIGHLIGHTS: Record<string, { label: string; Icon: typeof Zap; className: string }> = {
   FASTEST_ANSWER: { label: 'Respuesta más rápida', Icon: Zap, className: 'text-amber-500' },
-  LEADER_CHANGE: { label: 'Cambio de líder', Icon: Repeat, className: 'text-sky-500' },
+  LEADER_CHANGE: { label: 'Cambio de líder', Icon: Repeat, className: 'text-brand-600' },
   BEST_STREAK: { label: 'Mayor racha', Icon: Flame, className: 'text-orange-500' },
   FIRST_LINE: { label: 'Primera línea', Icon: Megaphone, className: 'text-brand-500' },
   BINGO: { label: 'Bingo', Icon: Trophy, className: 'text-amber-500' },
@@ -72,9 +72,7 @@ export default function ResultsPage({ params }: { params: Promise<{ code: string
 
       {data.summary.ranking && (
         <section className="card p-4">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
-            Clasificación
-          </h2>
+          <h2 className="eyebrow mb-3">Clasificación</h2>
           <ol className="flex flex-col gap-1">
             {data.summary.ranking.map((r) => (
               <li

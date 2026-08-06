@@ -23,7 +23,7 @@ export default function HistoryPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">Historial</h1>
+      <h1 className="mb-6 text-3xl font-black tracking-tight sm:text-4xl">Historial</h1>
       {isLoading && <div className="card h-40 animate-pulse" />}
       {data && data.length === 0 && (
         <div className="card p-12 text-center text-slate-500 dark:text-slate-400">
@@ -33,7 +33,10 @@ export default function HistoryPage() {
       {data && data.length > 0 && (
         <div className="card divide-y divide-slate-200 dark:divide-slate-800">
           {data.map((h) => (
-            <div key={h.roomId} className="flex flex-wrap items-center justify-between gap-2 p-4">
+            <div
+              key={h.roomId}
+              className="flex flex-col items-start justify-between gap-3 p-4 sm:flex-row sm:items-center sm:p-5"
+            >
               <div>
                 <p className="font-semibold">{h.gameName}</p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -41,7 +44,7 @@ export default function HistoryPage() {
                   {Math.round(h.durationMs / 60000)} min · {h.participants} jugadores
                 </p>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex w-full items-center justify-between gap-3 text-sm sm:w-auto sm:justify-start">
                 <span className="flex items-center gap-1.5">
                   <Trophy className="h-4 w-4 text-amber-500" aria-hidden />
                   <span className="font-medium">{h.winnerAlias ?? '—'}</span>

@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { api, ApiError, type PublicUser } from '@/lib/api';
 import { GoogleButton } from '@/components/google-button';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 
 type FormData = { displayName: string; email: string; password: string };
 
@@ -29,9 +30,22 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <div className="card p-8">
-        <h1 className="mb-6 text-2xl font-bold">Crear cuenta</h1>
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-20 sm:px-6">
+      <Link
+        href="/"
+        className="mb-4 flex items-center gap-2 self-start font-mono text-xs uppercase tracking-[0.14em] text-slate-500 hover:text-brand-600"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Volver
+      </Link>
+      <div className="card p-6 sm:p-8">
+        <span className="mb-5 grid h-11 w-11 place-items-center rounded-md border-2 border-slate-900 bg-brand-600 text-slate-50 dark:border-slate-100">
+          <Sparkles className="h-6 w-6" />
+        </span>
+        <h1 className="font-display text-3xl leading-tight tracking-tight">Monta la fiesta</h1>
+        <p className="mb-6 mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Crea tu cuenta y prepara una partida en minutos.
+        </p>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div>
             <label className="label" htmlFor="displayName">

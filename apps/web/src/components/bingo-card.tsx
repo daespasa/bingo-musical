@@ -42,23 +42,24 @@ export function BingoCardGrid({
             disabled={disabled || marked || wrong || cell.isFree}
             onClick={() => onMark(cell.id)}
             className={clsx(
-              'relative flex aspect-square flex-col items-center justify-center overflow-hidden rounded-xl border p-1 text-center transition-all duration-200 active:scale-95',
+              'relative flex aspect-square flex-col items-center justify-center overflow-hidden rounded border-2 p-1 text-center transition-all duration-150',
               marked &&
-                'animate-mark border-emerald-400 bg-emerald-100 text-emerald-900 shadow-[0_0_0_2px_rgba(52,211,153,0.4)] dark:bg-emerald-900/50 dark:text-emerald-100',
+                'animate-mark border-emerald-500 bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100',
               cell.isFree &&
-                'border-brand-400 bg-brand-100 text-brand-900 dark:bg-brand-900/50 dark:text-brand-100',
-              wrong && 'animate-shake border-rose-300 bg-rose-100 opacity-60 dark:bg-rose-900/40',
+                'border-brand-600 bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-100',
+              wrong &&
+                'animate-shake border-rose-300 bg-rose-100 text-rose-900 line-through opacity-70 dark:border-rose-500 dark:bg-rose-900 dark:text-rose-100',
               inLine && 'animate-line ring-2 ring-amber-400',
               !marked &&
                 !wrong &&
                 !cell.isFree &&
-                'border-slate-300 bg-white hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md dark:border-slate-700 dark:bg-slate-800',
+                'border-slate-300 bg-slate-50 text-slate-800 hover:border-slate-900 hover:shadow-sleeve active:translate-y-0.5 active:shadow-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-100 dark:hover:shadow-none',
             )}
           >
             {(marked || wrong) && (
               <span
                 className={clsx(
-                  'absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-white',
+                  'absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full text-slate-50',
                   marked ? 'animate-pop bg-emerald-500' : 'bg-rose-500',
                 )}
                 aria-hidden
@@ -79,7 +80,7 @@ export function BingoCardGrid({
                   {cell.displayTitle}
                 </span>
                 {cell.displayArtist && (
-                  <span className="mt-0.5 text-[9px] text-slate-500 dark:text-slate-400 sm:text-[10px]">
+                  <span className="mt-0.5 font-mono text-[9px] uppercase tracking-wide text-slate-500 dark:text-slate-400 sm:text-[10px]">
                     {cell.displayArtist}
                   </span>
                 )}

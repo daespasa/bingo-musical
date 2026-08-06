@@ -102,7 +102,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
   if (room.authFailed) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6">
-        <p className="text-accent-500">Tu sesión ha caducado o fuiste expulsado.</p>
+        <p className="text-rose-500">Tu sesión ha caducado o fuiste expulsado.</p>
         <Link href={`/join/${code}`} className="btn-primary">
           Volver a entrar
         </Link>
@@ -124,21 +124,23 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
   const players = state?.participants.filter((p) => p.role === 'PLAYER') ?? [];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-5">
       <header className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Sala {code}</p>
-          <h1 className="font-bold">{state?.gameName ?? '…'}</h1>
+        <div className="min-w-0">
+          <p className="font-mono text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+            Sala <span className="text-slate-900 dark:text-slate-100">{code}</span>
+          </p>
+          <h1 className="truncate font-display text-lg leading-tight">{state?.gameName ?? '…'}</h1>
         </div>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex shrink-0 items-center gap-2 text-sm">
           {!room.connected && (
-            <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900 dark:text-amber-200">
+            <span className="flex items-center gap-1 rounded border-2 border-amber-500 bg-amber-200 px-2 py-1 font-mono text-xs uppercase tracking-wide text-amber-700 dark:bg-amber-700 dark:text-amber-200">
               <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
               Reconectando…
             </span>
           )}
           {myEntry && (
-            <span className="rounded-full bg-brand-100 px-3 py-1 font-mono font-bold tabular-nums text-brand-700 dark:bg-brand-900 dark:text-brand-300">
+            <span className="data rounded border-2 border-slate-900 bg-brand-600 px-3 py-1 font-medium text-slate-50 dark:border-slate-100">
               {myEntry.score}
             </span>
           )}
@@ -148,11 +150,11 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
       {toast && (
         <div
           role="status"
-          className={`animate-toast flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-center text-sm font-medium text-white ${
+          className={`animate-toast flex items-center justify-center gap-2 rounded border-2 border-slate-900 px-4 py-3 text-center font-display text-sm uppercase tracking-wide text-slate-50 shadow-sleeve dark:border-slate-100 ${
             toast.tone === 'success'
-              ? 'bg-emerald-600'
+              ? 'bg-emerald-500'
               : toast.tone === 'error'
-                ? 'bg-accent-500'
+                ? 'bg-rose-500'
                 : 'bg-slate-900 dark:bg-slate-700'
           }`}
         >
@@ -167,9 +169,12 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
 
       {state?.status === 'LOBBY' && (
         <div className="card flex flex-col items-center gap-4 p-8 text-center">
-          <PartyPopper className="h-10 w-10 text-brand-500" aria-hidden />
-          <p className="font-semibold">Esperando a que el anfitrión empiece…</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          {/* Disco parado: la partida aún no ha arrancado */}
+          <div className="vinyl w-20" aria-hidden />
+          <p className="font-display text-lg leading-tight">
+            Esperando a que el anfitrión empiece…
+          </p>
+          <p className="font-mono text-xs uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
             {players.length} jugadores en la sala
           </p>
           {isRemote && !audioEnabled && (
@@ -244,9 +249,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
           </div>
           {state.settings.showLeaderboard && (
             <section className="card p-4">
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Ranking
-              </h2>
+              <h2 className="eyebrow mb-3">Ranking</h2>
               <Leaderboard entries={room.leaderboard} highlightId={participantId ?? undefined} />
             </section>
           )}
