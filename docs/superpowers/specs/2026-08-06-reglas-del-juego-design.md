@@ -9,12 +9,24 @@ separado. Esta es la primera porque es la única que rompe partidas hoy, y
 porque el pulido de una partida real no tiene sentido antes de arreglar las
 reglas.
 
-| Orden | Épica                 | Contenido                                                                                                                  |
-| ----- | --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Reglas del juego      | Fallo recuperable y pulido de una partida real                                                                             |
-| 2     | Colecciones y Spotify | Importar listas enteras, gestionar colecciones, crear listas canción a canción, colecciones temáticas, conectar tu Spotify |
-| 3     | El espectáculo        | Highlights entre rondas, más estadísticas, reacciones en el proyector, animaciones musicales                               |
-| 4     | Producto y cuenta     | Textos orientados a la persona, header rediseñado, editar perfil, dashboard inicial, sesión                                |
+| Orden | Épica                 | Contenido                                                                                                     |
+| ----- | --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1     | Reglas del juego      | Fallo recuperable y pulido de una partida real                                                                |
+| 2     | Colecciones y Spotify | Importar listas enteras, gestionar colecciones, crear listas canción a canción, colecciones temáticas propias |
+| 3     | El espectáculo        | Highlights entre rondas, más estadísticas, reacciones en el proyector, animaciones musicales                  |
+| 4     | Producto y cuenta     | Textos orientados a la persona, header rediseñado, editar perfil, dashboard inicial, sesión                   |
+
+Dos decisiones ya tomadas sobre la épica 2, para no volver sobre ellas:
+
+- **No se conectan cuentas de Spotify.** La idea era recomendar sobre las listas
+  propias de cada persona, y no compensa el coste: OAuth por usuario, tokens
+  cifrados y refresco. Se mantienen las credenciales de aplicación, que bastan
+  para buscar e importar listas públicas.
+- **Las colecciones temáticas son nuestras.** Un script las construye buscando
+  en Spotify por año y género, y se pueden regenerar y ampliar con el tiempo.
+  Spotify ya no da `preview_url` a las aplicaciones nuevas, así que el script
+  debe descartar las canciones cuya preview no resuelva el `PreviewProvider` e
+  informar de la cobertura obtenida: una colección temática solo sirve si suena.
 
 ## El problema
 
