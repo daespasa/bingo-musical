@@ -2,7 +2,7 @@
 
 Bingo musical en tiempo real inspirado en la dinámica de Kahoot: un anfitrión crea una partida, los jugadores entran con un código o QR, reciben cartones musicales distintos y marcan canciones mientras suenan fragmentos de 15 segundos. Líneas, bingos, ranking en vivo y ceremonia de premios.
 
-**Versión actual: v0.2.0** — MVP local jugable. Ver [PROGRESS.md](PROGRESS.md) y [CHANGELOG.md](CHANGELOG.md).
+**Versión actual: v0.2.0** — MVP local jugable. Ver [PROGRESS.md](PROGRESS.md), [CHANGELOG.md](CHANGELOG.md) y el sistema visual en [DESIGN.md](DESIGN.md).
 
 ---
 
