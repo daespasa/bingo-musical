@@ -1,7 +1,34 @@
 import type { Metadata, Viewport } from 'next';
+import { Archivo, Archivo_Black, DM_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { PwaProvider } from '@/components/pwa-provider';
+
+/**
+ * Tipografía de funda de disco: una grotesca negra para los rótulos, su misma
+ * familia en pesos normales para el texto y una monoespaciada para todo lo que
+ * es dato (códigos de sala, tiempos, puntuaciones). `next/font` las descarga
+ * al compilar y las sirve desde el propio dominio, sin peticiones externas.
+ */
+const display = Archivo_Black({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const sans = Archivo({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const mono = DM_Mono({
+  weight: ['400', '500'],
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Bingo Musical',
@@ -26,14 +53,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#9333ea' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+    { media: '(prefers-color-scheme: light)', color: '#cf3a00' },
+    { media: '(prefers-color-scheme: dark)', color: '#100e0c' },
   ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body>
         <Providers>{children}</Providers>
         <PwaProvider />
