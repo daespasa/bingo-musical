@@ -114,6 +114,16 @@ export class SpotifyApiService {
     return body.tracks.items.map((t) => this.toTrack(t));
   }
 
+  /** Busca una canción concreta por su identificador de Spotify. */
+  async trackById(spotifyTrackId: string): Promise<SpotifyTrack | null> {
+    try {
+      const body = await this.get<SpotifyApiTrack>(`/tracks/${spotifyTrackId}`);
+      return body.id ? this.toTrack(body) : null;
+    } catch {
+      return null;
+    }
+  }
+
   /** Extrae el ID de una URL, URI o ID pelado de playlist. */
   static parsePlaylistId(input: string): string | null {
     const trimmed = input.trim();

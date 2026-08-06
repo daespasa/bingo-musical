@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -61,6 +61,7 @@ export default function MusicPage() {
   const [collectionName, setCollectionName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const queryClient = useQueryClient();
 
   const { data: status } = useQuery({
     queryKey: ['spotify-status'],
@@ -70,6 +71,23 @@ export default function MusicPage() {
   const { data: collections } = useQuery({
     queryKey: ['collections'],
     queryFn: () => api<CollectionSummary[]>('/collections'),
+  });
+
+  const [targetId, setTargetId] = useState('');
+  const [added, setAdded] = useState<Record<string, string>>({});
+
+  const addTrack = useMutation({
+    mutationFn: (spotifyTrackId: string) =>
+      api<{ previewStatus: string }>('/spotify/add-track', {
+        method: 'POST',
+        body: JSON.stringify({ collectionId: targetId, spotifyTrackId }),
+      }),
+    onSuccess: (result, spotifyTrackId) => {
+      setError(null);
+      setAdded((prev) => ({ ...prev, [spotifyTrackId]: result.previewStatus }));
+      void queryClient.invalidateQueries({ queryKey: ['collections'] });
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'No se pudo añadir'),
   });
 
   const createCollection = useMutation({
@@ -217,14 +235,54 @@ export default function MusicPage() {
                 Buscar
               </button>
             </form>
+            {search.data && search.data.length > 0 && (
+              <div className="mt-4">
+                <label className="label" htmlFor="destino">
+                  Añadir a
+                </label>
+                <select
+                  id="destino"
+                  className="input"
+                  value={targetId}
+                  onChange={(e) => setTargetId(e.target.value)}
+                >
+                  <option value="">Elige una colección tuya…</option>
+                  {(collections ?? [])
+                    .filter((c) => c.editable)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
             {search.data && (
               <ul className="mt-4 divide-y divide-slate-200 dark:divide-slate-800">
                 {search.data.map((t) => (
-                  <li key={t.spotifyTrackId} className="py-2 text-sm">
-                    <p className="font-medium">{t.title}</p>
-                    <p className="text-slate-500 dark:text-slate-400">
-                      {t.artists.join(', ')} · {t.album}
-                    </p>
+                  <li key={t.spotifyTrackId} className="flex items-center gap-3 py-2 text-sm">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{t.title}</span>
+                      <span className="block truncate text-slate-500 dark:text-slate-400">
+                        {t.artists.join(', ')} · {t.album}
+                      </span>
+                    </span>
+                    {added[t.spotifyTrackId] ? (
+                      <span className="flex shrink-0 items-center gap-1 font-mono text-xs uppercase tracking-wide text-emerald-600">
+                        <CheckCircle2 className="h-4 w-4" aria-hidden />
+                        {added[t.spotifyTrackId] === 'AVAILABLE' ? 'Añadida' : 'Sin audio'}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => addTrack.mutate(t.spotifyTrackId)}
+                        disabled={!targetId || addTrack.isPending}
+                        aria-label={`Añadir ${t.title}`}
+                        className="btn-secondary w-auto shrink-0"
+                      >
+                        <Plus className="h-4 w-4" aria-hidden />
+                        Añadir
+                      </button>
+                    )}
                   </li>
                 ))}
                 {search.data.length === 0 && (
