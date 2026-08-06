@@ -1,6 +1,6 @@
 # Progreso
 
-- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.3.1`.
+- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.4.0`.
 - **Épica actual**: ninguna — release cerrada con CI y E2E en verde.
 - **Rama actual**: `main`.
 
@@ -26,6 +26,7 @@
 | Visual identity  | Sistema de funda de disco: papel y tinta, tipografía propia, el disco indica la ronda      |
 | Stitch           | Código de sala en casillas, escaneo del QR, contrato del código en `@bingo/shared`         |
 | Game rules       | Fallo recuperable entre rondas, confirmación propia al terminar, sonda de partida real     |
+| Collections      | Importar listas enteras, gestionar y duplicar colecciones, canción a canción, temáticas    |
 
 ## Validaciones ejecutadas
 
@@ -33,9 +34,9 @@
 | ---------------- | -------------------------------------------------------------- |
 | `pnpm lint`      | 8/8 paquetes sin errores                                       |
 | `pnpm typecheck` | 8/8 paquetes sin errores                                       |
-| `pnpm test`      | 71 tests en 7 archivos (shared 34, music-providers 24, api 13) |
+| `pnpm test`      | 94 tests en 9 archivos (shared 34, music-providers 24, api 36) |
 | `pnpm build`     | 5/5 paquetes compilados                                        |
-| `pnpm test:e2e`  | 14 tests Playwright en verde, con Spotify configurado          |
+| `pnpm test:e2e`  | 17 tests Playwright en verde, con Spotify configurado          |
 | Docker           | `bingo-postgres` y `bingo-redis` en estado `Up (healthy)`      |
 | Migraciones      | 3 migraciones aplicadas correctamente                          |
 | GitHub Actions   | Workflows `CI` y `E2E` en verde en `main`                      |
@@ -48,7 +49,6 @@ borrado, que es el estado de un checkout limpio como el de CI.
 - Modo híbrido (el modelo lo contempla, la lógica no está implementada).
 - Reclamaciones por columna, diagonal y patrones libres (solo fila y cartón completo).
 - Verificación de correo y recuperación de contraseña reales.
-- Reordenar y eliminar canciones dentro de una colección importada.
 - Restauración del estado de una partida en curso si se reinicia la API (la sala queda pausada).
 - Highlight de mayor remontada (el tipo existe, no se calcula).
 
@@ -59,13 +59,13 @@ borrado, que es el estado de un checkout limpio como el de CI.
 
 ## Próximo bloque recomendado
 
-1. Épica 2: colecciones y Spotify (importar listas enteras, gestionarlas, crear
-   listas canción a canción y colecciones temáticas propias).
-2. Persistir el runtime de la partida en Redis para sobrevivir a reinicios.
-3. Patrones de línea configurables (columnas y diagonales).
-4. Modo oscuro «laca» revisado pantalla a pantalla, que es lo que sugería Stitch
+1. Épica 3: el espectáculo (highlights entre rondas, estadísticas, reacciones).
+2. Épica 4: producto y cuenta (textos, header, perfil, dashboard, sesión).
+3. Persistir el runtime de la partida en Redis para sobrevivir a reinicios.
+4. Patrones de línea configurables (columnas y diagonales).
+5. Modo oscuro «laca» revisado pantalla a pantalla, que es lo que sugería Stitch
    como siguiente variante.
 
 ## Último commit relevante
 
-`chore(release): integrate epic/game-rules`
+`chore(release): integrate epic/collections`
