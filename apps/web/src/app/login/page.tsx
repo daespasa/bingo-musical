@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { Suspense, useState } from 'react';
+import { ArrowLeft, Music4 } from 'lucide-react';
 import { api, ApiError, type PublicUser } from '@/lib/api';
 import { GoogleButton } from '@/components/google-button';
 
@@ -31,12 +32,18 @@ function LoginForm() {
   };
 
   return (
-    <div className="card p-8">
-      <h1 className="mb-6 text-2xl font-bold">Iniciar sesión</h1>
+    <div className="card p-6 sm:p-8">
+      <span className="mb-5 grid h-11 w-11 place-items-center rounded-md border-2 border-slate-900 bg-brand-600 text-slate-50 dark:border-slate-100">
+        <Music4 className="h-5 w-5" />
+      </span>
+      <h1 className="font-display text-3xl leading-tight tracking-tight">Qué bien verte</h1>
+      <p className="mb-6 mt-2 text-sm text-slate-600 dark:text-slate-300">
+        Accede para preparar tu próxima partida.
+      </p>
       {oauthFailed && (
         <p
           role="alert"
-          className="mb-4 rounded-xl bg-rose-50 p-3 text-sm text-accent-500 dark:bg-rose-950/40"
+          className="mb-4 rounded border-2 border-accent-500 bg-accent-100 p-3 text-sm text-accent-600 dark:bg-rose-900 dark:text-rose-100"
         >
           No se pudo completar el acceso con Google. Inténtalo de nuevo.
         </p>
@@ -84,14 +91,23 @@ function LoginForm() {
           Regístrate
         </Link>
       </p>
-      <p className="mt-2 text-xs text-slate-400">Demo: demo@bingo.local / Demo1234!</p>
+      <p className="data mt-2 text-xs text-slate-500 dark:text-slate-400">
+        Demo: demo@bingo.local / Demo1234!
+      </p>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-20 sm:px-6">
+      <Link
+        href="/"
+        className="mb-4 flex items-center gap-2 self-start font-mono text-xs uppercase tracking-[0.14em] text-slate-500 hover:text-brand-600"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Volver
+      </Link>
       <Suspense fallback={<div className="card h-96 animate-pulse" />}>
         <LoginForm />
       </Suspense>

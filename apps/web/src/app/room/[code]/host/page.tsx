@@ -100,7 +100,7 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Panel del anfitrión</p>
+          <p className="eyebrow">Panel del anfitrión</p>
           <h1 className="text-xl font-bold">{state?.gameName ?? '…'}</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -124,7 +124,7 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
             <p className="text-5xl font-black tracking-[0.2em] text-brand-600 dark:text-brand-400">
               {code}
             </p>
-            <div className="rounded-xl bg-white p-3">
+            <div className="rounded-md bg-white p-3">
               <QRCodeSVG value={joinUrl} size={180} />
             </div>
             <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -281,15 +281,11 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
           )}
           <div className="grid gap-6 md:grid-cols-2">
             <section className="card p-4">
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Ranking en vivo
-              </h2>
+              <h2 className="eyebrow mb-3">Ranking en vivo</h2>
               <Leaderboard entries={room.leaderboard} />
             </section>
             <section className="card p-4">
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Jugadores ({players.length})
-              </h2>
+              <h2 className="eyebrow mb-3">Jugadores ({players.length})</h2>
               <ul className="flex flex-col gap-1 text-sm">
                 {players.map((p) => (
                   <li key={p.id} className="flex items-center justify-between px-2 py-1">

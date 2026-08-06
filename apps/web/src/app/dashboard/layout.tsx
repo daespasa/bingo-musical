@@ -1,40 +1,48 @@
 import Link from 'next/link';
-import { Music4 } from 'lucide-react';
+import { History, LayoutGrid, Library, Music4 } from 'lucide-react';
 import { UserMenu } from '@/components/user-menu';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/70 backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <nav className="flex items-center gap-6">
-            <Link href="/dashboard" className="flex items-center gap-2 text-lg font-black">
-              <Music4 className="h-5 w-5 text-brand-500" aria-hidden />
-              Bingo Musical
+      <header className="sticky top-0 z-20 border-b-2 border-slate-900 bg-slate-50/90 backdrop-blur-md dark:border-slate-700 dark:bg-slate-950/90">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <nav className="flex min-w-0 items-center gap-1 sm:gap-2">
+            <Link
+              href="/dashboard"
+              className="mr-1 flex shrink-0 items-center gap-2 font-display sm:mr-4 sm:text-lg"
+            >
+              <span className="grid h-9 w-9 place-items-center rounded-md border-2 border-slate-900 bg-brand-600 text-slate-50 dark:border-slate-100">
+                <Music4 className="h-4 w-4" aria-hidden />
+              </span>
+              <span className="hidden md:inline">Bingo Musical</span>
             </Link>
             <Link
               href="/dashboard"
-              className="text-sm text-slate-600 hover:text-brand-600 dark:text-slate-300"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-brand-50 hover:text-brand-700 dark:text-slate-300 dark:hover:bg-brand-900/30"
             >
-              Partidas
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline">Partidas</span>
             </Link>
             <Link
               href="/dashboard/music"
-              className="text-sm text-slate-600 hover:text-brand-600 dark:text-slate-300"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-brand-50 hover:text-brand-700 dark:text-slate-300 dark:hover:bg-brand-900/30"
             >
-              Música
+              <Library className="h-4 w-4" />
+              <span className="hidden sm:inline">Música</span>
             </Link>
             <Link
               href="/dashboard/history"
-              className="text-sm text-slate-600 hover:text-brand-600 dark:text-slate-300"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-brand-50 hover:text-brand-700 dark:text-slate-300 dark:hover:bg-brand-900/30"
             >
-              Historial
+              <History className="h-4 w-4" />
+              <span className="hidden sm:inline">Historial</span>
             </Link>
           </nav>
           <UserMenu />
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
     </div>
   );
 }

@@ -49,8 +49,8 @@ export default function JoinCodePage({ params }: { params: Promise<{ code: strin
   };
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <div className="card p-8">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-16 sm:px-6">
+      <div className="card p-6 sm:p-8">
         {isLoading && (
           <div className="h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
         )}

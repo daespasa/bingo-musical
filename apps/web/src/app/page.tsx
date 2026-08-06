@@ -1,32 +1,144 @@
 import Link from 'next/link';
-import { Headphones, Music4 } from 'lucide-react';
+import { ArrowRight, Headphones, Music4 } from 'lucide-react';
+
+/** Portada del cartón de muestra: dos casillas ya marcadas. */
+const SLEEVE_TRACKS = [
+  'Viva la Vida',
+  'Flowers',
+  'La Bachata',
+  'Libre',
+  'As It Was',
+  'DESPECHÁ',
+  'Titanium',
+  'Blinding Lights',
+  'Todo de Ti',
+];
+const SLEEVE_MARKED = [4, 7];
+
+const CREDITS = [
+  {
+    label: 'Jugadores',
+    text: 'Entran con un código de seis letras o el QR. Sin instalar nada, sin cuenta.',
+  },
+  {
+    label: 'Música',
+    text: 'Colección demo incluida, o importa una lista pública de Spotify.',
+  },
+  {
+    label: 'Reglas',
+    text: 'Cada marca, línea y bingo los valida el servidor. Nadie puede hacer trampa.',
+  },
+];
 
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-8 px-6 text-center">
-      <div>
-        <Music4 className="mx-auto mb-4 h-14 w-14 text-brand-500" aria-hidden />
-        <h1 className="bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-5xl font-black text-transparent">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-6 sm:px-8">
+      <nav className="flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2.5 font-display text-lg tracking-tight">
+          <span className="grid h-9 w-9 place-items-center rounded-md border-2 border-slate-900 bg-brand-600 text-slate-50 dark:border-slate-100">
+            <Music4 className="h-4 w-4" aria-hidden />
+          </span>
           Bingo Musical
-        </h1>
-        <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
-          Reconoce la canción, marca tu cartón y canta ¡línea! o ¡bingo! antes que nadie.
-        </p>
-      </div>
-      <div className="flex w-full max-w-sm flex-col gap-3">
-        <Link href="/join" className="btn-primary text-lg">
-          <Headphones className="h-5 w-5" aria-hidden />
-          Unirme a una partida
-        </Link>
-        <Link href="/login" className="btn-secondary">
-          Soy anfitrión — Iniciar sesión
         </Link>
         <Link
-          href="/register"
-          className="text-sm text-brand-600 hover:underline dark:text-brand-400"
+          href="/login"
+          className="font-mono text-xs uppercase tracking-[0.14em] text-slate-500 underline-offset-4 hover:text-brand-600 hover:underline dark:text-slate-400"
         >
-          Crear una cuenta nueva
+          Acceder
         </Link>
+      </nav>
+
+      <div className="grid flex-1 items-center gap-14 py-14 lg:grid-cols-[1.05fr_.95fr] lg:gap-12 lg:py-20">
+        <section>
+          <p className="eyebrow">Bingo musical en directo</p>
+          <h1 className="mt-5 font-display text-[2.6rem] leading-[0.92] tracking-[-0.03em] sm:text-[3.4rem] lg:text-[3.9rem]">
+            Suenan quince
+            <br />
+            segundos.
+            <br />
+            <span className="text-brand-600 dark:text-brand-400">Reconócela</span> antes
+            <br />
+            que nadie.
+          </h1>
+          <p className="mt-6 max-w-md text-pretty text-lg leading-8 text-slate-600 dark:text-slate-300">
+            El anfitrión elige la lista y reparte cartones. Ninguno se repite. Marca la canción
+            mientras suena y adelanta a los demás por velocidad.
+          </p>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Link href="/join" className="btn-primary sm:w-auto">
+              <Headphones className="h-4 w-4" aria-hidden />
+              Tengo un código
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+            <Link href="/register" className="btn-secondary sm:w-auto">
+              Crear una partida
+            </Link>
+          </div>
+
+          <dl className="mt-12 grid gap-5 border-t-2 border-slate-900 pt-6 dark:border-slate-700 sm:grid-cols-3">
+            {CREDITS.map((credit) => (
+              <div key={credit.label}>
+                <dt className="font-mono text-xs uppercase tracking-[0.16em] text-brand-600 dark:text-brand-400">
+                  {credit.label}
+                </dt>
+                <dd className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  {credit.text}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        {/*
+         * Firma: el disco saliendo de la funda. La portada es un cartón real,
+         * que es exactamente lo que recibe cada jugador.
+         */}
+        <section className="relative mx-auto w-full max-w-lg" aria-label="Vista previa del juego">
+          <div className="relative pr-[30%]">
+            {/*
+             * El giro va en un hijo: `animate-spin-record` escribe `transform`
+             * y borraría el centrado vertical si compartieran elemento.
+             */}
+            <div className="absolute left-[46%] top-1/2 w-[54%] -translate-y-1/2">
+              <div className="vinyl animate-spin-record w-full" aria-hidden />
+            </div>
+            <div className="card relative z-10 p-4 shadow-sleeve-lg sm:p-5">
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div>
+                  <p className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                    Sala <span className="data text-slate-900 dark:text-slate-100">BAILA</span>
+                  </p>
+                  <p className="mt-0.5 font-display text-xl leading-tight">Hits para cantar</p>
+                </div>
+                <span className="flex shrink-0 items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-600 dark:bg-brand-400" />
+                  En directo
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-1.5">
+                {SLEEVE_TRACKS.map((track, index) => (
+                  <div
+                    key={track}
+                    className={`flex aspect-square items-center justify-center rounded border-2 p-1.5 text-center text-[11px] font-semibold leading-tight ${
+                      SLEEVE_MARKED.includes(index)
+                        ? 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+                    }`}
+                  >
+                    {track}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <span className="btn-secondary pointer-events-none w-full">¡Línea!</span>
+                <span className="btn-primary pointer-events-none w-full">¡Bingo!</span>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );

@@ -57,7 +57,7 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
             Entra en <span className="font-bold text-brand-600">{joinUrl}</span>
           </p>
           <div className="flex items-center gap-10">
-            <div className="rounded-2xl bg-white p-5">
+            <div className="rounded-md bg-white p-5">
               <QRCodeSVG value={joinUrl} size={260} />
             </div>
             <div>

@@ -41,9 +41,13 @@ export function UserMenu() {
       <span className="hidden text-sm text-slate-500 dark:text-slate-400 sm:inline">
         {user?.displayName}
       </span>
-      <button onClick={logout} className="btn-secondary px-3 py-2 text-xs">
+      <button
+        onClick={logout}
+        className="btn-secondary min-h-9 w-auto px-3 py-2 text-xs"
+        aria-label="Cerrar sesión"
+      >
         <LogOut className="h-3.5 w-3.5" aria-hidden />
-        Cerrar sesión
+        <span className="hidden lg:inline">Cerrar sesión</span>
       </button>
     </div>
   );

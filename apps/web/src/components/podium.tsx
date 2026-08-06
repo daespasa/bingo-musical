@@ -22,7 +22,7 @@ const HIGHLIGHTS: Record<
   { label: string; Icon: typeof Zap; className: string }
 > = {
   FASTEST_ANSWER: { label: 'Respuesta más rápida', Icon: Zap, className: 'text-amber-500' },
-  LEADER_CHANGE: { label: 'Cambio de líder', Icon: Repeat, className: 'text-sky-500' },
+  LEADER_CHANGE: { label: 'Cambio de líder', Icon: Repeat, className: 'text-brand-600' },
   BEST_STREAK: { label: 'Mayor racha', Icon: Flame, className: 'text-orange-500' },
   FIRST_LINE: { label: 'Primera línea', Icon: Megaphone, className: 'text-brand-500' },
   BINGO: { label: 'Bingo', Icon: Trophy, className: 'text-amber-500' },
@@ -172,9 +172,7 @@ export function PodiumCeremony({
             </section>
           )}
           <section className="card animate-rise w-full p-4">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
-              Clasificación final
-            </h2>
+            <h2 className="eyebrow mb-3">Clasificación final</h2>
             <Leaderboard entries={finished.leaderboard} highlightId={highlightId} />
           </section>
           <Link href={`/room/${code}/results`} className="text-sm text-brand-600 hover:underline">

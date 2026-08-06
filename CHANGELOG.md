@@ -2,6 +2,38 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [0.2.0] - 2026-08-06
+
+Identidad visual propia: la interfaz pasa de un tema violeta genérico a un
+sistema de funda de disco. Ver [DESIGN.md](DESIGN.md).
+
+### Added
+
+- Sistema de diseño documentado con paleta, tipografía, forma y firma.
+- `.vinyl`: disco dibujado en CSS que indica el estado de la ronda. Gira
+  mientras suena el fragmento y se para cuando se cierra la ventana para
+  marcar, de modo que el movimiento informa en lugar de decorar.
+- Tipografía servida desde el propio dominio: Archivo Black para rótulos,
+  Archivo para texto y DM Mono para códigos de sala, tiempos y puntuaciones.
+
+### Changed
+
+- Paleta de papel hueso y tinta cálida con naranja de etiqueta discográfica
+  como único color de acción; verde para lo acertado, oro para línea y bingo y
+  ladrillo para errores.
+- Portada reconstruida: un disco saliendo de su funda cuya carátula es un
+  cartón real, en lugar del titular con degradado y las píldoras de
+  características.
+- Casillas del cartón tratadas como una lista de canciones; la fallada se tacha
+  y no depende solo del color.
+- Botones con canto de tinta y sombra dura que se hunden al pulsarlos.
+- Iconos de la PWA y colores del manifest repintados con la nueva paleta.
+
+### Fixed
+
+- Encabezados de sección que quedaban en un tono demasiado claro para leerse
+  con comodidad sobre el fondo.
+
 ## [0.1.1] - 2026-08-06
 
 ### Fixed

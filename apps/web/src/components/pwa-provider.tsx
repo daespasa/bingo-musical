@@ -60,7 +60,7 @@ export function PwaProvider() {
   };
 
   return (
-    <div className="animate-toast fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+    <div className="animate-toast fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-md border-2 border-slate-900 bg-slate-50 p-3 shadow-sleeve dark:border-slate-100 dark:bg-slate-900">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">Instalar Bingo Musical</p>
         <p className="text-xs text-slate-500 dark:text-slate-400">
