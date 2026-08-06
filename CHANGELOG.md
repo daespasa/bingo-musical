@@ -2,6 +2,33 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [0.3.0] - 2026-08-06
+
+Refinamientos sobre el sistema visual, a partir de las variantes generadas con
+Google Stitch desde `DESIGN.md`.
+
+### Added
+
+- Código de sala en seis casillas separadas, sobre un único campo de texto para
+  no romper el pegado, el autorrelleno ni los lectores de pantalla. Al
+  completarse entra en la sala sin pulsar nada más.
+- Escaneo del QR de la sala con la cámara, usando el detector del navegador. Es
+  un atajo opcional: si el navegador no lo admite el botón no aparece, y si se
+  deniega la cámara lo explica y deja escribir el código.
+- `ROOM_CODE_ALPHABET`, `normalizeRoomCode` y `extractRoomCode` en
+  `@bingo/shared`, con 11 tests. El servidor que genera los códigos y el
+  formulario que los recoge ya no pueden discrepar.
+- Etiqueta accesible en el buscador de Spotify, que solo tenía texto de ayuda.
+- Cobertura E2E de la entrada por código, que no se probaba.
+
+### Changed
+
+- La carátula de la portada va enmarcada dentro de la funda, como una lámina
+  pegada, en lugar de ir a sangre.
+- El test de Spotify ya no da por hecho que no hay credenciales: pregunta al
+  servidor por su estado y comprueba que la pantalla cuenta lo mismo. Antes
+  fallaba en cuanto alguien configuraba Spotify en su máquina.
+
 ## [0.2.0] - 2026-08-06
 
 Identidad visual propia: la interfaz pasa de un tema violeta genérico a un

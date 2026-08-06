@@ -62,6 +62,22 @@ No es decoración, **informa del estado**:
 El giro va siempre en un elemento hijo: `animate-spin-record` escribe
 `transform` y borraría cualquier centrado hecho con `translate`.
 
+## Códigos de sala
+
+El código de seis caracteres se escribe en **casillas separadas**, una por
+carácter, en monoespaciada. Por debajo es un único campo de texto: el teclado,
+el pegado, el autorrelleno y los lectores de pantalla siguen viendo un solo
+control. Seis campos encadenados romperían el pegado y el borrado hacia atrás.
+
+El alfabeto (`ROOM_CODE_ALPHABET`, en `@bingo/shared`) no tiene ceros ni oes,
+ni unos ni íes ni eles, porque el código se lee en voz alta o desde el otro
+lado de la habitación. Lo comparten el servidor que los genera y el formulario
+que los recoge, así que no pueden discrepar.
+
+Escanear el QR es un atajo, nunca la única vía: el botón solo aparece si el
+navegador trae el detector de códigos, y si se deniega la cámara lo dice y
+deja escribir el código a mano.
+
 ## Reglas de calidad
 
 - Contraste: el texto secundario usa `slate-500`/`slate-400`, calibrados sobre

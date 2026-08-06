@@ -114,6 +114,7 @@ export default function MusicPage() {
             onChange={(e) => setQuery(e.target.value)}
             className="input"
             placeholder="Título o artista"
+            aria-label="Buscar en Spotify"
           />
           <button type="submit" disabled={search.isPending} className="btn-primary shrink-0">
             {search.isPending ? (
