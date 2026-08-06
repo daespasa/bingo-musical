@@ -93,6 +93,21 @@ export function useRoom(token: string | null): RoomConnection {
         setSchedule(null);
         setLastClaim(null);
         setAwaitingReveal(false);
+        // Los fallos pertenecen a la ronda que acaba: esas canciones siguen
+        // vivas y hay que poder marcarlas cuando les toque sonar.
+        setState((prev) =>
+          prev?.card
+            ? {
+                ...prev,
+                card: {
+                  ...prev.card,
+                  cells: prev.card.cells.map((c) =>
+                    c.status === 'INVALID' ? { ...c, status: 'UNMARKED' } : c,
+                  ),
+                },
+              }
+            : prev,
+        );
       }),
     );
     socket.on(

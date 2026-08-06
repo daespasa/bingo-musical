@@ -661,14 +661,21 @@ export class GameEngineService {
           latencyMs,
         },
       });
-      await tx.bingoCardCell.update({
-        where: { id: cellId },
-        data: {
-          status: isCorrect ? 'VALID' : 'INVALID',
-          markedAt: new Date(),
-          validatedAt: new Date(),
-        },
-      });
+      // El fallo no se guarda en la casilla: es un suceso de esta ronda y ya
+      // vive en `playerMark`, cuya clave única (roundId, cellId) impide que se
+      // penalice dos veces. Si se escribiera aquí, la casilla quedaría
+      // bloqueada el resto de la partida y esa canción no podría marcarse
+      // cuando le tocara sonar.
+      if (isCorrect) {
+        await tx.bingoCardCell.update({
+          where: { id: cellId },
+          data: {
+            status: 'VALID',
+            markedAt: new Date(),
+            validatedAt: new Date(),
+          },
+        });
+      }
       for (const e of events) {
         await tx.scoreEvent.create({
           data: {
