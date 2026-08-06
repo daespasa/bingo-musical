@@ -6,7 +6,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ### Fixed
 
-- `@bingo/shared` se compila antes de arrancar los servidores de desarrollo: la tarea `dev` de Turborepo depende de `^build`, el paquete pierde su script `dev` (el `tsc --watch` reescribía `dist` mientras la API arrancaba y dejaba a `ts-node-dev` reiniciando sin escuchar) y el `webServer` de Playwright lo construye porque no pasa por Turborepo. Con esto los E2E vuelven a pasar en un checkout limpio, que era el fallo del workflow E2E.
+- Los paquetes del workspace se compilan antes de arrancar los servidores de desarrollo: la tarea `dev` de Turborepo depende de `^build` y el `webServer` de Playwright construye las dependencias de cada app (`pnpm --filter "<app>^..." build`) porque no pasa por Turborepo. En un checkout limpio los E2E fallaban con `Cannot find module @bingo/shared/dist/index.js` y, tras arreglar ese paquete, con el mismo error en `@bingo/music-providers`; era la causa del workflow E2E en rojo.
+- `@bingo/shared` pierde su script `dev`: el `tsc --watch` reescribía `dist` mientras la API arrancaba y dejaba a `ts-node-dev` reiniciando sin llegar a escuchar, de modo que `pnpm dev` no levantaba la API.
 
 ## [0.1.0] - 2026-08-05
 
