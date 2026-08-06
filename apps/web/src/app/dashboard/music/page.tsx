@@ -22,12 +22,27 @@ type SpotifyTrack = {
   durationMs: number;
 };
 
-type ImportedTrack = {
-  trackId: string;
+type ImportResult = {
+  collectionId: string;
+  /** Canciones guardadas, que puede ser menos de las que tiene la lista. */
+  imported: number;
+  /** Las que se quedaron fuera por el tope. */
+  skipped: number;
+  total: number;
+};
+
+type CollectionTrack = {
+  id: string;
   title: string;
   artist: string;
-  previewStatus: string;
-  confidence: number;
+  /** `null` mientras no se ha comprobado si suena. */
+  previewStatus: string | null;
+};
+
+type CollectionDetail = {
+  id: string;
+  name: string;
+  tracks: CollectionTrack[];
 };
 
 export default function MusicPage() {
@@ -49,13 +64,30 @@ export default function MusicPage() {
 
   const importPlaylist = useMutation({
     mutationFn: () =>
-      api<{ collectionId: string; tracks: ImportedTrack[] }>('/spotify/import-playlist', {
+      api<ImportResult>('/spotify/import-playlist', {
         method: 'POST',
         body: JSON.stringify({ playlist, name: collectionName || undefined }),
       }),
     onError: (err) =>
       setError(err instanceof ApiError ? err.message : 'No se pudo importar la playlist'),
   });
+
+  // El audio se resuelve por detrás, así que se va preguntando por la
+  // colección hasta que no quede ninguna canción por comprobar.
+  const importedId = importPlaylist.data?.collectionId;
+  const { data: imported } = useQuery({
+    queryKey: ['collection', importedId],
+    queryFn: () => api<CollectionDetail>(`/collections/${importedId}`),
+    enabled: Boolean(importedId),
+    refetchInterval: (q) => {
+      const tracks = q.state.data?.tracks;
+      if (!tracks) return 2000;
+      return tracks.some((t) => t.previewStatus === null) ? 2000 : false;
+    },
+  });
+
+  const pending = imported?.tracks.filter((t) => t.previewStatus === null).length ?? 0;
+  const playable = imported?.tracks.filter((t) => t.previewStatus === 'AVAILABLE').length ?? 0;
 
   if (status && !status.configured) {
     return (
@@ -176,7 +208,7 @@ export default function MusicPage() {
             {importPlaylist.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                Importando y resolviendo previews…
+                Guardando canciones…
               </>
             ) : (
               <>
@@ -189,38 +221,62 @@ export default function MusicPage() {
 
         {importPlaylist.data && (
           <div className="mt-4">
-            <p className="mb-2 text-sm font-medium">
-              {importPlaylist.data.tracks.filter((t) => t.previewStatus === 'AVAILABLE').length} de{' '}
-              {importPlaylist.data.tracks.length} canciones tienen preview reproducible.
+            <p className="text-sm font-medium">
+              Guardadas {importPlaylist.data.imported} canciones.
+              {importPlaylist.data.skipped > 0 && (
+                <>
+                  {' '}
+                  La lista tiene {importPlaylist.data.total}, así que se han dejado fuera las{' '}
+                  {importPlaylist.data.skipped} últimas.
+                </>
+              )}
             </p>
-            <ul className="max-h-80 divide-y divide-slate-200 overflow-y-auto text-sm dark:divide-slate-800">
-              {importPlaylist.data.tracks.map((t) => (
-                <li key={t.trackId} className="flex items-center gap-3 py-2">
-                  {t.previewStatus === 'AVAILABLE' ? (
-                    <CheckCircle2
-                      className="h-4 w-4 shrink-0 text-emerald-500"
-                      aria-label="Disponible"
-                    />
-                  ) : (
-                    <AlertTriangle
-                      className="h-4 w-4 shrink-0 text-amber-500"
-                      aria-label="No disponible"
-                    />
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{t.title}</span>
-                    <span className="block truncate text-slate-500 dark:text-slate-400">
-                      {t.artist}
-                      {t.previewStatus === 'AVAILABLE' && t.confidence < 0.8 && (
-                        <span className="ml-2 text-amber-600">
-                          coincidencia dudosa ({Math.round(t.confidence * 100)}%)
-                        </span>
-                      )}
+
+            <p className="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              {pending > 0 ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  Comprobando cuáles suenan: {playable} listas, quedan {pending}.
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
+                  Suenan {playable} de {imported?.tracks.length ?? 0}. Ya puedes jugar con ella.
+                </>
+              )}
+            </p>
+
+            {imported && (
+              <ul className="mt-3 max-h-80 divide-y divide-slate-200 overflow-y-auto text-sm dark:divide-slate-800">
+                {imported.tracks.map((t) => (
+                  <li key={t.id} className="flex items-center gap-3 py-2">
+                    {t.previewStatus === null ? (
+                      <Loader2
+                        className="h-4 w-4 shrink-0 animate-spin text-slate-400"
+                        aria-label="Comprobando"
+                      />
+                    ) : t.previewStatus === 'AVAILABLE' ? (
+                      <CheckCircle2
+                        className="h-4 w-4 shrink-0 text-emerald-500"
+                        aria-label="Suena"
+                      />
+                    ) : (
+                      <AlertTriangle
+                        className="h-4 w-4 shrink-0 text-amber-500"
+                        aria-label="Sin audio"
+                      />
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{t.title}</span>
+                      <span className="block truncate text-slate-500 dark:text-slate-400">
+                        {t.artist}
+                      </span>
                     </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            )}
+
             <button
               onClick={() => router.push('/dashboard/games/new')}
               className="btn-primary mt-4 w-full"

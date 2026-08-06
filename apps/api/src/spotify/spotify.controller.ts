@@ -34,7 +34,7 @@ export class SpotifyController {
   importPlaylist(
     @CurrentUser() user: User,
     @Body() dto: ImportPlaylistDto,
-  ): Promise<{ collectionId: string; tracks: ImportedTrack[] }> {
+  ): Promise<{ collectionId: string; imported: number; skipped: number; total: number }> {
     return this.spotify.importPlaylist(user.id, dto.playlist, dto.name ?? 'Playlist importada');
   }
 

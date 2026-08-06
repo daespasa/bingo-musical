@@ -119,17 +119,25 @@ export class SpotifyService {
    * Importa una playlist pública a una colección del usuario y resuelve las
    * previews de todas sus canciones.
    */
+  /**
+   * Importa una lista en dos fases. Primero guarda los metadatos, que son
+   * segundos, y devuelve la colección ya usable. El audio se resuelve después
+   * en segundo plano, porque tarda del orden de un segundo por canción y una
+   * lista larga convertiría esto en una petición que muere por el camino.
+   */
   async importPlaylist(
     ownerId: string,
     playlistRef: string,
     collectionName: string,
-  ): Promise<{ collectionId: string; tracks: ImportedTrack[] }> {
+  ): Promise<{ collectionId: string; imported: number; skipped: number; total: number }> {
     const playlistId = SpotifyApiService.parsePlaylistId(playlistRef);
     if (!playlistId) {
       throw new Error('No se reconoce el enlace de playlist');
     }
-    const spotifyTracks = await this.spotify.playlistTracks(playlistId);
-    this.logger.log(`Importando ${spotifyTracks.length} canciones de la playlist ${playlistId}`);
+    const { tracks: spotifyTracks, total, skipped } = await this.spotify.playlistTracks(playlistId);
+    this.logger.log(
+      `Importando ${spotifyTracks.length} de ${total} canciones de la playlist ${playlistId}`,
+    );
 
     const collection = await this.prisma.musicCollection.create({
       data: {
@@ -139,29 +147,48 @@ export class SpotifyService {
       },
     });
 
-    const imported: ImportedTrack[] = [];
     let position = 0;
     for (const t of spotifyTracks) {
       const trackId = await this.upsertTrack(t);
-      const preview = await this.resolvePreview(trackId, t);
       await this.prisma.musicCollectionTrack.upsert({
         where: { collectionId_trackId: { collectionId: collection.id, trackId } },
         update: {},
         create: { collectionId: collection.id, trackId, position: position++ },
       });
-      imported.push({
-        trackId,
-        title: t.title,
-        artist: t.artists.join(', '),
-        album: t.album,
-        coverUrl: t.coverUrl,
-        durationMs: t.durationMs,
-        previewStatus: preview.status,
-        previewUrl: preview.url,
-        confidence: preview.confidence,
-      });
     }
-    return { collectionId: collection.id, tracks: imported };
+
+    void this.resolveInBackground(collection.id, ownerId);
+
+    return { collectionId: collection.id, imported: spotifyTracks.length, skipped, total };
+  }
+
+  /** Colecciones cuyo audio se está resolviendo ahora mismo. */
+  private readonly resolving = new Set<string>();
+
+  isResolving(collectionId: string): boolean {
+    return this.resolving.has(collectionId);
+  }
+
+  /**
+   * Resuelve el audio sin bloquear a quien importa. Si la API se reinicia a
+   * mitad, la resolución se corta: se retoma desde la pantalla de la colección
+   * o en la revalidación previa a empezar la partida.
+   */
+  async resolveInBackground(collectionId: string, ownerId: string): Promise<void> {
+    if (this.resolving.has(collectionId)) return;
+    this.resolving.add(collectionId);
+    try {
+      const resolved = await this.resolvePreviews(collectionId, ownerId);
+      const playable = resolved.filter((t) => t.previewUrl).length;
+      this.logger.log(`Colección ${collectionId}: suenan ${playable} de ${resolved.length}`);
+    } catch (error) {
+      this.logger.error(
+        `No se pudo resolver el audio de la colección ${collectionId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    } finally {
+      this.resolving.delete(collectionId);
+    }
   }
 
   /** Revalida las previews de una colección antes de empezar la partida. */
