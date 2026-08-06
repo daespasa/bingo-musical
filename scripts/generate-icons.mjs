@@ -15,9 +15,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'apps', 'web', 'public', 'icons');
 mkdirSync(outDir, { recursive: true });
 
-const BRAND = [147, 51, 234]; // brand-600
-const ACCENT = [244, 63, 94]; // accent-500
-const WHITE = [255, 255, 255];
+const BRAND = [207, 58, 0]; // brand-600, naranja de etiqueta
+const ACCENT = [245, 90, 30]; // brand-500
+const WHITE = [250, 246, 236]; // slate-50, papel hueso
 
 function crc32(buf) {
   let c;
