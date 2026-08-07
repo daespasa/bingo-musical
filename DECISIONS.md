@@ -171,3 +171,32 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Contexto**: comparten cartones, generación, validación, línea, bingo, ranking, ceremonia, reacciones, The Show e historial. Lo único que cambia es qué se sabe de la canción mientras suena.
 - **Elección**: `BingoRevealMode` vive en la configuración del modo (`HIDDEN_UNTIL_REVEAL` / `VISIBLE_FROM_START`), no como enum de Prisma: no hay ninguna columna que lo use y un tipo SQL sin referencias es solo ruido.
 - **Consecuencias**: en «clásico» la canción viaja identificada desde el primer segundo y el reto pasa a ser encontrarla en el cartón, así que no se penaliza no reconocerla de oído.
+
+## 2026-08-07 — El selector de modo se añade al formulario, no lo convierte en pasos
+
+- **Decisión**: `/dashboard/games/new` gana secciones nuevas (modo y variante) en la misma página, en lugar de convertirse en un asistente con pasos.
+- **Contexto**: los E2E de partida rellenan todos los campos de esa página en una sola pasada. Un asistente por pasos los habría roto todos a la vez, y romper la cobertura de la partida completa para reordenar campos es una mala compra.
+- **Alternativas**: máquina de pasos con estado; asistente en varias rutas.
+- **Elección**: las secciones aparecen en el orden del flujo (modo → variante → nombre → música → cartón → ritmo → reglas), que es lo que el paso a paso pretendía ordenar. Los campos específicos del modo solo se renderizan para el modo elegido.
+- **Consecuencias**: sin regresión en los E2E existentes (8/8 en verde tras el cambio). Si más adelante los modos traen configuraciones largas, el paso a paso se puede introducir entonces, ya con el dominio resuelto.
+
+## 2026-08-07 — Los modos no jugables se enseñan, pero deshabilitados
+
+- **Decisión**: el selector muestra las cinco tarjetas; las de los modos sin handler salen como «Próximamente» y con el botón deshabilitado.
+- **Contexto**: esconderlos dejaría al anfitrión sin saber hacia dónde va Gramola; enseñarlos activos sería prometer algo que al pulsar no lleva a ninguna parte.
+- **Elección**: la disponibilidad sale del catálogo compartido, así que cliente y servidor no pueden discrepar; el registro además se niega a resolver un handler inexistente, de forma que la API tampoco los acepta aunque alguien salte la interfaz.
+- **Consecuencias**: activar un modo es cambiar su `availability` **después** de registrar su handler, no antes.
+
+## 2026-08-07 — En bingo clásico, fallar una casilla no resta
+
+- **Decisión**: con `VISIBLE_FROM_START`, una marca equivocada puntúa 0 en lugar de aplicar `wrongMarkPenalty`.
+- **Contexto**: la canción está identificada en pantalla. Fallar no es «no la he reconocido de oído», es «he tocado otra casilla mientras buscaba». Penalizarlo castiga justo al público al que esta variante quiere incluir: familias, mayores, grupos con niveles musicales muy distintos.
+- **Alternativas**: mantener la penalización; reducirla a la mitad.
+- **Elección**: sin penalización. Lo que sigue premiándose es la velocidad al encontrarla, la línea y el bingo.
+- **Consecuencias**: la regla vive en `MusicBingoHandler.calculateScore`, no en el motor, así que el motor no sabe nada de variantes. El bingo a ciegas mantiene la penalización intacta.
+
+## 2026-08-07 — La canción visible se muestra junto al estado de la ronda, no en su lugar
+
+- **Decisión**: en bingo clásico, el título aparece sobre el estado de la ronda, no sustituyéndolo.
+- **Contexto**: la primera versión sustituía el bloque de estado por el título, y quien jugaba perdía la cuenta atrás y el «últimos segundos para marcar». Lo detectó un E2E antes de llegar a ninguna parte.
+- **Consecuencias**: se ve a la vez qué suena y cuánto queda. Tras el reveal el encabezado desaparece, porque entonces manda «La canción era…» y repetir el título dos veces solo añade ruido.

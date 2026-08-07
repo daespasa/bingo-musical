@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
   completedRows,
-  computeSpeedBonus,
   createRng,
   effectiveValidPositions,
   isFullCard,
@@ -10,11 +9,15 @@ import {
   type CardTrack,
   type GameFinishedPayload,
   type HighlightPayload,
+  readGameModeConfig,
   type LeaderboardEntry,
+  type MusicBingoConfig,
   type RoundView,
 } from '@bingo/shared';
 import type { GameSettings, HighlightType } from '@bingo/database';
 import { PrismaService } from '../prisma.service';
+import { GameModeRegistry } from '../game-modes/game-mode.registry';
+import { revealedInfo } from '../game-modes/music-bingo.handler';
 import { CardsService } from './cards.service';
 
 export type EnginePhase =
@@ -51,6 +54,12 @@ type RoomRuntime = {
   roomId: string;
   gameId: string;
   settings: GameSettings;
+  /**
+   * Configuración del modo, validada al cargar la partida. Se guarda en el
+   * runtime para no releerla en cada marca y para que el modo no pueda cambiar
+   * a mitad de sala.
+   */
+  bingoConfig: MusicBingoConfig;
   tracks: Map<string, CardTrack & { previewUrl: string }>;
   order: string[]; // trackIds en orden de ronda
   phase: EnginePhase;
@@ -83,6 +92,7 @@ export class GameEngineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cards: CardsService,
+    private readonly modes: GameModeRegistry,
   ) {}
 
   bindEmitter(emitter: EngineEmitter): void {
@@ -97,9 +107,11 @@ export class GameEngineService {
     const rt = this.rooms.get(roomId);
     if (!rt?.currentRound) return null;
     const r = rt.currentRound;
+    // Tras el reveal la canción se ve siempre; antes, solo si la variante la
+    // enseña desde el principio (bingo clásico).
     const revealed = ['REVEALING', 'ROUND_RESULTS'].includes(rt.phase)
       ? { title: r.title, artist: r.artist }
-      : null;
+      : revealedInfo(rt.bingoConfig, r);
     return {
       id: r.roundId,
       index: r.index,
@@ -213,6 +225,12 @@ export class GameEngineService {
       },
     });
     const settings = room.game.settings!;
+    // El modo sale de la partida persistida, nunca de quien abre la sala. Si
+    // la configuración guardada no es válida, es mejor no empezar.
+    const bingoConfig = this.modes.validateConfig(
+      'MUSIC_BINGO',
+      readGameModeConfig('MUSIC_BINGO', room.game.modeConfig),
+    );
 
     const tracks = new Map<string, CardTrack & { previewUrl: string }>();
     for (const ct of room.game.collection.tracks) {
@@ -235,6 +253,7 @@ export class GameEngineService {
       roomId,
       gameId: room.gameId,
       settings,
+      bingoConfig,
       tracks,
       order,
       phase: 'LOBBY',
@@ -310,6 +329,9 @@ export class GameEngineService {
       index,
       totalRounds: rt.order.length,
       previewUrl: track.previewUrl,
+      // En bingo a ciegas esto es `null` y el título no sale del servidor
+      // hasta el reveal: mandarlo antes sería regalar la respuesta.
+      revealed: revealedInfo(rt.bingoConfig, track),
     });
 
     // Programar cuando todos estén listos o venza el timeout
@@ -663,28 +685,36 @@ export class GameEngineService {
       return { ok: true, status: existing.isCorrect ? 'VALID' : 'INVALID' };
     }
 
-    const isCorrect = cell.trackId === r.trackId;
     const latencyMs = r.startsAt ? Math.max(0, Date.now() - r.startsAt) : 0;
     const s = rt.settings;
+    const handler = this.modes.resolve('MUSIC_BINGO');
 
-    let points = 0;
-    const events: Array<{ type: string; points: number }> = [];
+    // El veredicto y los puntos los decide el handler del modo; el motor solo
+    // los persiste y los reparte. Así, añadir un modo no obliga a tocar esto.
+    const { correct: isCorrect } = await handler.evaluateAnswer({
+      roomId,
+      config: rt.bingoConfig,
+      participantId,
+      round: { trackId: r.trackId, revealed: revealedInfo(rt.bingoConfig, r) },
+      answer: { cellTrackId: cell.trackId },
+      latencyMs,
+    });
+
+    const streakBefore = rt.streaks.get(participantId) ?? 0;
+    const events = handler.calculateScore({
+      config: rt.bingoConfig,
+      participantId,
+      result: { correct: isCorrect },
+      latencyMs,
+      streak: streakBefore,
+      windowMs: s.snippetDurationMs + s.answerWindowMs,
+      scoring: s,
+    });
+    const points = events.reduce((total, event) => total + event.points, 0);
+
     if (isCorrect) {
-      points += s.correctMarkPoints;
-      events.push({ type: 'CORRECT_MARK', points: s.correctMarkPoints });
-      const windowTotal = s.snippetDurationMs + s.answerWindowMs;
-      const bonus = computeSpeedBonus(latencyMs, windowTotal, s.speedBonusMax);
-      if (bonus > 0) {
-        points += bonus;
-        events.push({ type: 'SPEED_BONUS', points: bonus });
-      }
-      const streak = (rt.streaks.get(participantId) ?? 0) + 1;
-      rt.streaks.set(participantId, streak);
+      rt.streaks.set(participantId, streakBefore + 1);
       rt.correctMarks.set(participantId, (rt.correctMarks.get(participantId) ?? 0) + 1);
-      if (streak > 0 && streak % 3 === 0) {
-        points += s.streakBonusPoints;
-        events.push({ type: 'STREAK_BONUS', points: s.streakBonusPoints });
-      }
       if (!r.fastest || latencyMs < r.fastest.latencyMs) {
         r.fastest = {
           participantId,
@@ -693,8 +723,6 @@ export class GameEngineService {
         };
       }
     } else {
-      points += s.wrongMarkPenalty;
-      events.push({ type: 'WRONG_MARK', points: s.wrongMarkPenalty });
       rt.streaks.set(participantId, 0);
     }
 

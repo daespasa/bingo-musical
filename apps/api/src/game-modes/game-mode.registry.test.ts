@@ -165,6 +165,36 @@ describe('handler del bingo musical', () => {
     expect(events).toEqual([{ type: 'WRONG_MARK', points: -50 }]);
   });
 
+  it('en bingo clásico una marca equivocada no resta', () => {
+    // La canción está en pantalla: fallar es haber tocado otra casilla, no no
+    // reconocerla de oído. Penalizarlo castiga a quien aún busca en el cartón.
+    const events = handler.calculateScore({
+      config: { ...defaultConfigForMode('MUSIC_BINGO'), revealMode: 'VISIBLE_FROM_START' },
+      participantId: 'p1',
+      result: { correct: false },
+      latencyMs: 500,
+      streak: 0,
+      windowMs: 25000,
+      scoring: SCORING,
+    });
+
+    expect(events).toEqual([]);
+  });
+
+  it('en bingo clásico el acierto sigue premiando la velocidad', () => {
+    const events = handler.calculateScore({
+      config: { ...defaultConfigForMode('MUSIC_BINGO'), revealMode: 'VISIBLE_FROM_START' },
+      participantId: 'p1',
+      result: { correct: true },
+      latencyMs: 0,
+      streak: 0,
+      windowMs: 25000,
+      scoring: SCORING,
+    });
+
+    expect(events.map((e) => e.type)).toEqual(['CORRECT_MARK', 'SPEED_BONUS']);
+  });
+
   it('la partida termina al agotar las canciones', () => {
     const config = defaultConfigForMode('MUSIC_BINGO');
     const context = { config, totalRounds: 10, activeParticipantIds: ['p1'] };

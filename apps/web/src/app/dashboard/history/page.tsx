@@ -8,6 +8,9 @@ import { api } from '@/lib/api';
 type HistoryEntry = {
   roomId: string;
   gameName: string;
+  /** Las partidas anteriores a Gramola llegan aquí ya como «Bingo musical». */
+  modeName: string;
+  variantName: string | null;
   code: string;
   finishedAt: string;
   durationMs: number;
@@ -39,6 +42,10 @@ export default function HistoryPage() {
             >
               <div>
                 <p className="font-semibold">{h.gameName}</p>
+                <p className="font-mono text-xs uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">
+                  {h.modeName}
+                  {h.variantName ? ` · ${h.variantName}` : ''}
+                </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Sala {h.code} · {new Date(h.finishedAt).toLocaleString('es-ES')} ·{' '}
                   {Math.round(h.durationMs / 60000)} min · {h.participants} jugadores

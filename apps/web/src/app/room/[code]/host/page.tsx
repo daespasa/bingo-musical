@@ -219,6 +219,7 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
             schedule={room.schedule}
             prepare={room.prepare}
             revealed={room.revealed}
+            nowPlaying={room.nowPlaying}
             paused={room.paused}
             playing={audio.playing}
             audioError={audio.audioError}

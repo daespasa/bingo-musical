@@ -6,12 +6,16 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import clsx from 'clsx';
 import { Gift, ListMusic, Wand2 } from 'lucide-react';
+import { BINGO_VARIANTS, type BingoRevealMode, type GameMode } from '@bingo/shared';
 import { api, ApiError } from '@/lib/api';
+import { GameModeSelector } from '@/components/game-mode-selector';
 import type { CollectionSummary } from '@/lib/types';
 
 type FormData = {
   name: string;
   collectionId: string;
+  mode: GameMode;
+  revealMode: BingoRevealMode;
   cardSize: number;
   freeCenter: boolean;
   snippetDurationMs: number;
@@ -49,6 +53,8 @@ export default function NewGamePage() {
     formState: { isSubmitting },
   } = useForm<FormData>({
     defaultValues: {
+      mode: 'MUSIC_BINGO',
+      revealMode: 'HIDDEN_UNTIL_REVEAL',
       cardSize: 3,
       freeCenter: false,
       snippetDurationMs: 15000,
@@ -65,6 +71,11 @@ export default function NewGamePage() {
   const selectedCollection = watch('collectionId');
   const cardSize = watch('cardSize');
   const autoReveal = watch('autoReveal');
+  const mode = watch('mode');
+  const revealMode = watch('revealMode');
+  // En bingo clásico la canción se ve desde el primer segundo, así que no hay
+  // nada que reconocer de oído y las reglas de reconocimiento pierden sentido.
+  const revealedFromStart = revealMode === 'VISIBLE_FROM_START';
 
   const onSubmit = async (data: FormData) => {
     setError(null);
@@ -74,6 +85,10 @@ export default function NewGamePage() {
         body: JSON.stringify({
           name: data.name,
           collectionId: data.collectionId,
+          mode: data.mode,
+          // El servidor revalida esta configuración con el esquema del modo;
+          // aquí solo se manda lo que el anfitrión ha elegido.
+          modeConfig: { mode: data.mode, revealMode: data.revealMode },
           settings: {
             cardSize: Number(data.cardSize),
             freeCenter: data.freeCenter,
@@ -99,6 +114,49 @@ export default function NewGamePage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-2xl font-bold">Nueva partida</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <div className="card p-6">
+          <GameModeSelector
+            value={mode}
+            onSelectAction={(next) => setValue('mode', next, { shouldValidate: true })}
+          />
+        </div>
+
+        {mode === 'MUSIC_BINGO' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">Variante del bingo</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {BINGO_VARIANTS.map((variant) => (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={revealMode === variant.id}
+                    onClick={() => setValue('revealMode', variant.id)}
+                    className={clsx(
+                      'rounded-xl border p-4 text-left transition',
+                      revealMode === variant.id
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                    )}
+                  >
+                    <span className="font-semibold">{variant.name}</span>
+                    <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                      {variant.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {revealedFromStart && (
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                  Buena opción para grupos con niveles musicales muy distintos: nadie queda fuera
+                  por no reconocer la canción de oído.
+                </p>
+              )}
+            </fieldset>
+          </div>
+        )}
+
         <div className="card p-6">
           <label className="label" htmlFor="name">
             Nombre de la partida

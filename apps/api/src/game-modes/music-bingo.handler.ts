@@ -70,6 +70,11 @@ export class MusicBingoHandler implements GameModeHandler<'MUSIC_BINGO'> {
   calculateScore(context: ScoreContext<'MUSIC_BINGO', BingoResult>): ScoreEventInput[] {
     const { scoring } = context;
     if (!context.result.correct) {
+      // En bingo clásico la canción está identificada en pantalla, así que
+      // fallar no es no reconocerla de oído: es haber tocado otra casilla.
+      // Penalizarlo castigaría justo a quien todavía busca en el cartón, que
+      // es a quien este modo pretende incluir.
+      if (context.config.revealMode === 'VISIBLE_FROM_START') return [];
       return [{ type: 'WRONG_MARK', points: scoring.wrongMarkPenalty }];
     }
 

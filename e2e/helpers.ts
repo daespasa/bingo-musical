@@ -68,11 +68,20 @@ export async function loginAsHost(page: Page, opciones: { fresh?: boolean } = {}
  */
 export async function createGameAndOpenRoom(
   page: Page,
-  options: { name: string; snippetSeconds?: '10' | '15'; autoReveal?: boolean } = {
+  options: {
+    name: string;
+    snippetSeconds?: '10' | '15';
+    autoReveal?: boolean;
+    /** Variante del bingo. Por defecto, a ciegas: el bingo de siempre. */
+    variant?: 'Bingo a ciegas' | 'Bingo clásico';
+  } = {
     name: 'E2E',
   },
 ): Promise<string> {
   await page.goto('/dashboard/games/new');
+  if (options.variant) {
+    await page.getByRole('radio', { name: new RegExp(options.variant) }).click();
+  }
   await page.getByLabel('Nombre de la partida').fill(options.name);
   await demoCollectionCard(page).click();
   await page.getByLabel('Duración del fragmento (s)').selectOption(options.snippetSeconds ?? '10');
