@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { RoomStatePayload } from '@bingo/shared';
+import { readGameModeConfig, type RoomStatePayload } from '@bingo/shared';
 import { PrismaService } from '../prisma.service';
 import { CardsService } from './cards.service';
 import { GameEngineService } from './game-engine.service';
@@ -48,6 +48,9 @@ export class RoomStateService {
         lineEnabled: settings?.lineEnabled ?? true,
         bingoEnabled: settings?.bingoEnabled ?? true,
         showLeaderboard: settings?.showLeaderboard ?? true,
+        // Las partidas anteriores no tienen configuración guardada: se leen
+        // como bingo a ciegas, que es como se jugaban.
+        revealMode: readGameModeConfig('MUSIC_BINGO', room.game.modeConfig).revealMode,
       },
       participants: room.participants.map((p) => ({
         id: p.id,

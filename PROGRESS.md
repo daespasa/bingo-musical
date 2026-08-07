@@ -4,7 +4,7 @@
 - **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
   plataforma de juegos musicales.
 - **Rama actual**: `epic/gramola-platform`.
-- **Fase**: 2 de 12 terminadas (marca y dominio genérico).
+- **Fase**: 4 de 12 terminadas (marca, dominio, selector y bingo clásico).
 
 ## Épica Gramola: estado por fases
 
@@ -13,8 +13,8 @@
 | 0    | Baseline y auditoría                       | Terminada |
 | 1    | Marca Gramola                              | Terminada |
 | 2    | Dominio genérico de modos                  | Terminada |
-| 3    | Selector de modo y wizard                  | Pendiente |
-| 4    | Bingo clásico (revelado desde el inicio)   | Pendiente |
+| 3    | Selector de modo y wizard                  | Terminada |
+| 4    | Bingo clásico (revelado desde el inicio)   | Terminada |
 | 5    | Quiz musical                               | Pendiente |
 | 6    | Adivina la canción                         | Pendiente |
 | 7    | Supervivencia                              | Pendiente |
@@ -48,15 +48,28 @@
   `configVersion`, validada al escribir y al leer.
 - Migración aditiva `20260807124839_add_game_mode_and_config`.
 
+### Fases 3 y 4 — Selector y bingo clásico (`feat/game-mode-selector`)
+
+- Selector «¿A qué quieres jugar?» con las cinco tarjetas: jugadores
+  recomendados, dificultad, proyector, remoto y disponibilidad. Los modos sin
+  handler salen como `Próximamente` y no se pueden elegir.
+- Cada modo tiene figura propia además de color, para no depender de él.
+- Selector de variante del bingo: «Bingo a ciegas» y «Bingo clásico».
+- En clásico, título y artista viajan desde `round:prepare` y se ven en jugador,
+  anfitrión y proyector; la reconexión los recupera de `room:state`.
+- En clásico una marca equivocada no resta, y la regla vive en el handler.
+- El motor delega evaluación y puntuación en el handler del modo.
+- El historial muestra modo y variante.
+
 ## Validaciones ejecutadas en esta épica
 
-Ejecutadas el 2026-08-07 sobre `refactor/game-mode-domain`:
+Ejecutadas el 2026-08-07 sobre `feat/game-mode-selector`:
 
 | Comprobación     | Resultado                                                        |
 | ---------------- | ---------------------------------------------------------------- |
 | `pnpm lint`      | 8/8 paquetes sin errores                                         |
 | `pnpm typecheck` | 8/8 paquetes sin errores                                         |
-| `pnpm test`      | 134 tests en 13 archivos (shared 59, music-providers 24, api 51) |
+| `pnpm test`      | 136 tests en 13 archivos (shared 59, music-providers 24, api 53) |
 | `pnpm build`     | 5/5 paquetes compilados                                          |
 | Migración        | Aplicada sobre la base de datos con datos reales                 |
 
@@ -94,10 +107,9 @@ GitHub Actions.
 
 ## Pendiente de la épica
 
-Las fases 3 a 12 siguen sin empezar. En concreto, **no existen todavía**:
-selector de modo en el wizard, bingo clásico de principio a fin, quiz musical,
-adivina la canción, supervivencia, modo mixto, adaptación de The Show y de la
-ceremonia por modo, ni los E2E nuevos.
+Las fases 5 a 12 siguen sin empezar. En concreto, **no existen todavía**: quiz
+musical, adivina la canción, supervivencia, modo mixto, adaptación de The Show
+y de la ceremonia a cada modo, ni la revancha.
 
 El catálogo marca esos modos como `PROXIMAMENTE` y el registro se niega a
 resolver un handler que no existe, de forma que ninguno puede iniciarse por
@@ -112,7 +124,7 @@ error desde la interfaz ni desde la API.
 
 ## Próximo paso
 
-Fase 3: selector de modo en `/dashboard/games/new`, alimentado por el catálogo
-de `@bingo/shared`, con las tarjetas de los modos no implementados en estado
-`Próximamente` y no seleccionables. A continuación, fase 4 (bingo clásico), que
-ya tiene dominio y handler y solo necesita recorrido de interfaz.
+Fase 5: quiz musical. Es el primer modo que necesita entidades nuevas
+(`RoundQuestion`, `AnswerOption`, `PlayerAnswer`) y el primero donde la
+seguridad manda: la respuesta correcta no puede viajar al cliente antes del
+reveal, ni por payload, ni por props, ni por caché de React Query.

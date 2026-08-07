@@ -3,6 +3,8 @@
  * contractVersion se incrementa ante cambios incompatibles.
  */
 
+import type { BingoRevealMode } from './game-modes';
+
 export const CONTRACT_VERSION = 1;
 
 export type BaseRealtimeEvent<T> = {
@@ -75,6 +77,8 @@ export type RoomStatePayload = {
     lineEnabled: boolean;
     bingoEnabled: boolean;
     showLeaderboard: boolean;
+    /** Variante del bingo, para que la interfaz sepa qué contar. */
+    revealMode: BingoRevealMode;
   };
   participants: ParticipantView[];
   round: RoundView | null;
@@ -99,6 +103,12 @@ export type RoundPreparePayload = {
   index: number;
   totalRounds: number;
   previewUrl: string;
+  /**
+   * Título y artista cuando la variante los enseña desde el primer segundo
+   * (bingo clásico). En bingo a ciegas es `null` y el servidor no los manda
+   * hasta `round:revealed`: si viajaran antes, se regalaría la respuesta.
+   */
+  revealed: { title: string; artist: string } | null;
 };
 
 export type RoundRevealedPayload = {

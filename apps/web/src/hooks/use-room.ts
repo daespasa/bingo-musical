@@ -29,6 +29,11 @@ export type RoomConnection = {
   schedule: RoundSchedulePayload | null;
   prepare: RoundPreparePayload | null;
   revealed: RoundRevealedPayload | null;
+  /**
+   * Canción identificada mientras suena, en bingo clásico. Es distinto de
+   * `revealed`: aquí no se está desvelando nada, se está buscando en el cartón.
+   */
+  nowPlaying: { title: string; artist: string } | null;
   finished: GameFinishedPayload | null;
   lastClaim: ClaimResultPayload | null;
   /** Reclamaciones aceptadas de la partida, en orden de llegada. */
@@ -62,6 +67,7 @@ export function useRoom(token: string | null): RoomConnection {
   const [schedule, setSchedule] = useState<RoundSchedulePayload | null>(null);
   const [prepare, setPrepare] = useState<RoundPreparePayload | null>(null);
   const [revealed, setRevealed] = useState<RoundRevealedPayload | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<{ title: string; artist: string } | null>(null);
   const [finished, setFinished] = useState<GameFinishedPayload | null>(null);
   const [lastClaim, setLastClaim] = useState<ClaimResultPayload | null>(null);
   const [acceptedClaims, setAcceptedClaims] = useState<ClaimResultPayload[]>([]);
@@ -88,6 +94,11 @@ export function useRoom(token: string | null): RoomConnection {
           setState(s);
           setLeaderboard(s.leaderboard);
           setPaused(s.status === 'PAUSED');
+          // Al reconectar a media ronda de bingo clásico, la canción vuelve a
+          // verse: sin esto, quien recarga se queda buscando a ciegas.
+          if (s.settings.revealMode === 'VISIBLE_FROM_START') {
+            setNowPlaying(s.round?.revealed ?? null);
+          }
         }
       }),
     );
@@ -99,6 +110,7 @@ export function useRoom(token: string | null): RoomConnection {
       'round:prepare',
       p<RoundPreparePayload>((d) => {
         setPrepare(d);
+        setNowPlaying(d.revealed);
         setRevealed(null);
         setSchedule(null);
         setLastClaim(null);
@@ -277,6 +289,7 @@ export function useRoom(token: string | null): RoomConnection {
     schedule,
     prepare,
     revealed,
+    nowPlaying,
     finished,
     lastClaim,
     acceptedClaims,

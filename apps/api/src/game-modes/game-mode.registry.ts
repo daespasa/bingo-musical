@@ -20,6 +20,21 @@ import { MusicBingoHandler } from './music-bingo.handler';
  */
 type AnyGameModeHandler = { [M in GameMode]: GameModeHandler<M> }[GameMode];
 
+/**
+ * Handler concreto de cada modo.
+ *
+ * Sin este mapa, `resolve` devolvería un handler con las cargas útiles en
+ * `unknown` y quien lo usa tendría que hacer conversiones a mano, que es justo
+ * lo que la unión discriminada venía a evitar.
+ */
+type HandlerByMode = {
+  MUSIC_BINGO: MusicBingoHandler;
+  MULTIPLE_CHOICE: GameModeHandler<'MULTIPLE_CHOICE'>;
+  FREE_TEXT: GameModeHandler<'FREE_TEXT'>;
+  SURVIVAL: GameModeHandler<'SURVIVAL'>;
+  MIXED: GameModeHandler<'MIXED'>;
+};
+
 @Injectable()
 export class GameModeRegistry {
   private readonly handlers = new Map<GameMode, AnyGameModeHandler>();
@@ -45,14 +60,14 @@ export class GameModeRegistry {
    * Handler de un modo. Lanza si no hay ninguno: es mejor negarse a empezar
    * que arrancar una sala que nadie sabe conducir.
    */
-  resolve<M extends GameMode>(mode: M): GameModeHandler<M> {
+  resolve<M extends GameMode>(mode: M): HandlerByMode[M] {
     const handler = this.handlers.get(mode);
     if (!handler) {
       throw new BadRequestException(
         `El modo «${describeGameMode(mode).name}» todavía no se puede jugar`,
       );
     }
-    return handler as unknown as GameModeHandler<M>;
+    return handler as unknown as HandlerByMode[M];
   }
 
   /**
@@ -63,7 +78,10 @@ export class GameModeRegistry {
    */
   validateConfig<M extends GameMode>(mode: M, config: unknown): ConfigForMode<M> {
     try {
-      return this.resolve(mode).validateConfig(config);
+      // El handler devuelve la configuración de su propio modo; con `M`
+      // genérico TypeScript no puede estrecharlo solo, pero `resolve` ya
+      // garantiza que el handler es el del modo pedido.
+      return this.resolve(mode).validateConfig(config) as ConfigForMode<M>;
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       const detail = error instanceof Error ? error.message : 'formato desconocido';

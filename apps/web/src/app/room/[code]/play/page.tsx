@@ -218,6 +218,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
           <RoundStatus
             schedule={room.schedule}
             revealed={room.revealed}
+            nowPlaying={room.nowPlaying}
             paused={room.paused}
             playing={audio.playing}
             audioError={audio.audioError}

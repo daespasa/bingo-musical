@@ -114,6 +114,19 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
               <p className="text-3xl uppercase tracking-widest text-slate-400">
                 Ronda {(room.prepare?.index ?? 0) + 1} / {room.prepare?.totalRounds ?? '…'}
               </p>
+              {/*
+               * Bingo clásico: la canción va identificada en el proyector desde
+               * el primer segundo, que es lo que permite jugar a quien no la
+               * reconoce de oído.
+               */}
+              {room.nowPlaying && (
+                <div className="mt-4">
+                  <p className="text-6xl font-black leading-tight">{room.nowPlaying.title}</p>
+                  <p className="mt-2 text-3xl text-slate-500 dark:text-slate-300">
+                    {room.nowPlaying.artist}
+                  </p>
+                </div>
+              )}
               {room.paused ? (
                 <Pause className="mx-auto mt-6 h-24 w-24 text-slate-400" aria-hidden />
               ) : (
