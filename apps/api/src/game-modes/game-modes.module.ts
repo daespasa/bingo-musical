@@ -1,0 +1,14 @@
+import { Global, Module } from '@nestjs/common';
+import { GameModeRegistry } from './game-mode.registry';
+import { MusicBingoHandler } from './music-bingo.handler';
+
+/**
+ * Global porque el registro lo necesitan tanto la creación de partidas como el
+ * motor en tiempo real, y no aporta nada obligar a cada módulo a importarlo.
+ */
+@Global()
+@Module({
+  providers: [MusicBingoHandler, GameModeRegistry],
+  exports: [GameModeRegistry],
+})
+export class GameModesModule {}

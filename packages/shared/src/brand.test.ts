@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { APP_BRAND, brandTitle } from './brand';
+import { describeGameMode } from './game-modes';
 
 describe('APP_BRAND', () => {
   it('expone el nombre comercial del producto', () => {
@@ -26,11 +27,15 @@ describe('APP_BRAND', () => {
 });
 
 /**
- * El nombre viejo no debe reaparecer en texto que ve quien juega. Los
- * identificadores técnicos heredados (`@bingo/*`, `bingo_session`, el nombre
- * del proyecto Docker, `demo@bingo.local`) sí se conservan a propósito y están
- * justificados en DECISIONS.md, así que el guardián solo mira la marca escrita
- * tal cual aparecía en la interfaz.
+ * El nombre viejo no debe reaparecer en texto que ve quien juega.
+ *
+ * El guardián distingue por mayúsculas, que es lo que separa los dos usos:
+ * «Bingo Musical» era el nombre del producto y ya no existe; «Bingo musical»
+ * es el nombre de uno de los modos de juego y sí debe seguir apareciendo.
+ *
+ * Los identificadores técnicos heredados (`@bingo/*`, `bingo_session`, el
+ * nombre del proyecto Docker, `demo@bingo.local`) se conservan a propósito y
+ * están justificados en DECISIONS.md, así que quedan fuera de esta comprobación.
  */
 describe('marca visible', () => {
   const repoRoot = resolve(__dirname, '../../..');
@@ -52,9 +57,14 @@ describe('marca visible', () => {
   it('no queda «Bingo Musical» en el código de las apps', () => {
     const offenders = scanned
       .flatMap((dir) => sourceFiles(join(repoRoot, dir)))
-      .filter((file) => /Bingo Musical/i.test(readFileSync(file, 'utf8')))
+      .filter((file) => /Bingo Musical/.test(readFileSync(file, 'utf8')))
       .map((file) => file.slice(repoRoot.length + 1));
 
     expect(offenders).toEqual([]);
+  });
+
+  it('el modo de juego sí conserva su nombre', () => {
+    // Renombrar el producto no renombra el bingo: sigue siendo uno de los modos.
+    expect(describeGameMode('MUSIC_BINGO').name).toBe('Bingo musical');
   });
 });

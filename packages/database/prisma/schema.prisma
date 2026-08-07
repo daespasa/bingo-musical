@@ -47,6 +47,16 @@ enum GameStatus {
   ARCHIVED
 }
 
+/// Modo de juego de una partida. Solo entran valores que el servidor sabe
+/// jugar de principio a fin: un valor aquí es una promesa al anfitrión.
+enum GameMode {
+  MUSIC_BINGO
+  MULTIPLE_CHOICE
+  FREE_TEXT
+  SURVIVAL
+  MIXED
+}
+
 enum ParticipantRole {
   HOST
   PLAYER
@@ -271,6 +281,13 @@ model Game {
   id           String          @id @default(uuid())
   name         String
   status       GameStatus      @default(DRAFT)
+  /// Las partidas anteriores a Gramola son bingo: por eso el valor por defecto
+  /// es MUSIC_BINGO y la migración no necesita reescribir ninguna fila.
+  mode         GameMode        @default(MUSIC_BINGO)
+  /// Configuración específica del modo, validada con Zod al escribir y al leer
+  /// (ver packages/shared/src/game-config.ts). Nulo = valores por defecto del
+  /// modo, que es lo que corresponde al historial anterior.
+  modeConfig   Json?
   ownerId      String
   owner        User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   collectionId String

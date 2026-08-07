@@ -1,11 +1,16 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Game, GameSettings, Prisma } from '@bingo/database';
+import { describeGameMode, describeGameVariant, readGameModeConfig } from '@bingo/shared';
 import { PrismaService } from '../prisma.service';
+import { GameModeRegistry } from '../game-modes/game-mode.registry';
 import { CreateGameDto } from './games.dto';
 
 @Injectable()
 export class GamesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly modes: GameModeRegistry,
+  ) {}
 
   async create(ownerId: string, dto: CreateGameDto): Promise<Game> {
     const collection = await this.prisma.musicCollection.findFirst({
@@ -16,11 +21,20 @@ export class GamesService {
     if (collection._count.tracks < 9) {
       throw new ForbiddenException('La colección necesita al menos 9 canciones');
     }
+
+    // El modo se fija al crear la partida y no vuelve a venir del cliente. La
+    // configuración se valida ahora: una partida guardada con reglas inválidas
+    // reventaría a mitad de sala, con gente dentro.
+    const mode = dto.mode ?? 'MUSIC_BINGO';
+    const modeConfig = this.modes.validateConfig(mode, dto.modeConfig ?? { mode });
+
     return this.prisma.game.create({
       data: {
         name: dto.name.trim(),
         status: 'READY',
         ownerId,
+        mode,
+        modeConfig,
         collectionId: collection.id,
         settings: { create: { ...dto.settings } },
       },
@@ -44,6 +58,7 @@ export class GamesService {
       id: g.id,
       name: g.name,
       status: g.status,
+      mode: g.mode,
       createdAt: g.createdAt.toISOString(),
       collectionName: g.collection.name,
       activeRoomCode: g.rooms[0]?.code ?? null,
@@ -86,6 +101,10 @@ export class GamesService {
         trackCount: game.collection._count.tracks,
       },
       settings: game.settings,
+      mode: game.mode,
+      // Las partidas anteriores a Gramola no tienen configuración guardada:
+      // se les devuelve la del bingo por defecto, que es como se jugaban.
+      modeConfig: readGameModeConfig(game.mode, game.modeConfig),
       rooms: game.rooms.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
     };
   }
@@ -120,6 +139,9 @@ export class GamesService {
         name: `${game.name} (copia)`,
         status: 'READY',
         ownerId,
+        // La copia se juega igual que el original: mismo modo y mismas reglas.
+        mode: game.mode,
+        modeConfig: readGameModeConfig(game.mode, game.modeConfig),
         collectionId: game.collectionId,
         settings: { create: settingsData },
       },
@@ -135,21 +157,30 @@ export class GamesService {
           select: {
             id: true,
             code: true,
-            game: { select: { name: true } },
+            game: { select: { name: true, mode: true, modeConfig: true } },
             _count: { select: { participants: true } },
           },
         },
         winner: { select: { alias: true } },
       },
     });
-    return results.map((r) => ({
-      roomId: r.room.id,
-      gameName: r.room.game.name,
-      code: r.room.code,
-      finishedAt: r.finishedAt.toISOString(),
-      durationMs: r.durationMs,
-      participants: r.room._count.participants,
-      winnerAlias: r.winner?.alias ?? null,
-    }));
+    return results.map((r) => {
+      // El historial anterior a Gramola no guardaba modo, pero la columna tiene
+      // MUSIC_BINGO por defecto: esas partidas se muestran como bingo, que es
+      // lo que fueron.
+      const config = readGameModeConfig(r.room.game.mode, r.room.game.modeConfig);
+      return {
+        roomId: r.room.id,
+        gameName: r.room.game.name,
+        mode: r.room.game.mode,
+        modeName: describeGameMode(r.room.game.mode).name,
+        variantName: describeGameVariant(config),
+        code: r.room.code,
+        finishedAt: r.finishedAt.toISOString(),
+        durationMs: r.durationMs,
+        participants: r.room._count.participants,
+        winnerAlias: r.winner?.alias ?? null,
+      };
+    });
   }
 }

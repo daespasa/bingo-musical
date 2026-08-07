@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "GameMode" AS ENUM ('MUSIC_BINGO', 'MULTIPLE_CHOICE', 'FREE_TEXT', 'SURVIVAL', 'MIXED');
+
+-- AlterTable
+ALTER TABLE "Game" ADD COLUMN     "mode" "GameMode" NOT NULL DEFAULT 'MUSIC_BINGO',
+ADD COLUMN     "modeConfig" JSONB;

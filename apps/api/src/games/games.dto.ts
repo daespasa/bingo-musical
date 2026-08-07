@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -13,6 +14,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { GAME_MODES, type GameMode } from '@bingo/shared';
 
 export class GameSettingsDto {
   @ApiPropertyOptional({ enum: [3, 4, 5], default: 3 })
@@ -99,4 +101,22 @@ export class CreateGameDto {
   @ValidateNested()
   @Type(() => GameSettingsDto)
   settings?: GameSettingsDto;
+
+  @ApiPropertyOptional({ enum: GAME_MODES, default: 'MUSIC_BINGO' })
+  @IsOptional()
+  @IsIn(GAME_MODES)
+  mode?: GameMode;
+
+  /**
+   * Configuración específica del modo. No se valida aquí con class-validator
+   * porque su forma depende del modo: la valida el handler correspondiente con
+   * su esquema Zod discriminado, que es la única fuente de verdad.
+   */
+  @ApiPropertyOptional({
+    description: 'Configuración del modo. La valida el handler del modo elegido.',
+    type: Object,
+  })
+  @IsOptional()
+  @IsObject()
+  modeConfig?: unknown;
 }

@@ -1,4 +1,6 @@
 export * from './brand';
+export * from './game-modes';
+export * from './game-config';
 export * from './normalize';
 export * from './scoring';
 export * from './cards';
