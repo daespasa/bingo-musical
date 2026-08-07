@@ -134,3 +134,40 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Contexto**: `gh repo rename` deja redirección, pero rompe _remotes_ locales de cualquier clon y cualquier referencia externa; cambiar DNS a mitad de una épica no aporta nada.
 - **Elección**: renombrar solo cuando toda la marca visible sea Gramola, `main` esté en verde y la documentación actualizada. La documentación de despliegue ya apunta a `gramola.daespasa.com` para que el día del cambio no haya que reescribirla.
 - **Consecuencias**: la recomendación se entrega al cerrar la épica, no se ejecuta automáticamente.
+
+## 2026-08-07 — `Game` representa cualquier partida, con handlers por modo
+
+- **Decisión**: `Game` gana `mode` (enum `GameMode`) y el motor resuelve un `GameModeHandler` por modo, en lugar de repartir `if (game.mode === ...)` por la aplicación.
+- **Contexto**: el bingo dejaba de ser el único juego. La alternativa evidente —condicionales por modo en el motor, el gateway, la puntuación y la interfaz— multiplica los sitios que hay que tocar al añadir un modo y hace imposible razonar sobre ninguno.
+- **Alternativas**: condicionales por modo; una tabla por modo con su propio motor; herencia de una clase base `Game`.
+- **Elección**: una interfaz (`GameModeHandler`) con cinco responsabilidades —validar configuración, crear ronda, evaluar respuesta, puntuar y decidir el final— y un registro que la resuelve. Todo lo demás (sala, código, QR, lobby, audio y su sincronización, temporizador, ranking, highlights, ceremonia, reacciones, reconexión) sigue en el motor común, sin duplicar.
+- **Consecuencias**: añadir un modo es implementar la interfaz y registrarlo. El registro solo declara soportado lo que tiene handler, así que un modo a medias no puede empezar una partida.
+
+## 2026-08-07 — El cliente nunca elige el handler
+
+- **Decisión**: el modo se fija al crear la partida, se persiste y el servidor lo lee de ahí. Ninguna petición ni evento acepta el modo como parámetro.
+- **Contexto**: si el navegador pudiera indicar con qué reglas evaluar sus respuestas, podría pedir que su partida se juzgara con las de otro modo.
+- **Consecuencias**: `GameModeRegistry.resolve` parte siempre del modo persistido; la configuración se revalida al leerla, de forma que una fila JSON manipulada a mano tampoco cambia las reglas.
+
+## 2026-08-07 — La configuración de cada modo va en JSON validado, no en columnas nullable
+
+- **Decisión**: `Game.modeConfig` es una columna JSON validada con esquemas Zod discriminados por `mode`, con `configVersion`.
+- **Contexto**: cada modo necesita campos que a los demás no les dicen nada. Como columnas serían decenas de `nullable` que ningún modo usa a la vez, y añadir un modo exigiría una migración de esquema.
+- **Alternativas**: una tabla de configuración por modo; columnas nullable; JSON sin validar.
+- **Elección**: JSON, pero validado **al escribir y al leer** (`packages/shared/src/game-config.ts`). Lo que comparten todos los modos (rondas, duraciones, revelado, avance, ranking) sigue en columnas de `GameSettings`, porque es consultable y no cambia al añadir modos.
+- **Consecuencias**: sin `any` en ningún punto; fuera de ese archivo la configuración siempre está tipada y discriminada. El precio es que la base de datos no valida el JSON por su cuenta, y por eso la validación de lectura no es opcional.
+
+## 2026-08-07 — Las partidas anteriores son MUSIC_BINGO sin tocar ninguna fila
+
+- **Decisión**: `mode` se añade con `DEFAULT 'MUSIC_BINGO'` y `modeConfig` queda nulo en el historial existente.
+- **Contexto**: había 176 partidas y 26 resultados en la base de datos de desarrollo; el historial no puede perderse ni mostrarse vacío.
+- **Elección**: migración puramente aditiva (un `CREATE TYPE` y un `ALTER TABLE ADD COLUMN`). `readGameModeConfig` devuelve la configuración por defecto del modo cuando `modeConfig` es nulo, en lugar de fallar, que es lo que permite abrir el historial de siempre sin reescribir filas.
+- **Rollback**: `ALTER TABLE "Game" DROP COLUMN mode, DROP COLUMN "modeConfig"; DROP TYPE "GameMode";` No hay pérdida de datos, porque ninguna columna preexistente se toca.
+- **Consecuencias**: verificado contra la base de datos con datos reales: 176/176 partidas quedan como bingo y los 26 resultados se conservan.
+
+## 2026-08-07 — Las variantes del bingo no duplican el motor
+
+- **Decisión**: «Bingo a ciegas» y «Bingo clásico» son el mismo modo con distinto `revealMode`, no dos modos.
+- **Contexto**: comparten cartones, generación, validación, línea, bingo, ranking, ceremonia, reacciones, The Show e historial. Lo único que cambia es qué se sabe de la canción mientras suena.
+- **Elección**: `BingoRevealMode` vive en la configuración del modo (`HIDDEN_UNTIL_REVEAL` / `VISIBLE_FROM_START`), no como enum de Prisma: no hay ninguna columna que lo use y un tipo SQL sin referencias es solo ruido.
+- **Consecuencias**: en «clásico» la canción viaja identificada desde el primer segundo y el reto pasa a ser encontrarla en el cartón, así que no se penaliza no reconocerla de oído.
