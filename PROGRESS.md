@@ -1,6 +1,6 @@
 # Progreso
 
-- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.5.0`.
+- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.5.1`.
 - **Épica actual**: ninguna — release cerrada con CI y E2E en verde.
 - **Rama actual**: `main`.
 
@@ -38,7 +38,7 @@
 | `pnpm typecheck` | 8/8 paquetes sin errores                                       |
 | `pnpm test`      | 94 tests en 9 archivos (shared 34, music-providers 24, api 36) |
 | `pnpm build`     | 5/5 paquetes compilados                                        |
-| `pnpm test:e2e`  | 23 tests Playwright en verde, con Spotify configurado          |
+| `pnpm test:e2e`  | 25 tests Playwright en verde, con Spotify configurado          |
 | Docker           | `bingo-postgres` y `bingo-redis` en estado `Up (healthy)`      |
 | Migraciones      | 3 migraciones aplicadas correctamente                          |
 | GitHub Actions   | Workflows `CI` y `E2E` en verde en `main`                      |
