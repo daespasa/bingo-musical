@@ -1,71 +1,100 @@
 # Progreso
 
-- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.5.2`.
-- **Épica actual**: ninguna — release cerrada con CI y E2E en verde.
-- **Rama actual**: `main`.
+- **Estado**: épica **Gramola** en curso. La base publicada sigue siendo `v0.5.2`.
+- **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
+  plataforma de juegos musicales.
+- **Rama actual**: `epic/gramola-platform`.
+- **Fase**: 2 de 12 terminadas (marca y dominio genérico).
 
-## Funcionalidades terminadas
+## Épica Gramola: estado por fases
 
-| Épica            | Contenido                                                                                  |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| Foundation       | Monorepo pnpm + Turborepo, TS estricto, ESLint, Prettier, Husky, commitlint, Docker, CI    |
-| Database         | 27 modelos Prisma, migraciones, seed con usuario demo, 20 pistas e historial               |
-| Authentication   | Registro, login, logout, Argon2id, cookies HttpOnly, rutas protegidas, dashboard           |
-| Music catalog    | Colección demo con audio generado, reproductor de previews                                 |
-| Games and rooms  | Wizard de partida, códigos de 6 caracteres, QR, lobby, invitados con token firmado         |
-| Bingo cards      | Generación determinista en servidor 3×3/4×4/5×5, centro libre, sin duplicados              |
-| Realtime engine  | Socket.IO + Redis adapter, contratos tipados, presencia, reconexión                        |
-| Gameplay         | Máquina de estados de ronda, precarga y reproducción sincronizada, controles del anfitrión |
-| Scoring          | Marcas validadas en servidor, bonus de velocidad y racha, línea, bingo, ranking en vivo    |
-| Results          | Highlights, ceremonia de podio con confeti, historial y duplicado de partidas              |
-| Spotify          | Búsqueda, importación de playlists, `PreviewProvider` encapsulado con caché y reintentos   |
-| UX polish        | Iconos lucide (sin emojis), revelado y avance automáticos configurables, animaciones       |
-| OAuth y sesiones | Inicio de sesión con Google, renovación deslizante, cierre de otros dispositivos           |
-| PWA              | Manifest, service worker, iconos generados, aviso de instalación, página offline           |
-| Quality          | 71 tests unitarios, 12 E2E con Playwright, CI en GitHub Actions, documentación             |
-| Visual identity  | Sistema de funda de disco: papel y tinta, tipografía propia, el disco indica la ronda      |
-| Stitch           | Código de sala en casillas, escaneo del QR, contrato del código en `@bingo/shared`         |
-| Game rules       | Fallo recuperable entre rondas, confirmación propia al terminar, sonda de partida real     |
-| Collections      | Importar listas enteras, gestionar y duplicar colecciones, canción a canción, temáticas    |
-| The show         | Resumen entre rondas, reacciones en la proyección, disco y ecualizador                     |
-| Account          | Header con sección activa, dashboard inicial, editar perfil y contraseña, sesiones         |
+| Fase | Contenido                                  | Estado    |
+| ---- | ------------------------------------------ | --------- |
+| 0    | Baseline y auditoría                       | Terminada |
+| 1    | Marca Gramola                              | Terminada |
+| 2    | Dominio genérico de modos                  | Terminada |
+| 3    | Selector de modo y wizard                  | Pendiente |
+| 4    | Bingo clásico (revelado desde el inicio)   | Pendiente |
+| 5    | Quiz musical                               | Pendiente |
+| 6    | Adivina la canción                         | Pendiente |
+| 7    | Supervivencia                              | Pendiente |
+| 8    | Modo mixto                                 | Pendiente |
+| 9    | Experiencia transversal (Show, resultados) | Pendiente |
+| 10   | Regresión                                  | Pendiente |
+| 11   | Calidad                                    | Pendiente |
+| 12   | Release                                    | Pendiente |
 
-## Validaciones ejecutadas
+### Fase 1 — Marca (`feat/gramola-brand`)
 
-| Comprobación     | Resultado                                                      |
-| ---------------- | -------------------------------------------------------------- |
-| `pnpm lint`      | 8/8 paquetes sin errores                                       |
-| `pnpm typecheck` | 8/8 paquetes sin errores                                       |
-| `pnpm test`      | 94 tests en 9 archivos (shared 34, music-providers 24, api 36) |
-| `pnpm build`     | 5/5 paquetes compilados                                        |
-| `pnpm test:e2e`  | 25 tests Playwright en verde, con Spotify configurado          |
-| Docker           | `bingo-postgres` y `bingo-redis` en estado `Up (healthy)`      |
-| Migraciones      | 3 migraciones aplicadas correctamente                          |
-| GitHub Actions   | Workflows `CI` y `E2E` en verde en `main`                      |
+- `APP_BRAND` en `packages/shared/src/brand.ts` como única fuente del nombre.
+- Metadata, manifest PWA, aviso de instalación, cabeceras, portada y Swagger
+  consumen la constante.
+- Portada con el reclamo «Tu música. Vuestro juego.» y los CTA nuevos.
+- Test que impide que «Bingo Musical» reaparezca en el código de las apps,
+  distinguiendo el producto (ya no existe) del modo de juego (sigue existiendo).
+- Identificadores técnicos heredados conservados a propósito; razonado en
+  `DECISIONS.md`.
 
-Los E2E y `pnpm dev` se han verificado además partiendo de `packages/shared/dist`
-borrado, que es el estado de un checkout limpio como el de CI.
+### Fase 2 — Dominio genérico (`refactor/game-mode-domain`)
 
-## Funcionalidades aplazadas
+- `GameMode` en Prisma y catálogo de modos en `@bingo/shared`, con
+  disponibilidad explícita: solo `MUSIC_BINGO` se anuncia como jugable.
+- `GameModeHandler` + `GameModeRegistry`: cada modo encapsula validación de
+  configuración, creación de ronda, evaluación, puntuación y final de partida.
+  El motor de sala, audio, ranking y realtime siguen siendo comunes.
+- `MusicBingoHandler` con las dos variantes (`HIDDEN_UNTIL_REVEAL` y
+  `VISIBLE_FROM_START`) sobre el mismo motor.
+- Configuración por modo en JSON validado con Zod discriminado, con
+  `configVersion`, validada al escribir y al leer.
+- Migración aditiva `20260807124839_add_game_mode_and_config`.
 
-- Modo híbrido (el modelo lo contempla, la lógica no está implementada).
-- Reclamaciones por columna, diagonal y patrones libres (solo fila y cartón completo).
-- Verificación de correo y recuperación de contraseña reales.
-- Restauración del estado de una partida en curso si se reinicia la API (la sala queda pausada).
-- Highlight de mayor remontada (el tipo existe, no se calcula).
+## Validaciones ejecutadas en esta épica
 
-## Errores conocidos
+Ejecutadas el 2026-08-07 sobre `refactor/game-mode-domain`:
 
-- Al reiniciar la API con una partida en curso, la sala pierde el runtime en memoria y hay que crear otra sala; el historial anterior se conserva.
-- El aviso de instalación de la PWA solo aparece en navegadores Chromium; en iOS hay que usar «Añadir a pantalla de inicio».
+| Comprobación     | Resultado                                                        |
+| ---------------- | ---------------------------------------------------------------- |
+| `pnpm lint`      | 8/8 paquetes sin errores                                         |
+| `pnpm typecheck` | 8/8 paquetes sin errores                                         |
+| `pnpm test`      | 134 tests en 13 archivos (shared 59, music-providers 24, api 51) |
+| `pnpm build`     | 5/5 paquetes compilados                                          |
+| Migración        | Aplicada sobre la base de datos con datos reales                 |
 
-## Próximo bloque recomendado
+Baseline de partida (`v0.5.2`, mismo día): lint y typecheck en verde, 94 tests.
 
-1. Persistir el runtime de la partida en Redis para sobrevivir a reinicios.
-2. Patrones de línea configurables (columnas y diagonales).
-3. Modo oscuro «laca» revisado pantalla a pantalla, que es lo que sugería Stitch
-   como siguiente variante.
+**No ejecutados todavía en esta épica**: `pnpm test:e2e`, `docker compose
+--profile full build` y GitHub Actions. Las cifras de E2E de `v0.5.2` (25 tests)
+no se han vuelto a comprobar y no deben darse por vigentes.
 
-## Último commit relevante
+## Compatibilidad verificada
 
-`chore(release): integrate epic/the-show`
+- La migración es aditiva: un `CREATE TYPE` y un `ALTER TABLE ADD COLUMN`.
+- Comprobado contra la base de datos de desarrollo con datos: 176/176 partidas
+  quedan como `MUSIC_BINGO` y los 26 resultados y 24 usuarios se conservan.
+- `modeConfig` nulo se lee como la configuración por defecto del modo, así que
+  el historial anterior abre sin reescribir ninguna fila.
+
+## Pendiente de la épica
+
+Las fases 3 a 12 siguen sin empezar. En concreto, **no existen todavía**:
+selector de modo en el wizard, bingo clásico de principio a fin, quiz musical,
+adivina la canción, supervivencia, modo mixto, adaptación de The Show y de la
+ceremonia por modo, ni los E2E nuevos.
+
+El catálogo marca esos modos como `PROXIMAMENTE` y el registro se niega a
+resolver un handler que no existe, de forma que ninguno puede iniciarse por
+error desde la interfaz ni desde la API.
+
+## Errores conocidos (heredados de v0.5.2)
+
+- Al reiniciar la API con una partida en curso, la sala pierde el runtime en
+  memoria y hay que crear otra sala; el historial anterior se conserva.
+- El aviso de instalación de la PWA solo aparece en navegadores Chromium; en
+  iOS hay que usar «Añadir a pantalla de inicio».
+
+## Próximo paso
+
+Fase 3: selector de modo en `/dashboard/games/new`, alimentado por el catálogo
+de `@bingo/shared`, con las tarjetas de los modos no implementados en estado
+`Próximamente` y no seleccionables. A continuación, fase 4 (bingo clásico), que
+ya tiene dominio y handler y solo necesita recorrido de interfaz.
