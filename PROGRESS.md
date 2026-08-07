@@ -62,9 +62,27 @@ Ejecutadas el 2026-08-07 sobre `refactor/game-mode-domain`:
 
 Baseline de partida (`v0.5.2`, mismo día): lint y typecheck en verde, 94 tests.
 
-**No ejecutados todavía en esta épica**: `pnpm test:e2e`, `docker compose
---profile full build` y GitHub Actions. Las cifras de E2E de `v0.5.2` (25 tests)
-no se han vuelto a comprobar y no deben darse por vigentes.
+### E2E: la suite no está en verde, y no es culpa de esta épica
+
+`pnpm test:e2e` se ha ejecutado tres veces sobre la épica y dos sobre `main`:
+
+| Rama                    | Resultado                                                         |
+| ----------------------- | ----------------------------------------------------------------- |
+| `epic/gramola-platform` | 24 pasan / 1 falla (`auth.spec.ts` «sin credenciales de Spotify») |
+| `epic/gramola-platform` | 23 pasan / 2 fallan (la anterior más `game-rules.spec.ts`)        |
+| `main` (v0.5.2)         | 24 pasan / 1 falla (**el mismo test** que en la épica)            |
+
+Los dos tests aislados pasan en ambas ramas; solo fallan dentro de la suite
+completa, y el conjunto que falla cambia entre ejecuciones. Es inestabilidad
+preexistente, reproducida en `main` sin ningún cambio de esta épica.
+
+Por tanto: **la afirmación de `v0.5.2` de «25 E2E en verde» no se reproduce en
+este entorno** y no debe arrastrarse. Queda como problema conocido a investigar
+antes de la release: los tests comparten una sola sesión desde `c185a1e` y
+dependen de temporización real de audio, que son los dos sospechosos.
+
+**No ejecutados todavía en esta épica**: `docker compose --profile full build` y
+GitHub Actions.
 
 ## Compatibilidad verificada
 
