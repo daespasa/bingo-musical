@@ -81,7 +81,7 @@ test.describe('PWA', () => {
       display: string;
       icons: Array<{ sizes: string; purpose?: string }>;
     };
-    expect(body.name).toBe('Bingo Musical');
+    expect(body.name).toBe('Gramola');
     expect(body.display).toBe('standalone');
     expect(body.icons.map((i) => i.sizes)).toContain('512x512');
     expect(body.icons.some((i) => i.purpose === 'maskable')).toBe(true);

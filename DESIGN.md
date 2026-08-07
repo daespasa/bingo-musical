@@ -1,4 +1,4 @@
-# Sistema visual — Bingo Musical
+# Sistema visual — Gramola
 
 Dirección: **funda de disco**. El producto es un juego de reconocer canciones, así
 que la interfaz toma prestado el lenguaje de una edición en vinilo: papel hueso,

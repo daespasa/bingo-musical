@@ -4,6 +4,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import { APP_BRAND } from '@bingo/shared';
 import { AppModule } from './app.module';
 import { RedisIoAdapter } from './realtime/redis.adapter';
 import { loadEnv, isProduction } from './config/env';
@@ -31,8 +32,8 @@ async function bootstrap(): Promise<void> {
   app.useWebSocketAdapter(redisAdapter);
 
   const swagger = new DocumentBuilder()
-    .setTitle('Bingo Musical API')
-    .setDescription('API REST y WebSocket del bingo musical')
+    .setTitle(`${APP_BRAND.name} API`)
+    .setDescription(`API REST y WebSocket de ${APP_BRAND.name}: ${APP_BRAND.description}`)
     .setVersion('0.1.0')
     .addCookieAuth('bingo_session')
     .build();

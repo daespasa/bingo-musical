@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Music4 } from 'lucide-react';
+import { APP_BRAND } from '@bingo/shared';
 import { UserMenu } from '@/components/user-menu';
 import { MainNav } from '@/components/main-nav';
 
@@ -15,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="grid h-9 w-9 place-items-center rounded-md border-2 border-slate-900 bg-brand-600 text-slate-50 dark:border-slate-100">
               <Music4 className="h-4 w-4" aria-hidden />
             </span>
-            <span className="hidden md:inline">Bingo Musical</span>
+            <span className="hidden md:inline">{APP_BRAND.name}</span>
           </Link>
 
           {/* La navegación empuja al menú de cuenta al extremo derecho */}
