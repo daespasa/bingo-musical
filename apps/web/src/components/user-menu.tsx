@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { LogOut } from 'lucide-react';
 import { api, type PublicUser } from '@/lib/api';
 
@@ -20,27 +21,33 @@ export function UserMenu() {
   };
 
   return (
-    <div className="flex items-center gap-3">
-      {user?.avatarUrl ? (
-        // Avatar remoto de Google: <img> evita configurar dominios en next/image
-        <img
-          src={user.avatarUrl}
-          alt=""
-          width={32}
-          height={32}
-          className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700"
-          referrerPolicy="no-referrer"
-        />
-      ) : (
-        user && (
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700 dark:bg-brand-900 dark:text-brand-300">
-            {user.displayName.charAt(0).toUpperCase()}
-          </span>
-        )
-      )}
-      <span className="hidden text-sm text-slate-500 dark:text-slate-400 sm:inline">
-        {user?.displayName}
-      </span>
+    <div className="flex items-center gap-2">
+      <Link
+        href="/dashboard/profile"
+        className="flex items-center gap-2 rounded px-1 py-1 hover:text-brand-600"
+        aria-label="Tu cuenta"
+      >
+        {user?.avatarUrl ? (
+          // Avatar remoto de Google: <img> evita configurar dominios en next/image
+          <img
+            src={user.avatarUrl}
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          user && (
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-slate-900 bg-brand-600 font-display text-sm text-slate-50 dark:border-slate-100">
+              {user.displayName.charAt(0).toUpperCase()}
+            </span>
+          )
+        )}
+        <span className="hidden max-w-[10rem] truncate text-sm font-medium sm:inline">
+          {user?.displayName}
+        </span>
+      </Link>
       <button
         onClick={logout}
         className="btn-secondary min-h-9 w-auto px-3 py-2 text-xs"

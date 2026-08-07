@@ -112,8 +112,7 @@ export default function MusicPage() {
         method: 'POST',
         body: JSON.stringify({ playlist, name: collectionName || undefined }),
       }),
-    onError: (err) =>
-      setError(err instanceof ApiError ? err.message : 'No se pudo importar la playlist'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'No se pudo traer la lista'),
   });
 
   // El audio se resuelve por detrás, así que se va preguntando por la
@@ -199,8 +198,8 @@ export default function MusicPage() {
       {status && !status.configured && (
         <p className="card flex items-start gap-2 p-4 text-sm text-slate-600 dark:text-slate-300">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
-          Para buscar canciones e importar listas hace falta conectar Spotify. Mientras tanto puedes
-          jugar con la colección que ya viene incluida.
+          Buscar canciones y traer listas de Spotify no está disponible todavía. Mientras tanto
+          puedes jugar con las colecciones que ya vienen incluidas.
         </p>
       )}
 
@@ -295,7 +294,7 @@ export default function MusicPage() {
           <section className="card p-6">
             <h2 className="label flex items-center gap-2">
               <ListMusic className="h-4 w-4 text-brand-500" aria-hidden />
-              Importar una playlist pública
+              Traer una lista de Spotify
             </h2>
             <form
               onSubmit={(e) => {
@@ -326,12 +325,12 @@ export default function MusicPage() {
                 {importPlaylist.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                    Guardando canciones…
+                    Trayendo canciones…
                   </>
                 ) : (
                   <>
                     <Download className="h-4 w-4" aria-hidden />
-                    Importar playlist
+                    Traer la lista
                   </>
                 )}
               </button>

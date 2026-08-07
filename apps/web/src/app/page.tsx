@@ -26,7 +26,7 @@ const CREDITS = [
   },
   {
     label: 'Reglas',
-    text: 'Cada marca, línea y bingo los valida el servidor. Nadie puede hacer trampa.',
+    text: 'Nadie puede colar una marca ni cantar una línea que no tiene. Se comprueba todo.',
   },
 ];
 
