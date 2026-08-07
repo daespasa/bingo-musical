@@ -1,6 +1,6 @@
 # Progreso
 
-- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.4.0`.
+- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.5.0`.
 - **Épica actual**: ninguna — release cerrada con CI y E2E en verde.
 - **Rama actual**: `main`.
 
@@ -27,6 +27,8 @@
 | Stitch           | Código de sala en casillas, escaneo del QR, contrato del código en `@bingo/shared`         |
 | Game rules       | Fallo recuperable entre rondas, confirmación propia al terminar, sonda de partida real     |
 | Collections      | Importar listas enteras, gestionar y duplicar colecciones, canción a canción, temáticas    |
+| The show         | Resumen entre rondas, reacciones en la proyección, disco y ecualizador                     |
+| Account          | Header con sección activa, dashboard inicial, editar perfil y contraseña, sesiones         |
 
 ## Validaciones ejecutadas
 
@@ -36,7 +38,7 @@
 | `pnpm typecheck` | 8/8 paquetes sin errores                                       |
 | `pnpm test`      | 94 tests en 9 archivos (shared 34, music-providers 24, api 36) |
 | `pnpm build`     | 5/5 paquetes compilados                                        |
-| `pnpm test:e2e`  | 17 tests Playwright en verde, con Spotify configurado          |
+| `pnpm test:e2e`  | 23 tests Playwright en verde, con Spotify configurado          |
 | Docker           | `bingo-postgres` y `bingo-redis` en estado `Up (healthy)`      |
 | Migraciones      | 3 migraciones aplicadas correctamente                          |
 | GitHub Actions   | Workflows `CI` y `E2E` en verde en `main`                      |
@@ -59,13 +61,11 @@ borrado, que es el estado de un checkout limpio como el de CI.
 
 ## Próximo bloque recomendado
 
-1. Épica 3: el espectáculo (highlights entre rondas, estadísticas, reacciones).
-2. Épica 4: producto y cuenta (textos, header, perfil, dashboard, sesión).
-3. Persistir el runtime de la partida en Redis para sobrevivir a reinicios.
-4. Patrones de línea configurables (columnas y diagonales).
-5. Modo oscuro «laca» revisado pantalla a pantalla, que es lo que sugería Stitch
+1. Persistir el runtime de la partida en Redis para sobrevivir a reinicios.
+2. Patrones de línea configurables (columnas y diagonales).
+3. Modo oscuro «laca» revisado pantalla a pantalla, que es lo que sugería Stitch
    como siguiente variante.
 
 ## Último commit relevante
 
-`chore(release): integrate epic/collections`
+`chore(release): integrate epic/the-show`

@@ -2,6 +2,32 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [0.5.0] - 2026-08-07
+
+El espectáculo entre rondas y la cuenta.
+
+### Added
+
+- **Resumen entre canción y canción**: cuánta gente la tenía, quién la cazó
+  antes y en cuánto, qué rachas siguen vivas y quién ha adelantado a quién.
+  Sale en el móvil y en la proyección.
+- **Reacciones**: seis reacciones que suben flotando por la pantalla de
+  proyección con el nombre de quien la lanza. Repertorio cerrado, sin servicio
+  externo de imágenes y sin nada que moderar; una cada tres segundos por
+  persona.
+- **Disco girando y ecualizador** en la proyección mientras suena el fragmento.
+- **Tu cuenta**: cambiar el nombre con el que te ve la gente, cambiar la
+  contraseña comprobando la actual, y cerrar sesión en los demás dispositivos.
+- **Dashboard de verdad**: saluda por tu nombre, te devuelve a la sala que
+  tengas abierta y resume partidas, canciones y partidas jugadas.
+
+### Changed
+
+- El header marca la sección en la que estás con un canto grueso y
+  `aria-current`; antes no había forma de saberlo.
+- Textos repasados para hablar de lo que le importa a quien juega: fuera «el
+  servidor valida», «playlist» y «previews».
+
 ## [0.4.0] - 2026-08-06
 
 Colecciones: importar listas enteras, gestionarlas y colecciones temáticas.
