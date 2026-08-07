@@ -2,7 +2,7 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
-## [0.5.1] - 2026-08-07
+## [0.5.2] - 2026-08-07
 
 ### Fixed
 
@@ -12,6 +12,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
   cualquier respuesta de sesión no válida te devuelve al acceso y te explica por
   qué. Pasaba también al cerrar la sesión desde otro dispositivo, que es
   justo lo que se añadió en la versión anterior.
+
+  El cierre de sesión se confirma antes de aplicarse: un 401 suelto puede ser
+  una carrera al recién entrar, y expulsar por eso sería peor que el problema
+  que se arregla.
 
 ## [0.5.0] - 2026-08-07
 

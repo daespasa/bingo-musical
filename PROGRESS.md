@@ -1,6 +1,6 @@
 # Progreso
 
-- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.5.1`.
+- **Estado**: MVP local completo y jugable con identidad visual propia, publicado como `v0.5.2`.
 - **Épica actual**: ninguna — release cerrada con CI y E2E en verde.
 - **Rama actual**: `main`.
 
