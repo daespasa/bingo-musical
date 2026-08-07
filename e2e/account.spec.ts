@@ -54,3 +54,47 @@ test.describe('Cuenta y navegación', () => {
     await expect(page.getByRole('heading', { name: '¿Montamos una partida?' })).toBeVisible();
   });
 });
+
+test.describe('Sesión caducada', () => {
+  test('con la cookie caducada te devuelve al login en vez de dar errores', async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await loginAsHost(page);
+
+    // Se falsea la cookie: sigue estando, pero ya no vale. Es lo que pasa
+    // cuando caduca o cuando se cierra la sesión desde otro dispositivo.
+    const cookies = await context.cookies();
+    const session = cookies.find((c) => c.name === 'bingo_session');
+    expect(session, 'no se encontró la cookie de sesión').toBeTruthy();
+    await context.clearCookies();
+    await context.addCookies([{ ...session!, value: 'ya-no-vale' }]);
+
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
+    await expect(page.getByText(/Tu sesión ha caducado/)).toBeVisible();
+
+    await context.close();
+  });
+
+  test('cerrar sesión en otro dispositivo echa al primero', async ({ browser }) => {
+    const primero = await browser.newContext();
+    const paginaPrimero = await primero.newPage();
+    await loginAsHost(paginaPrimero);
+
+    const segundo = await browser.newContext();
+    const paginaSegundo = await segundo.newPage();
+    await loginAsHost(paginaSegundo);
+
+    // El segundo cierra el resto de sesiones
+    await paginaSegundo.goto('/dashboard/profile');
+    await paginaSegundo.getByRole('button', { name: /Cerrar sesión en los demás/ }).click();
+    await expect(paginaSegundo.getByText(/sesiones|ninguna otra sesión/)).toBeVisible();
+
+    // El primero se entera en cuanto vuelve a pedir algo
+    await paginaPrimero.goto('/dashboard');
+    await expect(paginaPrimero).toHaveURL(/\/login/, { timeout: 15_000 });
+
+    await primero.close();
+    await segundo.close();
+  });
+});

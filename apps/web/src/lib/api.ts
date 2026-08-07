@@ -9,6 +9,19 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Aviso de sesión caída. La cookie puede seguir en el navegador pero ya no
+ * valer (ha caducado, o se ha cerrado desde otro dispositivo), y entonces la
+ * aplicación se queda dando errores sin echar a nadie. Quien monte la
+ * aplicación decide qué hacer; aquí solo se avisa.
+ */
+type UnauthorizedHandler = () => void;
+let onUnauthorized: UnauthorizedHandler | null = null;
+
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  onUnauthorized = handler;
+}
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     credentials: 'include',
@@ -26,6 +39,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     } catch {
       // sin cuerpo JSON
     }
+    if (res.status === 401) onUnauthorized?.();
     throw new ApiError(res.status, message);
   }
   // Las operaciones que no devuelven nada responden 204 sin cuerpo, y pedirle

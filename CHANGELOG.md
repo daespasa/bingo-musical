@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [0.5.1] - 2026-08-07
+
+### Fixed
+
+- **Con la sesión caducada la aplicación se quedaba dando errores sin echarte.**
+  La comprobación de acceso solo miraba que la cookie existiera, no que
+  siguiera valiendo, así que entrabas al panel y todo fallaba por dentro. Ahora
+  cualquier respuesta de sesión no válida te devuelve al acceso y te explica por
+  qué. Pasaba también al cerrar la sesión desde otro dispositivo, que es
+  justo lo que se añadió en la versión anterior.
+
 ## [0.5.0] - 2026-08-07
 
 El espectáculo entre rondas y la cuenta.

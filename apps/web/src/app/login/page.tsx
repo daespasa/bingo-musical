@@ -14,6 +14,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const oauthFailed = searchParams.get('error') === 'google';
+  const sessionExpired = searchParams.get('caducada') === '1';
   const [error, setError] = useState<string | null>(null);
   const {
     register,
@@ -40,6 +41,14 @@ function LoginForm() {
       <p className="mb-6 mt-2 text-sm text-slate-600 dark:text-slate-300">
         Accede para preparar tu próxima partida.
       </p>
+      {sessionExpired && (
+        <p
+          role="status"
+          className="mb-4 rounded border-2 border-amber-500 bg-amber-200 p-3 text-sm text-amber-700 dark:bg-amber-700 dark:text-amber-100"
+        >
+          Tu sesión ha caducado o se ha cerrado desde otro dispositivo. Vuelve a entrar.
+        </p>
+      )}
       {oauthFailed && (
         <p
           role="alert"
