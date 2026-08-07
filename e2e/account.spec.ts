@@ -59,7 +59,7 @@ test.describe('Sesión caducada', () => {
   test('con la cookie caducada te devuelve al login en vez de dar errores', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    await loginAsHost(page);
+    await loginAsHost(page, { fresh: true });
 
     // Se falsea la cookie: sigue estando, pero ya no vale. Es lo que pasa
     // cuando caduca o cuando se cierra la sesión desde otro dispositivo.
@@ -77,13 +77,15 @@ test.describe('Sesión caducada', () => {
   });
 
   test('cerrar sesión en otro dispositivo echa al primero', async ({ browser }) => {
+    // Sesiones propias: con la compartida ambos serían la misma y no habría
+    // nada que cerrar
     const primero = await browser.newContext();
     const paginaPrimero = await primero.newPage();
-    await loginAsHost(paginaPrimero);
+    await loginAsHost(paginaPrimero, { fresh: true });
 
     const segundo = await browser.newContext();
     const paginaSegundo = await segundo.newPage();
-    await loginAsHost(paginaSegundo);
+    await loginAsHost(paginaSegundo, { fresh: true });
 
     // El segundo cierra el resto de sesiones
     await paginaSegundo.goto('/dashboard/profile');

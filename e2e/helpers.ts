@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext, Page } from '@playwright/test';
+import type { Browser, BrowserContext, Cookie, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 /**
@@ -16,13 +16,50 @@ export function demoCollectionCard(page: Page) {
 
 export const DEMO_USER = { email: 'demo@bingo.local', password: 'Demo1234!' };
 
-/** Inicia sesión como el anfitrión demo y deja la página en el dashboard. */
-export async function loginAsHost(page: Page): Promise<void> {
+/**
+ * Cookies de una sesión ya iniciada, compartidas entre pruebas.
+ *
+ * El acceso está limitado a diez intentos por minuto, que es una protección
+ * que debe seguir ahí. Entrar por el formulario en cada prueba agota esa cuota
+ * y las últimas del recorrido se quedan fuera, así que se entra una vez y se
+ * reutiliza la sesión. Si deja de valer (por ejemplo tras cerrar sesión en los
+ * demás dispositivos), se vuelve a entrar.
+ */
+let sesionCompartida: Cookie[] | null = null;
+
+async function entrarPorFormulario(page: Page): Promise<void> {
   await page.goto('/login');
   await page.getByLabel('Correo').fill(DEMO_USER.email);
   await page.getByLabel('Contraseña').fill(DEMO_USER.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page).toHaveURL(/\/dashboard/);
+  sesionCompartida = await page.context().cookies();
+}
+
+/**
+ * Deja la página en el panel, con la sesión del anfitrión demo.
+ *
+ * @param opciones.fresh  Fuerza entrar por el formulario para conseguir una
+ *   sesión propia. Lo necesitan las pruebas que comparan dos sesiones, como
+ *   cerrar sesión en los demás dispositivos.
+ */
+export async function loginAsHost(page: Page, opciones: { fresh?: boolean } = {}): Promise<void> {
+  if (opciones.fresh) {
+    await entrarPorFormulario(page);
+    return;
+  }
+  if (sesionCompartida) {
+    await page.context().addCookies(sesionCompartida);
+    await page.goto('/dashboard');
+    // Si la sesión ya no vale, la aplicación devuelve al acceso
+    if (/\/dashboard/.test(page.url())) {
+      await expect(page.getByRole('link', { name: 'Tu cuenta' })).toBeVisible();
+      return;
+    }
+    sesionCompartida = null;
+    await page.context().clearCookies();
+  }
+  await entrarPorFormulario(page);
 }
 
 /**
