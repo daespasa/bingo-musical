@@ -1,6 +1,8 @@
-# Bingo Musical 🎵
+# Gramola 🎵
 
-Bingo musical en tiempo real inspirado en la dinámica de Kahoot: un anfitrión crea una partida, los jugadores entran con un código o QR, reciben cartones musicales distintos y marcan canciones mientras suenan fragmentos de 15 segundos. Líneas, bingos, ranking en vivo y ceremonia de premios.
+**Juega, escucha y adivina.**
+
+Gramola es una plataforma autoalojada de juegos musicales multijugador en tiempo real. Un anfitrión crea una sala, los jugadores entran con un código o QR desde cualquier móvil y juegan en directo. El **bingo musical** es su modo insignia; el dominio está preparado para más modos de juego.
 
 **Versión actual: v0.5.2** — MVP local jugable. Ver [PROGRESS.md](PROGRESS.md), [CHANGELOG.md](CHANGELOG.md) y el sistema visual en [DESIGN.md](DESIGN.md).
 
@@ -106,7 +108,7 @@ El audio nunca pasa por la API: el navegador reproduce la URL del proveedor y se
 
 ## Instalar como aplicación (PWA)
 
-La web es instalable. En Chrome o Edge aparece un aviso «Instalar Bingo Musical» (o el icono de instalación en la barra de direcciones). En iOS: **Compartir → Añadir a pantalla de inicio**.
+La web es instalable. En Chrome o Edge aparece un aviso «Instalar Gramola» (o el icono de instalación en la barra de direcciones). En iOS: **Compartir → Añadir a pantalla de inicio**.
 
 El service worker cachea la interfaz y los fragmentos de audio demo, pero **nunca** respuestas de la API ni del WebSocket: el estado de la partida siempre viene del servidor.
 
@@ -156,7 +158,7 @@ pantalla.
 
 1. En [Google Cloud Console → Credenciales](https://console.cloud.google.com/apis/credentials) crea un **ID de cliente de OAuth 2.0** de tipo aplicación web.
 2. Añade como URI de redirección autorizado: `http://localhost:3001/auth/google/callback`
-   (en producción: `https://bingo.daespasa.com/api/auth/google/callback`).
+   (en producción: `https://gramola.daespasa.com/api/auth/google/callback`).
 3. Copia las credenciales en tu `.env`:
 
    ```env
@@ -182,14 +184,14 @@ docker compose --profile full up -d --build
 
 Los datos viven en volúmenes nombrados (`bingo-pgdata`, `bingo-redisdata`) y sobreviven a `docker compose down`. **No uses `docker compose down -v`** salvo que quieras borrarlos.
 
-## Despliegue en bingo.daespasa.com
+## Despliegue en gramola.daespasa.com
 
 La arquitectura ya está preparada para ejecutarse tras Cloudflare Tunnel (la API activa `trust proxy` y cookies `Secure` en producción). Pasos previstos en el mini-PC con CasaOS:
 
-1. Clona el repositorio y crea el `.env` de producción con secretos nuevos, `NODE_ENV=production`, `WEB_URL=https://bingo.daespasa.com`, `API_URL=https://bingo.daespasa.com/api` y `NEXT_PUBLIC_*` apuntando al mismo dominio.
+1. Clona el repositorio y crea el `.env` de producción con secretos nuevos, `NODE_ENV=production`, `WEB_URL=https://gramola.daespasa.com`, `API_URL=https://gramola.daespasa.com/api` y `NEXT_PUBLIC_*` apuntando al mismo dominio.
 2. `docker compose --profile full up -d --build` y `pnpm db:deploy` (o deja que el contenedor de la API aplique las migraciones al arrancar).
 3. En Cloudflare Zero Trust crea un túnel con dos rutas hacia el host: `/` → `bingo-web:3000` y `/api` + `/socket.io` → `bingo-api:3001` (el WebSocket necesita su ruta propia).
-4. En Cloudflare DNS, el registro `bingo` apunta al túnel.
+4. En Cloudflare DNS, el registro `gramola` apunta al túnel.
 5. Actualiza el URI de redirección de Google al dominio real.
 
 ## Seguridad

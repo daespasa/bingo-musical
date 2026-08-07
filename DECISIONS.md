@@ -100,3 +100,37 @@
 - **Alternativas**: apuntar `main` a `src` y transpilar en cada consumidor; retrasar el arranque de la API; usar `tsc --watch` con `--incremental` y un delay.
 - **Elección**: compilar una vez antes de arrancar. Es determinista y funciona igual en local y en CI.
 - **Consecuencias**: cambiar `packages/shared` obliga a recompilar o reiniciar `pnpm dev`; a cambio, el arranque es reproducible.
+
+## 2026-08-07 — El producto pasa a llamarse Gramola
+
+- **Decisión**: la marca visible es **Gramola**; el bingo musical pasa a ser un modo de juego más.
+- **Contexto**: el producto deja de ser un solo juego para convertirse en una plataforma de juegos musicales en directo. Un nombre que describe el juego impide añadir quiz, adivinanzas o supervivencia sin que el nombre mienta.
+- **Alternativas**: mantener «Bingo Musical» y añadir modos igualmente; renombrar todo, incluidos identificadores técnicos.
+- **Elección**: renombrar solo lo visible y centralizarlo en `APP_BRAND` (`packages/shared/src/brand.ts`). Cambiar el nombre comercial no debe obligar a tocar decenas de archivos.
+- **Consecuencias**: metadata, manifest, cabeceras, portada, aviso de instalación y Swagger consumen la constante. Un test (`brand.test.ts`) impide que «Bingo Musical» reaparezca en el código de las apps.
+
+## 2026-08-07 — Qué se renombra y qué no
+
+Cada aparición se clasificó antes de tocarla. El criterio: renombrar lo que lee
+una persona, conservar lo que rompería instalaciones existentes.
+
+| Aparición                                            | Clase                      | Acción                 | Motivo                                                                                                    |
+| ---------------------------------------------------- | -------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------- |
+| Metadata, manifest, cabeceras, PWA                   | Marca visible              | → Gramola              | Es el nombre que se lee.                                                                                  |
+| `BingoCard`, `BingoCardCell`, `Claim` de línea/bingo | Dominio del bingo          | Se mantiene            | Pertenecen a un modo concreto, no al producto.                                                            |
+| `@bingo/*` (paquetes del monorepo)                   | Identificador técnico      | Se mantiene            | Renombrarlos toca 37 archivos y el lockfile sin ganancia para nadie.                                      |
+| `name: bingo-musical` (Compose)                      | Infraestructura            | Se mantiene            | Es el nombre de proyecto: cambiarlo huérfana `bingo-pgdata` y `bingo-redisdata`.                          |
+| `bingo_session` (cookie)                             | Compatibilidad persistente | Se mantiene            | Cambiarlo cerraría la sesión de todo el mundo al desplegar.                                               |
+| `demo@bingo.local`                                   | Compatibilidad persistente | Se mantiene            | El seed hace _upsert_ por email: cambiarlo crearía un segundo usuario demo y rompería los E2E existentes. |
+| `bingo.daespasa.com`                                 | Documentación              | → gramola.daespasa.com | Solo en documentación de despliegue futuro; no se toca DNS ni Cloudflare.                                 |
+
+- **Consecuencias**: hay deuda de nombres heredados, deliberada y acotada. Se
+  revisará cuando exista una migración con ventana de mantenimiento; ninguno de
+  estos nombres aparece en la interfaz.
+
+## 2026-08-07 — Renombrar el repositorio y el subdominio: todavía no
+
+- **Decisión**: el repositorio sigue siendo `daespasa/bingo-musical` y el subdominio en uso, `bingo.daespasa.com`, durante la implementación de la épica.
+- **Contexto**: `gh repo rename` deja redirección, pero rompe _remotes_ locales de cualquier clon y cualquier referencia externa; cambiar DNS a mitad de una épica no aporta nada.
+- **Elección**: renombrar solo cuando toda la marca visible sea Gramola, `main` esté en verde y la documentación actualizada. La documentación de despliegue ya apunta a `gramola.daespasa.com` para que el día del cambio no haya que reescribirla.
+- **Consecuencias**: la recomendación se entrega al cerrar la épica, no se ejecuta automáticamente.

@@ -1,11 +1,11 @@
 import type { MetadataRoute } from 'next';
+import { APP_BRAND } from '@bingo/shared';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Bingo Musical',
-    short_name: 'Bingo Musical',
-    description:
-      'Bingo musical en tiempo real: reconoce la canción, marca tu cartón y canta línea o bingo.',
+    name: APP_BRAND.name,
+    short_name: APP_BRAND.shortName,
+    description: APP_BRAND.longDescription,
     start_url: '/',
     scope: '/',
     display: 'standalone',
