@@ -17,6 +17,8 @@ import { loadGuestSession } from '@/lib/types';
 import { useRoom } from '@/hooks/use-room';
 import { useRoundAudio } from '@/hooks/use-round-audio';
 import { BingoCardGrid } from '@/components/bingo-card';
+import { ReactionBar } from '@/components/reactions';
+import { RoundSummary } from '@/components/round-summary';
 import { Leaderboard } from '@/components/leaderboard';
 import { RoundStatus } from '@/components/round-status';
 import { PodiumCeremony } from '@/components/podium';
@@ -250,6 +252,13 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
               </button>
             )}
           </div>
+          {room.roundResults && <RoundSummary results={room.roundResults} />}
+
+          <section className="card p-3">
+            <h2 className="eyebrow mb-2">Anima a la sala</h2>
+            <ReactionBar onReact={(reaction) => room.react(reaction)} />
+          </section>
+
           {state.settings.showLeaderboard && (
             <section className="card p-4">
               <h2 className="eyebrow mb-3">Ranking</h2>

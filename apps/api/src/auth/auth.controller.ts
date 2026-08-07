@@ -6,6 +6,7 @@ import {
   HttpCode,
   Ip,
   Logger,
+  Patch,
   Post,
   Query,
   Req,
@@ -19,7 +20,7 @@ import type { User } from '@bingo/database';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import { GoogleOAuthService } from './google-oauth.service';
-import { LoginDto, RegisterDto } from './auth.dto';
+import { ChangePasswordDto, LoginDto, RegisterDto, UpdateProfileDto } from './auth.dto';
 import { AuthGuard, AuthenticatedRequest, CurrentUser, SESSION_COOKIE } from './auth.guard';
 import { isProduction, loadEnv } from '../config/env';
 
@@ -173,6 +174,26 @@ export class AuthController {
   async logoutOthers(@Req() req: AuthenticatedRequest): Promise<{ closed: number }> {
     const closed = await this.sessions.destroyOthers(req.user.id, req.sessionToken);
     return { closed };
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard)
+  async updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ): Promise<PublicUser> {
+    const user = await this.auth.updateProfile(req.user.id, dto.displayName);
+    return toPublic(user);
+  }
+
+  @Post('change-password')
+  @UseGuards(AuthGuard)
+  @HttpCode(204)
+  async changePassword(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    await this.auth.changePassword(req.user.id, dto.currentPassword, dto.newPassword);
   }
 
   @Get('me')

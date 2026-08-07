@@ -171,9 +171,41 @@ export const ClientEvents = {
   HostNext: 'host:next',
   HostAddTime: 'host:add-time',
   HostEnd: 'host:end',
+  PlayerReact: 'player:react',
   HostKick: 'host:kick',
   HostLock: 'host:lock',
 } as const;
+
+/**
+ * Reacciones que puede lanzar quien juega. Es un juego de conjunto, así que se
+ * ven en la pantalla de proyección y las ve todo el mundo.
+ *
+ * El repertorio es cerrado a propósito: no hay servicio externo de imágenes,
+ * ni nada que moderar, y funciona sin conexión.
+ */
+export const REACTIONS = ['fuego', 'aplauso', 'risa', 'corazon', 'fiesta', 'baile'] as const;
+export type Reaction = (typeof REACTIONS)[number];
+
+export type ReactionPayload = {
+  participantId: string;
+  alias: string;
+  reaction: Reaction;
+};
+
+/** Resumen de lo que ha pasado en la ronda, para enseñarlo entre canción y canción. */
+export type RoundResultsPayload = {
+  roundId: string;
+  index: number;
+  /** Quién la cazó antes, si alguien lo hizo. */
+  fastest: { alias: string; latencyMs: number } | null;
+  /** Cuánta gente la tenía y la marcó. */
+  correctCount: number;
+  totalPlayers: number;
+  /** Rachas vivas al acabar la ronda, de mayor a menor. */
+  streaks: Array<{ alias: string; streak: number }>;
+  /** Quién ha adelantado a quién desde la ronda anterior. */
+  climbers: Array<{ alias: string; from: number; to: number }>;
+};
 
 export const ServerEvents = {
   RoomState: 'room:state',
@@ -195,6 +227,8 @@ export const ServerEvents = {
   ClaimRejected: 'claim:rejected',
   LeaderboardUpdated: 'leaderboard:updated',
   HighlightCreated: 'highlight:created',
+  RoundResults: 'round:results',
+  ReactionSent: 'reaction:sent',
   GameFinished: 'game:finished',
   RoomError: 'room:error',
 } as const;

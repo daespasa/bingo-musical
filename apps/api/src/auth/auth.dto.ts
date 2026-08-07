@@ -32,3 +32,28 @@ export class LoginDto {
   @MinLength(1)
   password!: string;
 }
+
+export class UpdateProfileDto {
+  @ApiProperty({ example: 'Ana' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(40)
+  displayName!: string;
+}
+
+export class ChangePasswordDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(8)
+  @MaxLength(72)
+  currentPassword!: string;
+
+  @ApiProperty({ minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(72)
+  @Matches(/(?=.*[a-zA-Z])(?=.*\d)/, {
+    message: 'La contraseña necesita al menos una letra y un número',
+  })
+  newPassword!: string;
+}

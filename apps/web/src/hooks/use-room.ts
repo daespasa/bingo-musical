@@ -15,6 +15,9 @@ import type {
   RoundPreparePayload,
   RoundRevealedPayload,
   RoundSchedulePayload,
+  ReactionPayload,
+  RoundResultsPayload,
+  Reaction,
 } from '@bingo/shared';
 import { createRoomSocket } from '@/lib/socket';
 
@@ -36,6 +39,11 @@ export type RoomConnection = {
   awaitingReveal: boolean;
   socket: Socket | null;
   markCell: (cellId: string) => Promise<MarkCellAck>;
+  /** Última reacción recibida, para que la proyección la haga flotar. */
+  lastReaction: ReactionPayload | null;
+  /** Resumen de la ronda que acaba de terminar. */
+  roundResults: RoundResultsPayload | null;
+  react: (reaction: Reaction) => void;
   claim: (type: 'LINE' | 'BINGO') => Promise<{ accepted: boolean; reason?: string }>;
 };
 
@@ -48,6 +56,8 @@ export function useRoom(token: string | null): RoomConnection {
   const [connected, setConnected] = useState(false);
   const [authFailed, setAuthFailed] = useState(false);
   const [state, setState] = useState<RoomStatePayload | null>(null);
+  const [lastReaction, setLastReaction] = useState<ReactionPayload | null>(null);
+  const [roundResults, setRoundResults] = useState<RoundResultsPayload | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [schedule, setSchedule] = useState<RoundSchedulePayload | null>(null);
   const [prepare, setPrepare] = useState<RoundPreparePayload | null>(null);
@@ -93,6 +103,7 @@ export function useRoom(token: string | null): RoomConnection {
         setSchedule(null);
         setLastClaim(null);
         setAwaitingReveal(false);
+        setRoundResults(null);
         // Los fallos pertenecen a la ronda que acaba: esas canciones siguen
         // vivas y hay que poder marcarlas cuando les toque sonar.
         setState((prev) =>
@@ -109,6 +120,14 @@ export function useRoom(token: string | null): RoomConnection {
             : prev,
         );
       }),
+    );
+    socket.on(
+      'reaction:sent',
+      p<ReactionPayload>((d) => setLastReaction(d)),
+    );
+    socket.on(
+      'round:results',
+      p<RoundResultsPayload>((d) => setRoundResults(d)),
     );
     socket.on(
       'round:schedule',
@@ -217,6 +236,10 @@ export function useRoom(token: string | null): RoomConnection {
     );
   }, []);
 
+  const react = useCallback((reaction: Reaction) => {
+    socketRef.current?.emit('player:react', { reaction });
+  }, []);
+
   const markCell = useCallback(
     (cellId: string): Promise<MarkCellAck> => {
       return new Promise((resolve) => {
@@ -262,6 +285,9 @@ export function useRoom(token: string | null): RoomConnection {
     awaitingReveal,
     socket: socketRef.current,
     markCell,
+    lastReaction,
+    roundResults,
+    react,
     claim,
   };
 }

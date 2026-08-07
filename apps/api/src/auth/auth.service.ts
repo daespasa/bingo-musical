@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { User } from '@bingo/database';
 import { PrismaService } from '../prisma.service';
 import { PasswordService } from './password.service';
@@ -20,6 +25,36 @@ export class AuthService {
     const passwordHash = await this.passwords.hash(password);
     return this.prisma.user.create({
       data: { email: normalizedEmail, passwordHash, displayName: displayName.trim() },
+    });
+  }
+
+  /** Cambia el nombre que ve el resto de la gente en las partidas. */
+  async updateProfile(userId: string, displayName: string): Promise<User> {
+    const clean = displayName.trim();
+    if (clean.length < 2 || clean.length > 40) {
+      throw new BadRequestException('El nombre tiene que tener entre 2 y 40 caracteres');
+    }
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { displayName: clean },
+    });
+  }
+
+  /**
+   * Cambia la contraseña comprobando antes la actual, para que a nadie le
+   * cambien la suya si se deja la sesión abierta.
+   */
+  async changePassword(userId: string, current: string, next: string): Promise<void> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (!user.passwordHash) {
+      throw new BadRequestException('Tu cuenta entra con Google y no tiene contraseña');
+    }
+    if (!(await this.passwords.verify(user.passwordHash, current))) {
+      throw new UnauthorizedException('La contraseña actual no es correcta');
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: await this.passwords.hash(next) },
     });
   }
 

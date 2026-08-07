@@ -9,12 +9,14 @@ test.describe('Autenticación y protección de rutas', () => {
 
   test('login, sesión persistente tras recargar y logout', async ({ page }) => {
     await loginAsHost(page);
-    await expect(page.getByText('Anfitrión Demo')).toBeVisible();
+    // El nombre sale en la cabecera y en el saludo, así que se mira la cabecera
+    const cuenta = page.getByRole('link', { name: 'Tu cuenta' });
+    await expect(cuenta).toContainText('Anfitrión Demo');
 
     // La sesión sobrevive a una recarga completa (cookie HttpOnly)
     await page.reload();
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByText('Anfitrión Demo')).toBeVisible();
+    await expect(cuenta).toContainText('Anfitrión Demo');
 
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();
     await expect(page).toHaveURL(/\/login/);
@@ -55,14 +57,14 @@ test.describe('Autenticación y protección de rutas', () => {
 
     await page.goto('/dashboard/music');
     if (configured) {
-      await expect(page.getByText('Spotify no está configurado')).toBeHidden();
       await expect(page.getByLabel('Buscar en Spotify')).toBeVisible();
+      await expect(page.getByText(/no está disponible todavía/)).toBeHidden();
     } else {
-      await expect(page.getByText('Spotify no está configurado')).toBeVisible();
-      await expect(
-        page.getByRole('button', { name: 'Crear partida con la colección demo' }),
-      ).toBeVisible();
+      await expect(page.getByText(/no está disponible todavía/)).toBeVisible();
+      await expect(page.getByLabel('Buscar en Spotify')).toHaveCount(0);
     }
+    // Gestionar colecciones funciona en ambos casos
+    await expect(page.getByLabel('Nombre de la colección nueva')).toBeVisible();
 
     // La colección demo está disponible en ambos casos
     await page.goto('/dashboard/games/new');

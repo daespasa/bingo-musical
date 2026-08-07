@@ -9,7 +9,7 @@ export default function OfflinePage() {
       <h1 className="text-2xl font-bold">Sin conexión</h1>
       <p className="text-slate-500 dark:text-slate-400">
         No hay red ahora mismo. En cuanto vuelvas a tener conexión, la partida se reanudará sola: tu
-        cartón y tu puntuación están guardados en el servidor.
+        cartón y tus puntos están a salvo.
       </p>
     </main>
   );

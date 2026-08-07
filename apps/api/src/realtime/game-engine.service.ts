@@ -56,6 +56,8 @@ type RoomRuntime = {
   phase: EnginePhase;
   phaseBeforePause: EnginePhase | null;
   currentRound: RoundRuntime | null;
+  /** Posición de cada jugador al acabar la ronda anterior, para ver quién sube. */
+  positionsBefore: Map<string, number>;
   scores: Map<string, number>;
   streaks: Map<string, number>;
   correctMarks: Map<string, number>;
@@ -238,6 +240,7 @@ export class GameEngineService {
       phase: 'LOBBY',
       phaseBeforePause: null,
       currentRound: null,
+      positionsBefore: new Map(),
       scores: new Map(),
       streaks: new Map(),
       correctMarks: new Map(),
@@ -420,6 +423,39 @@ export class GameEngineService {
     });
     this.emitRoom(rt, 'leaderboard:updated', { leaderboard });
 
+    // Resumen de la ronda: lo que se cuenta entre canción y canción
+    const positionsNow = new Map(leaderboard.map((e, i) => [e.participantId, i + 1]));
+    const climbers = [...positionsNow.entries()]
+      .flatMap(([participantId, to]) => {
+        const from = rt.positionsBefore.get(participantId);
+        if (from === undefined || from <= to) return [];
+        return [{ alias: rt.aliases.get(participantId) ?? '???', from, to }];
+      })
+      .sort((a, b) => b.from - b.to - (a.from - a.to))
+      .slice(0, 3);
+
+    const correctCount = await this.prisma.playerMark.count({
+      where: { roundId: r.roundId, isCorrect: true },
+    });
+
+    this.emitRoom(rt, 'round:results', {
+      roundId: r.roundId,
+      index: r.index,
+      fastest: r.fastest ? { alias: r.fastest.alias, latencyMs: r.fastest.latencyMs } : null,
+      correctCount,
+      totalPlayers: rt.aliases.size,
+      streaks: [...rt.streaks.entries()]
+        .filter(([, streak]) => streak >= 2)
+        .map(([participantId, streak]) => ({
+          alias: rt.aliases.get(participantId) ?? '???',
+          streak,
+        }))
+        .sort((a, b) => b.streak - a.streak)
+        .slice(0, 3),
+      climbers,
+    });
+    rt.positionsBefore = positionsNow;
+
     if (rt.settings.autoAdvance) {
       this.after(rt, rt.settings.roundResultsMs, () => void this.next(roomId));
     }
@@ -588,6 +624,17 @@ export class GameEngineService {
   }
 
   // ---------- Marcas y reclamaciones ----------
+
+  /** Reenvía una reacción a toda la sala, incluida la pantalla de proyección. */
+  broadcastReaction(roomId: string, participantId: string, reaction: string): void {
+    const rt = this.rooms.get(roomId);
+    if (!rt) return;
+    this.emitRoom(rt, 'reaction:sent', {
+      participantId,
+      alias: rt.aliases.get(participantId) ?? '???',
+      reaction,
+    });
+  }
 
   async markCell(
     roomId: string,
