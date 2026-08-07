@@ -89,6 +89,16 @@ Los dos tests aislados pasan en ambas ramas; solo fallan dentro de la suite
 completa, y el conjunto que falla cambia entre ejecuciones. Es inestabilidad
 preexistente, reproducida en `main` sin ningún cambio de esta épica.
 
+Tras las fases 3 y 4 se han ejecutado por separado, sin ningún fallo:
+
+| Suite                                              | Resultado |
+| -------------------------------------------------- | --------- |
+| `bingo-variants.spec.ts` (nueva)                   | 4/4       |
+| `gameplay` + `game-rules` + `the-show` (regresión) | 8/8       |
+
+La suite completa sigue sin ejecutarse entera en verde por el problema de
+arriba, anterior a esta épica.
+
 Por tanto: **la afirmación de `v0.5.2` de «25 E2E en verde» no se reproduce en
 este entorno** y no debe arrastrarse. Queda como problema conocido a investigar
 antes de la release: los tests comparten una sola sesión desde `c185a1e` y
