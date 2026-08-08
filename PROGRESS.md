@@ -4,7 +4,7 @@
 - **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
   plataforma de juegos musicales.
 - **Rama actual**: `epic/gramola-platform`.
-- **Fase**: 4 de 12 terminadas (marca, dominio, selector y bingo clásico).
+- **Fase**: 5 de 12 terminadas (marca, dominio, selector, bingo clásico y quiz).
 
 ## Épica Gramola: estado por fases
 
@@ -15,7 +15,7 @@
 | 2    | Dominio genérico de modos                  | Terminada |
 | 3    | Selector de modo y wizard                  | Terminada |
 | 4    | Bingo clásico (revelado desde el inicio)   | Terminada |
-| 5    | Quiz musical                               | Pendiente |
+| 5    | Quiz musical                               | Terminada |
 | 6    | Adivina la canción                         | Pendiente |
 | 7    | Supervivencia                              | Pendiente |
 | 8    | Modo mixto                                 | Pendiente |
@@ -61,17 +61,34 @@
 - El motor delega evaluación y puntuación en el handler del modo.
 - El historial muestra modo y variante.
 
+### Fase 5 — Quiz musical (`feat/music-quiz`)
+
+- `MultipleChoiceHandler` registrado: el quiz ya es un modo `DISPONIBLE`.
+- El servidor redacta la pregunta, construye las opciones con distractores de
+  la propia colección y persiste `RoundQuestion` + `AnswerOption` antes de
+  emitir nada.
+- Tipos de pregunta: título, artista y década. Año y álbum quedan en el dominio
+  pero no se ofrecen: dependen de metadatos que no toda colección trae.
+- La solución no viaja antes del reveal, ni por payload, ni por el ack de
+  respuesta, ni por el marcador (que se mueve al cerrar la ronda).
+- Distribución de respuestas y highlights propios: único acierto, acertaron
+  todos, no acertó nadie y distractor más votado.
+- Reconexión: la pregunta y la respuesta ya enviada se recuperan de
+  `room:state`.
+- Las 20 pistas demo reciben año, repartidas en cinco décadas.
+- Migración aditiva `20260808...add_quiz_questions_and_release_year`.
+
 ## Validaciones ejecutadas en esta épica
 
-Ejecutadas el 2026-08-07 sobre `feat/game-mode-selector`:
+Ejecutadas el 2026-08-08 sobre `feat/music-quiz`:
 
-| Comprobación     | Resultado                                                        |
-| ---------------- | ---------------------------------------------------------------- |
-| `pnpm lint`      | 8/8 paquetes sin errores                                         |
-| `pnpm typecheck` | 8/8 paquetes sin errores                                         |
-| `pnpm test`      | 136 tests en 13 archivos (shared 59, music-providers 24, api 53) |
-| `pnpm build`     | 5/5 paquetes compilados                                          |
-| Migración        | Aplicada sobre la base de datos con datos reales                 |
+| Comprobación     | Resultado                                         |
+| ---------------- | ------------------------------------------------- |
+| `pnpm lint`      | 8/8 paquetes sin errores                          |
+| `pnpm typecheck` | 8/8 paquetes sin errores                          |
+| `pnpm test`      | 163 tests (shared 59, music-providers 24, api 80) |
+| `pnpm build`     | 5/5 paquetes compilados                           |
+| Migración        | Aplicada sobre la base de datos con datos reales  |
 
 Baseline de partida (`v0.5.2`, mismo día): lint y typecheck en verde, 94 tests.
 
@@ -93,7 +110,8 @@ Tras las fases 3 y 4 se han ejecutado por separado, sin ningún fallo:
 
 | Suite                                              | Resultado |
 | -------------------------------------------------- | --------- |
-| `bingo-variants.spec.ts` (nueva)                   | 4/4       |
+| `quiz.spec.ts` (nueva)                             | 4/4       |
+| `bingo-variants.spec.ts`                           | 4/4       |
 | `gameplay` + `game-rules` + `the-show` (regresión) | 8/8       |
 
 La suite completa sigue sin ejecutarse entera en verde por el problema de
@@ -117,9 +135,9 @@ GitHub Actions.
 
 ## Pendiente de la épica
 
-Las fases 5 a 12 siguen sin empezar. En concreto, **no existen todavía**: quiz
-musical, adivina la canción, supervivencia, modo mixto, adaptación de The Show
-y de la ceremonia a cada modo, ni la revancha.
+Las fases 6 a 12 siguen sin empezar. En concreto, **no existen todavía**:
+adivina la canción, supervivencia, modo mixto, adaptación de The Show y de la
+ceremonia a cada modo, ni la revancha.
 
 El catálogo marca esos modos como `PROXIMAMENTE` y el registro se niega a
 resolver un handler que no existe, de forma que ninguno puede iniciarse por
@@ -134,7 +152,8 @@ error desde la interfaz ni desde la API.
 
 ## Próximo paso
 
-Fase 5: quiz musical. Es el primer modo que necesita entidades nuevas
-(`RoundQuestion`, `AnswerOption`, `PlayerAnswer`) y el primero donde la
-seguridad manda: la respuesta correcta no puede viajar al cliente antes del
-reveal, ni por payload, ni por props, ni por caché de React Query.
+Fase 6: adivina la canción. Reutiliza `PlayerAnswer` (que ya tiene `freeText` e
+`attempt`) y necesita la pieza que falta: normalización y comparación difusa en
+`@bingo/shared`, con umbrales que dependan de la longitud. El riesgo aquí no es
+filtrar la respuesta sino un _fuzzy_ demasiado permisivo que acepte «Sal» por
+«Sol».
