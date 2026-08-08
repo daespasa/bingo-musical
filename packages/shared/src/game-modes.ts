@@ -88,7 +88,7 @@ export const GAME_MODE_CATALOG: readonly GameModeDescriptor[] = [
     difficulty: 'MEDIA',
     supportsProjector: true,
     supportsRemote: true,
-    availability: 'PROXIMAMENTE',
+    availability: 'DISPONIBLE',
   },
   {
     id: 'FREE_TEXT',

@@ -6,7 +6,12 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import clsx from 'clsx';
 import { Gift, ListMusic, Wand2 } from 'lucide-react';
-import { BINGO_VARIANTS, type BingoRevealMode, type GameMode } from '@bingo/shared';
+import {
+  BINGO_VARIANTS,
+  type BingoRevealMode,
+  type GameMode,
+  type MultipleChoiceQuestionType,
+} from '@bingo/shared';
 import { api, ApiError } from '@/lib/api';
 import { GameModeSelector } from '@/components/game-mode-selector';
 import type { CollectionSummary } from '@/lib/types';
@@ -16,6 +21,9 @@ type FormData = {
   collectionId: string;
   mode: GameMode;
   revealMode: BingoRevealMode;
+  /** Tipos de pregunta del quiz. Al menos uno. */
+  questionTypes: MultipleChoiceQuestionType[];
+  optionCount: number;
   cardSize: number;
   freeCenter: boolean;
   snippetDurationMs: number;
@@ -28,6 +36,23 @@ type FormData = {
   showLeaderboard: boolean;
   shuffleTracks: boolean;
 };
+
+/**
+ * Tipos de pregunta que el quiz ofrece hoy.
+ *
+ * Año y álbum existen en el dominio pero no se ofrecen aquí: dependen de
+ * metadatos que las colecciones importadas no siempre traen, y una pregunta
+ * sin datos fiables es una pregunta injusta.
+ */
+const QUIZ_QUESTION_TYPES: Array<{
+  id: MultipleChoiceQuestionType;
+  label: string;
+  help: string;
+}> = [
+  { id: 'SONG_TITLE', label: 'Título', help: '¿Cómo se llama esta canción?' },
+  { id: 'ARTIST', label: 'Artista', help: '¿De quién es esta canción?' },
+  { id: 'DECADE', label: 'Década', help: '¿De qué década es? Necesita año en la colección.' },
+];
 
 const RULE_TOGGLES = [
   ['freeCenter', 'Centro libre', 'La casilla central cuenta como acertada (3×3 y 5×5).'],
@@ -55,6 +80,8 @@ export default function NewGamePage() {
     defaultValues: {
       mode: 'MUSIC_BINGO',
       revealMode: 'HIDDEN_UNTIL_REVEAL',
+      questionTypes: ['SONG_TITLE'],
+      optionCount: 4,
       cardSize: 3,
       freeCenter: false,
       snippetDurationMs: 15000,
@@ -73,6 +100,16 @@ export default function NewGamePage() {
   const autoReveal = watch('autoReveal');
   const mode = watch('mode');
   const revealMode = watch('revealMode');
+  const questionTypes = watch('questionTypes');
+
+  // Al menos un tipo de pregunta: sin ninguno no habría nada que preguntar.
+  const toggleQuestionType = (tipo: MultipleChoiceQuestionType) => {
+    const next = questionTypes.includes(tipo)
+      ? questionTypes.filter((t) => t !== tipo)
+      : [...questionTypes, tipo];
+    if (next.length === 0) return;
+    setValue('questionTypes', next);
+  };
   // En bingo clásico la canción se ve desde el primer segundo, así que no hay
   // nada que reconocer de oído y las reglas de reconocimiento pierden sentido.
   const revealedFromStart = revealMode === 'VISIBLE_FROM_START';
@@ -88,7 +125,14 @@ export default function NewGamePage() {
           mode: data.mode,
           // El servidor revalida esta configuración con el esquema del modo;
           // aquí solo se manda lo que el anfitrión ha elegido.
-          modeConfig: { mode: data.mode, revealMode: data.revealMode },
+          modeConfig:
+            data.mode === 'MULTIPLE_CHOICE'
+              ? {
+                  mode: 'MULTIPLE_CHOICE',
+                  questionTypes: data.questionTypes,
+                  optionCount: Number(data.optionCount),
+                }
+              : { mode: data.mode, revealMode: data.revealMode },
           settings: {
             cardSize: Number(data.cardSize),
             freeCenter: data.freeCenter,
@@ -154,6 +198,57 @@ export default function NewGamePage() {
                 </p>
               )}
             </fieldset>
+          </div>
+        )}
+
+        {mode === 'MULTIPLE_CHOICE' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">¿Qué se pregunta?</legend>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {QUIZ_QUESTION_TYPES.map((tipo) => {
+                  const activo = questionTypes.includes(tipo.id);
+                  return (
+                    <button
+                      key={tipo.id}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={activo}
+                      onClick={() => toggleQuestionType(tipo.id)}
+                      className={clsx(
+                        'rounded-xl border p-4 text-left transition',
+                        activo
+                          ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                          : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                      )}
+                    >
+                      <span className="font-semibold">{tipo.label}</span>
+                      <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                        {tipo.help}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                Con varios tipos, las rondas los van alternando.
+              </p>
+            </fieldset>
+
+            <div className="mt-5">
+              <label className="label" htmlFor="optionCount">
+                Número de opciones
+              </label>
+              <select
+                id="optionCount"
+                className="input"
+                {...register('optionCount', { valueAsNumber: true })}
+              >
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+              </select>
+            </div>
           </div>
         )}
 

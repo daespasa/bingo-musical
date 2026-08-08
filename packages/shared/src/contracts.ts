@@ -3,7 +3,7 @@
  * contractVersion se incrementa ante cambios incompatibles.
  */
 
-import type { BingoRevealMode } from './game-modes';
+import type { BingoRevealMode, GameMode } from './game-modes';
 
 export const CONTRACT_VERSION = 1;
 
@@ -60,11 +60,20 @@ export type RoundView = {
   startsAt: number | null;
   endsAt: number | null;
   revealed: { title: string; artist: string } | null;
+  /** La pregunta en curso, sin la solución, para reconectar a media ronda. */
+  question: QuizQuestionView | null;
+  /** Si quien pide el estado ya respondió, y qué opción eligió. */
+  myAnswer: { optionIndex: number } | null;
 };
 
 export type RoomStatePayload = {
   roomId: string;
   code: string;
+  /**
+   * Modo de juego. No confundir con `mode`, que es cómo se juega la sala
+   * (proyector o remoto); esto es a qué se juega.
+   */
+  gameMode: GameMode;
   mode: 'PROJECTOR' | 'REMOTE' | 'HYBRID';
   status: string;
   gameName: string;
@@ -109,7 +118,41 @@ export type RoundPreparePayload = {
    * hasta `round:revealed`: si viajaran antes, se regalaría la respuesta.
    */
   revealed: { title: string; artist: string } | null;
+  /**
+   * La pregunta de la ronda en los modos que preguntan.
+   *
+   * Nunca dice cuál es la correcta: `QuizQuestionView` no tiene ese campo a
+   * propósito, para que no pueda colarse al añadir datos a la ronda.
+   */
+  question: QuizQuestionView | null;
 };
+
+/** Lo que de una pregunta puede ver quien juega antes del reveal. */
+export type QuizQuestionView = {
+  type: 'SONG_TITLE' | 'ARTIST' | 'RELEASE_YEAR' | 'DECADE' | 'ALBUM';
+  prompt: string;
+  options: string[];
+};
+
+/** Cuánta gente lleva respondido. No dice quién ni qué. */
+export type QuizAnswerSubmittedPayload = {
+  answeredCount: number;
+  totalPlayers: number;
+};
+
+/** La solución y el reparto de respuestas. Solo se emite tras cerrar la ronda. */
+export type QuizDistributionPayload = {
+  roundId: string;
+  correctIndex: number;
+  correctText: string;
+  /** Cuántas respuestas ha recibido cada opción, en orden de opción. */
+  counts: number[];
+  answeredCount: number;
+  totalPlayers: number;
+};
+
+export type SubmitAnswerRequest = { optionIndex: number };
+export type SubmitAnswerAck = { ok: boolean; message?: string };
 
 export type RoundRevealedPayload = {
   roundId: string;
@@ -140,7 +183,13 @@ export type HighlightPayload = {
     | 'BEST_STREAK'
     | 'FIRST_LINE'
     | 'BINGO'
-    | 'BIGGEST_COMEBACK';
+    | 'BIGGEST_COMEBACK'
+    // Modos de pregunta. Los que no son de nadie en concreto llegan con
+    // `alias` vacío: son hitos de la ronda, no de una persona.
+    | 'ONLY_CORRECT'
+    | 'ALL_CORRECT'
+    | 'NOBODY_CORRECT'
+    | 'POPULAR_DISTRACTOR';
   alias: string;
   roundIndex: number | null;
   data?: Record<string, unknown>;
@@ -170,6 +219,7 @@ export const ClientEvents = {
   AudioError: 'audio:error',
   AudioDriftReport: 'audio:drift-report',
   CardMark: 'card:mark',
+  PlayerAnswer: 'player:answer',
   ClaimLine: 'claim:line',
   ClaimBingo: 'claim:bingo',
   HostStart: 'host:start',
@@ -233,6 +283,8 @@ export const ServerEvents = {
   RoundSkipped: 'round:skipped',
   RoundReplayed: 'round:replayed',
   CardUpdated: 'card:updated',
+  QuizAnswerSubmitted: 'quiz:answer-submitted',
+  QuizDistributionRevealed: 'quiz:distribution-revealed',
   ClaimAccepted: 'claim:accepted',
   ClaimRejected: 'claim:rejected',
   LeaderboardUpdated: 'leaderboard:updated',
