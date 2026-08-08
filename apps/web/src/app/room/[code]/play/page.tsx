@@ -17,6 +17,7 @@ import { loadGuestSession } from '@/lib/types';
 import { useRoom } from '@/hooks/use-room';
 import { useRoundAudio } from '@/hooks/use-round-audio';
 import { BingoCardGrid } from '@/components/bingo-card';
+import { QuizOptions } from '@/components/quiz-options';
 import { ReactionBar } from '@/components/reactions';
 import { RoundSummary } from '@/components/round-summary';
 import { Leaderboard } from '@/components/leaderboard';
@@ -224,6 +225,15 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
             audioError={audio.audioError}
             prepare={room.prepare}
           />
+          {room.question && (
+            <QuizOptions
+              question={room.question}
+              myAnswer={room.myAnswer}
+              distribution={room.distribution}
+              disabled={!room.connected || room.paused || !room.answersOpen}
+              onAnswerAction={(index) => void room.submitAnswer(index)}
+            />
+          )}
           {state.card && (
             <BingoCardGrid
               card={state.card}

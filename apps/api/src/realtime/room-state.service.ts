@@ -48,10 +48,16 @@ export class RoomStateService {
         lineEnabled: settings?.lineEnabled ?? true,
         bingoEnabled: settings?.bingoEnabled ?? true,
         showLeaderboard: settings?.showLeaderboard ?? true,
-        // Las partidas anteriores no tienen configuración guardada: se leen
-        // como bingo a ciegas, que es como se jugaban.
-        revealMode: readGameModeConfig('MUSIC_BINGO', room.game.modeConfig).revealMode,
+        // La configuración se lee con el modo real de la partida: leerla
+        // siempre como bingo hacía que una partida de quiz reventara aquí y la
+        // sala se quedara sin estado. `revealMode` solo significa algo en
+        // bingo; en los demás modos se manda el valor neutro.
+        revealMode:
+          room.game.mode === 'MUSIC_BINGO'
+            ? readGameModeConfig('MUSIC_BINGO', room.game.modeConfig).revealMode
+            : 'HIDDEN_UNTIL_REVEAL',
       },
+      gameMode: room.game.mode,
       participants: room.participants.map((p) => ({
         id: p.id,
         alias: p.alias,
@@ -60,7 +66,7 @@ export class RoomStateService {
         audioStatus: p.audioReadiness?.status ?? 'NOT_ENABLED',
         score: scoreById.get(p.id) ?? 0,
       })),
-      round: this.engine.roundView(roomId),
+      round: this.engine.roundView(roomId, forParticipantId),
       leaderboard,
       card,
       locked: room.lockedAt !== null,

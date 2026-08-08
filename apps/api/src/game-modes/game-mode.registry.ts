@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { describeGameMode, type ConfigForMode, type GameMode } from '@bingo/shared';
 import type { GameModeHandler } from './game-mode-handler';
 import { MusicBingoHandler } from './music-bingo.handler';
+import { MultipleChoiceHandler } from './multiple-choice.handler';
 
 /**
  * Resuelve el handler de cada modo.
@@ -29,7 +30,7 @@ type AnyGameModeHandler = { [M in GameMode]: GameModeHandler<M> }[GameMode];
  */
 type HandlerByMode = {
   MUSIC_BINGO: MusicBingoHandler;
-  MULTIPLE_CHOICE: GameModeHandler<'MULTIPLE_CHOICE'>;
+  MULTIPLE_CHOICE: MultipleChoiceHandler;
   FREE_TEXT: GameModeHandler<'FREE_TEXT'>;
   SURVIVAL: GameModeHandler<'SURVIVAL'>;
   MIXED: GameModeHandler<'MIXED'>;
@@ -39,8 +40,9 @@ type HandlerByMode = {
 export class GameModeRegistry {
   private readonly handlers = new Map<GameMode, AnyGameModeHandler>();
 
-  constructor(musicBingo: MusicBingoHandler) {
+  constructor(musicBingo: MusicBingoHandler, multipleChoice: MultipleChoiceHandler) {
     this.register(musicBingo);
+    this.register(multipleChoice);
   }
 
   private register(handler: AnyGameModeHandler): void {

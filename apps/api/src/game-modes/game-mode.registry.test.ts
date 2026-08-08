@@ -3,9 +3,10 @@ import { BadRequestException } from '@nestjs/common';
 import { defaultConfigForMode } from '@bingo/shared';
 import { GameModeRegistry } from './game-mode.registry';
 import { MusicBingoHandler, revealedInfo } from './music-bingo.handler';
+import { MultipleChoiceHandler } from './multiple-choice.handler';
 import type { ScoringSettings } from './game-mode-handler';
 
-const registry = new GameModeRegistry(new MusicBingoHandler());
+const registry = new GameModeRegistry(new MusicBingoHandler(), new MultipleChoiceHandler());
 
 const TRACK = {
   id: 'track-1',
@@ -32,14 +33,15 @@ describe('registro de modos', () => {
   });
 
   it('solo declara soportado lo que tiene handler', () => {
-    expect(registry.supportedModes()).toEqual(['MUSIC_BINGO']);
+    expect(registry.supportedModes()).toEqual(['MUSIC_BINGO', 'MULTIPLE_CHOICE']);
     expect(registry.isSupported('SURVIVAL')).toBe(false);
+    expect(registry.isSupported('MIXED')).toBe(false);
   });
 
   it('se niega a empezar una partida de un modo sin handler', () => {
     // Es preferible negarse que abrir una sala que nadie sabe conducir.
-    expect(() => registry.resolve('MULTIPLE_CHOICE')).toThrow(BadRequestException);
-    expect(() => registry.resolve('MULTIPLE_CHOICE')).toThrow(/Quiz musical/);
+    expect(() => registry.resolve('SURVIVAL')).toThrow(BadRequestException);
+    expect(() => registry.resolve('SURVIVAL')).toThrow(/Supervivencia/);
   });
 
   it('valida la configuración con el esquema del modo', () => {

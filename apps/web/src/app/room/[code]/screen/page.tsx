@@ -127,6 +127,50 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
                   </p>
                 </div>
               )}
+              {/*
+               * La pregunta y sus opciones se proyectan a tamaño de sala. Cuál
+               * es la correcta no está aquí: el proyector recibe la misma
+               * pregunta despojada que los jugadores.
+               */}
+              {room.question && (
+                <div className="mx-auto mt-6 max-w-4xl">
+                  <p className="font-display text-4xl leading-tight">{room.question.prompt}</p>
+                  <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {room.question.options.map((option, index) => {
+                      const correcto = room.distribution?.correctIndex === index;
+                      return (
+                        <li
+                          key={option}
+                          className={
+                            'flex items-center gap-3 rounded-md border-2 px-4 py-3 text-left text-2xl ' +
+                            (room.distribution
+                              ? correcto
+                                ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/40'
+                                : 'border-slate-300 opacity-60 dark:border-slate-700'
+                              : 'border-slate-900 dark:border-slate-700')
+                          }
+                        >
+                          <span className="data shrink-0 rounded border-2 border-current px-2 py-0.5 text-lg">
+                            {['A', 'B', 'C', 'D'][index]}
+                          </span>
+                          <span className="min-w-0 flex-1 font-semibold">{option}</span>
+                          {room.distribution && (
+                            <span className="data shrink-0 text-xl">
+                              {room.distribution.counts[index] ?? 0}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {room.answerProgress && !room.distribution && (
+                    <p className="data mt-4 text-2xl text-slate-500 dark:text-slate-400">
+                      {room.answerProgress.answeredCount} / {room.answerProgress.totalPlayers} han
+                      respondido
+                    </p>
+                  )}
+                </div>
+              )}
               {room.paused ? (
                 <Pause className="mx-auto mt-6 h-24 w-24 text-slate-400" aria-hidden />
               ) : (

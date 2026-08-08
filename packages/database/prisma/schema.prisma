@@ -119,6 +119,9 @@ enum ScoreEventType {
   BINGO_BONUS
   WRONG_MARK
   WRONG_CLAIM
+  // Modos de pregunta: el acierto y el fallo no son marcas de cartón
+  CORRECT_ANSWER
+  WRONG_ANSWER
 }
 
 enum HighlightType {
@@ -128,6 +131,20 @@ enum HighlightType {
   FIRST_LINE
   BINGO
   BIGGEST_COMEBACK
+  // Modos de pregunta
+  ONLY_CORRECT
+  ALL_CORRECT
+  NOBODY_CORRECT
+  POPULAR_DISTRACTOR
+}
+
+/// Qué se pregunta sobre la canción que suena.
+enum QuestionType {
+  SONG_TITLE
+  ARTIST
+  RELEASE_YEAR
+  DECADE
+  ALBUM
 }
 
 enum AuditActorType {
@@ -200,6 +217,9 @@ model Track {
   albumId         String?
   album           Album?      @relation(fields: [albumId], references: [id])
   durationMs      Int?
+  /// Año de publicación. Alimenta las preguntas de año y de década; nulo
+  /// significa que esas preguntas no pueden usar esta pista.
+  releaseYear     Int?
   source          TrackSource @default(DEMO)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -376,6 +396,7 @@ model RoomParticipant {
   audioReadiness AudioReadiness?
   card           BingoCard?
   marks          PlayerMark[]
+  answers        PlayerAnswer[]
   claims         Claim[]
   scoreEvents    ScoreEvent[]
   highlights     Highlight[]
@@ -468,12 +489,75 @@ model GameRound {
   revealedAt DateTime?
   createdAt  DateTime    @default(now())
 
-  marks  PlayerMark[]
-  claims Claim[]
-  scores ScoreEvent[]
+  marks    PlayerMark[]
+  claims   Claim[]
+  scores   ScoreEvent[]
+  question RoundQuestion?
+  answers  PlayerAnswer[]
 
   @@unique([roomId, index])
   @@index([roomId, status])
+}
+
+/// La pregunta de una ronda en los modos que preguntan.
+///
+/// Se persiste al crear la ronda para que todo el mundo reciba exactamente la
+/// misma pregunta y las mismas opciones, y para que el resultado sea
+/// reconstruible después sin volver a generarla.
+model RoundQuestion {
+  id      String       @id @default(uuid())
+  roundId String       @unique
+  round   GameRound    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  type    QuestionType
+  /// Enunciado ya redactado, para no recomponerlo en cada superficie.
+  prompt  String
+  /// Respuesta correcta en texto, para el reveal y el historial. Nunca viaja
+  /// al cliente antes de que la ronda se revele.
+  correctText String
+
+  options AnswerOption[]
+  answers PlayerAnswer[]
+}
+
+/// Una opción de respuesta. `isCorrect` no sale nunca del servidor antes del
+/// reveal: el cliente recibe las opciones sin esa columna.
+model AnswerOption {
+  id         String        @id @default(uuid())
+  questionId String
+  question   RoundQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  position   Int
+  text       String
+  isCorrect  Boolean       @default(false)
+
+  answers PlayerAnswer[]
+
+  @@unique([questionId, position])
+  @@index([questionId])
+}
+
+/// La respuesta de una persona a una ronda.
+model PlayerAnswer {
+  id            String          @id @default(uuid())
+  roundId       String
+  round         GameRound       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      RoundQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  /// Opción elegida en preguntas con opciones.
+  optionId      String?
+  option        AnswerOption?   @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  /// Texto escrito en respuesta libre. Preparado para el modo de adivinar.
+  freeText      String?
+  isCorrect     Boolean
+  latencyMs     Int?
+  /// Número de intento, empezando en 1. Con un solo intento siempre vale 1.
+  attempt       Int             @default(1)
+  createdAt     DateTime        @default(now())
+
+  /// Impide contar dos veces el mismo intento aunque el evento llegue repetido.
+  @@unique([roundId, participantId, attempt])
+  @@index([participantId])
 }
 
 model PlayerMark {

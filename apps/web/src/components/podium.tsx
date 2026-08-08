@@ -27,6 +27,11 @@ const HIGHLIGHTS: Record<
   FIRST_LINE: { label: 'Primera línea', Icon: Megaphone, className: 'text-brand-500' },
   BINGO: { label: 'Bingo', Icon: Trophy, className: 'text-amber-500' },
   BIGGEST_COMEBACK: { label: 'Mayor remontada', Icon: Rocket, className: 'text-emerald-500' },
+  // Modos de pregunta
+  ONLY_CORRECT: { label: 'Único acierto', Icon: Sparkles, className: 'text-amber-500' },
+  ALL_CORRECT: { label: 'Acertaron todos', Icon: Sparkles, className: 'text-emerald-500' },
+  NOBODY_CORRECT: { label: 'No acertó nadie', Icon: Megaphone, className: 'text-slate-500' },
+  POPULAR_DISTRACTOR: { label: 'La trampa favorita', Icon: Repeat, className: 'text-rose-500' },
 };
 
 const CONFETTI_COLORS = ['#a855f7', '#f43f5e', '#fbbf24', '#34d399', '#38bdf8'];

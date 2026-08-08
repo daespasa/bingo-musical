@@ -200,3 +200,49 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Decisión**: en bingo clásico, el título aparece sobre el estado de la ronda, no sustituyéndolo.
 - **Contexto**: la primera versión sustituía el bloque de estado por el título, y quien jugaba perdía la cuenta atrás y el «últimos segundos para marcar». Lo detectó un E2E antes de llegar a ninguna parte.
 - **Consecuencias**: se ve a la vez qué suena y cuánto queda. Tras el reveal el encabezado desaparece, porque entonces manda «La canción era…» y repetir el título dos veces solo añade ruido.
+
+## 2026-08-08 — La solución del quiz no sale del servidor antes del reveal
+
+- **Decisión**: la ronda de quiz tiene dos formas. `QuizRoundPayload` vive solo en el servidor e incluye `correctIndex` y `correctText`; hacia la red se convierte con `toPublicQuizRound`, que devuelve únicamente tipo, enunciado y opciones.
+- **Contexto**: en un juego de preguntas, filtrar la respuesta lo rompe entero. Basta con abrir el inspector para ganar, y quien lo hace ni siquiera necesita saber programar: `correctIndex: 2` se lee solo.
+- **Alternativas**: mandar la ronda entera y confiar en que el cliente no la mire; ofuscar la respuesta; cifrarla y mandar la clave al revelar.
+- **Elección**: que la respuesta no viaje. Una sola función es la puerta por la que la ronda sale hacia la red, así que añadir un campo sensible a la ronda no lo cuela solo: hay que añadirlo también a la vista pública, a mano.
+- **Consecuencias**: hay tests que comprueban que la vista pública no tiene esos campos, y un E2E que inspecciona el HTML servido y el objeto `window` buscando `correctIndex`, `correctText` e `isCorrect`. También obligó a las dos decisiones siguientes.
+
+## 2026-08-08 — Ni el ack ni el ranking delatan el acierto
+
+- **Decisión**: responder devuelve solo si se ha registrado el envío, y la puntuación del quiz se aplica **al cerrar la ronda**, no al responder.
+- **Contexto**: aunque la solución no viaje, un ack que diga «correcto» la revela igual. Y un marcador público que sube justo al pulsar la delata ante toda la sala.
+- **Elección**: el ack confirma recepción y nada más; `scoreQuizRound` aplica todos los puntos en el reveal. A la sala solo se le dice cuánta gente lleva respondido, sin decir quién ni qué.
+- **Consecuencias**: `leaderboard:updated` no se emite entre respuestas en quiz. A cambio, el ranking cuenta la historia de golpe al revelar, que además se parece más a un concurso.
+
+## 2026-08-08 — Las opciones se ven antes de poder pulsarse
+
+- **Decisión**: las opciones aparecen con `round:prepare`, pero deshabilitadas hasta `round:started`.
+- **Contexto**: el servidor solo acepta respuestas mientras la ronda está abierta. La primera versión enseñaba botones pulsables antes de que arrancara el fragmento: se podían pulsar y el servidor los rechazaba en silencio. Lo destapó un E2E.
+- **Elección**: mostrarlas cuanto antes —da tiempo a leerlas, que es parte del juego— pero desactivadas y con el texto «Prepara el oído…». Un botón que el servidor va a rechazar es peor que un botón desactivado.
+
+## 2026-08-08 — Los distractores salen de la propia colección
+
+- **Decisión**: las opciones incorrectas se toman de las demás pistas de la colección que suena.
+- **Contexto**: un distractor traído de fuera se reconoce al instante y convierte la pregunta en un regalo.
+- **Elección**: candidatos de la colección, sin repetir la respuesta correcta ni valores idénticos a ella. Las décadas admiten relleno con décadas vecinas cuando la colección es pequeña, porque siguen siendo respuestas creíbles; los años y los títulos no se inventan nunca.
+- **Consecuencias**: si la colección no da para construir una pregunta de un tipo, ese tipo se descarta en vez de plantearse con una sola opción. `supportedQuestionTypes` lo decide antes de empezar.
+
+## 2026-08-08 — La pregunta se genera con semilla estable y se persiste
+
+- **Decisión**: la pregunta se construye con un generador sembrado por sala y ronda, y se guarda en `RoundQuestion` + `AnswerOption` antes de emitirse.
+- **Contexto**: si se regenerara al vuelo, quien reconecta podría recibir otras opciones —u otro orden— que el resto de la sala, y el resultado no sería reconstruible después.
+- **Consecuencias**: todo el mundo ve exactamente la misma pregunta, reconectar no la cambia, y el historial puede reconstruirse sin volver a generarla.
+
+## 2026-08-08 — Fallar en el quiz no resta por defecto
+
+- **Decisión**: `wrongAnswerPenalty` es 0 salvo que el anfitrión lo cambie.
+- **Contexto**: penalizar el fallo empuja a no responder cuando hay dudas, que es justo lo contrario de lo que hace divertida una partida.
+- **Consecuencias**: no responder tampoco suma, y rompe racha igual que fallar. Quien quiera un concurso más duro tiene la penalización disponible.
+
+## 2026-08-08 — Los años del catálogo demo se reparten por décadas
+
+- **Decisión**: las 20 pistas demo reciben año, con cuatro pistas en cada una de cinco décadas.
+- **Contexto**: las preguntas de década necesitan distractores creíbles. Con todas las pistas en la misma década, la pregunta se responde sola.
+- **Elección**: años inventados y deterministas, como el resto de los metadatos demo. El seed los aplica también a las pistas ya creadas, para que una instalación anterior no se quede sin ellos.

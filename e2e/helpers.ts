@@ -74,11 +74,16 @@ export async function createGameAndOpenRoom(
     autoReveal?: boolean;
     /** Variante del bingo. Por defecto, a ciegas: el bingo de siempre. */
     variant?: 'Bingo a ciegas' | 'Bingo clásico';
+    /** Modo de juego. Por defecto, bingo musical. */
+    mode?: 'Bingo musical' | 'Quiz musical';
   } = {
     name: 'E2E',
   },
 ): Promise<string> {
   await page.goto('/dashboard/games/new');
+  if (options.mode && options.mode !== 'Bingo musical') {
+    await page.getByRole('radio', { name: new RegExp(options.mode) }).click();
+  }
   if (options.variant) {
     await page.getByRole('radio', { name: new RegExp(options.variant) }).click();
   }

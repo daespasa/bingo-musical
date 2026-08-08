@@ -4,27 +4,35 @@ import { createHash, randomUUID } from 'node:crypto';
 
 const prisma = new PrismaClient();
 
-const DEMO_TRACKS: Array<{ title: string; artist: string }> = [
-  { title: 'Neon Nights', artist: 'The Demo Waves' },
-  { title: 'Luna de Verano', artist: 'Los Sintéticos' },
-  { title: 'Electric Sunrise', artist: 'The Demo Waves' },
-  { title: 'Bailando en Marte', artist: 'Cohete 9' },
-  { title: 'Midnight Circuit', artist: 'Pixel Orchestra' },
-  { title: 'Corazón de Chip', artist: 'Los Sintéticos' },
-  { title: 'Golden Frequency', artist: 'Analog Dreams' },
-  { title: 'Viento del Norte', artist: 'Aurora Beat' },
-  { title: 'Silver Echoes', artist: 'Pixel Orchestra' },
-  { title: 'Ruta 404', artist: 'Cohete 9' },
-  { title: 'Crystal Rain', artist: 'Analog Dreams' },
-  { title: 'Fuego Lento', artist: 'Aurora Beat' },
-  { title: 'Binary Sunset Club', artist: 'Pixel Orchestra' },
-  { title: 'Mar de Cables', artist: 'Los Sintéticos' },
-  { title: 'Gravity Waltz', artist: 'The Demo Waves' },
-  { title: 'Ciudad Neón', artist: 'Aurora Beat' },
-  { title: 'Phantom Groove', artist: 'Analog Dreams' },
-  { title: 'Salto Cuántico', artist: 'Cohete 9' },
-  { title: 'Velvet Static', artist: 'The Demo Waves' },
-  { title: 'Último Tren', artist: 'Aurora Beat' },
+/**
+ * Catálogo demo. Nada de esto es música comercial: son piezas sintetizadas
+ * por `scripts/generate-demo-audio.mjs`, con metadatos inventados.
+ *
+ * Los años están repartidos a propósito entre cinco décadas, con cuatro pistas
+ * en cada una. Sin ese reparto, las preguntas de década se quedarían sin
+ * distractores creíbles y el quiz sería trivial.
+ */
+const DEMO_TRACKS: Array<{ title: string; artist: string; releaseYear: number }> = [
+  { title: 'Neon Nights', artist: 'The Demo Waves', releaseYear: 1983 },
+  { title: 'Luna de Verano', artist: 'Los Sintéticos', releaseYear: 1986 },
+  { title: 'Electric Sunrise', artist: 'The Demo Waves', releaseYear: 1989 },
+  { title: 'Bailando en Marte', artist: 'Cohete 9', releaseYear: 1981 },
+  { title: 'Midnight Circuit', artist: 'Pixel Orchestra', releaseYear: 1994 },
+  { title: 'Corazón de Chip', artist: 'Los Sintéticos', releaseYear: 1997 },
+  { title: 'Golden Frequency', artist: 'Analog Dreams', releaseYear: 1991 },
+  { title: 'Viento del Norte', artist: 'Aurora Beat', releaseYear: 1999 },
+  { title: 'Silver Echoes', artist: 'Pixel Orchestra', releaseYear: 2003 },
+  { title: 'Ruta 404', artist: 'Cohete 9', releaseYear: 2007 },
+  { title: 'Crystal Rain', artist: 'Analog Dreams', releaseYear: 2001 },
+  { title: 'Fuego Lento', artist: 'Aurora Beat', releaseYear: 2009 },
+  { title: 'Binary Sunset Club', artist: 'Pixel Orchestra', releaseYear: 2012 },
+  { title: 'Mar de Cables', artist: 'Los Sintéticos', releaseYear: 2015 },
+  { title: 'Gravity Waltz', artist: 'The Demo Waves', releaseYear: 2018 },
+  { title: 'Ciudad Neón', artist: 'Aurora Beat', releaseYear: 2011 },
+  { title: 'Phantom Groove', artist: 'Analog Dreams', releaseYear: 2021 },
+  { title: 'Salto Cuántico', artist: 'Cohete 9', releaseYear: 2023 },
+  { title: 'Velvet Static', artist: 'The Demo Waves', releaseYear: 2020 },
+  { title: 'Último Tren', artist: 'Aurora Beat', releaseYear: 2024 },
 ];
 
 function normalize(value: string): string {
@@ -68,17 +76,24 @@ async function main(): Promise<void> {
     const existing = await prisma.track.findFirst({
       where: { normalizedTitle: normalize(t.title), artistId: artist.id },
     });
-    const track =
-      existing ??
-      (await prisma.track.create({
-        data: {
-          title: t.title,
-          normalizedTitle: normalize(t.title),
-          artistId: artist.id,
-          durationMs: 17000,
-          source: 'DEMO',
-        },
-      }));
+    // Las pistas ya creadas también reciben el año: si solo se pusiera al
+    // crear, las instalaciones anteriores se quedarían sin metadatos y las
+    // preguntas de año y década no tendrían con qué trabajar.
+    const track = existing
+      ? await prisma.track.update({
+          where: { id: existing.id },
+          data: { releaseYear: t.releaseYear },
+        })
+      : await prisma.track.create({
+          data: {
+            title: t.title,
+            normalizedTitle: normalize(t.title),
+            artistId: artist.id,
+            durationMs: 17000,
+            releaseYear: t.releaseYear,
+            source: 'DEMO',
+          },
+        });
     await prisma.trackPreview.upsert({
       where: { trackId_provider: { trackId: track.id, provider: 'DEMO_LOCAL' } },
       update: {},

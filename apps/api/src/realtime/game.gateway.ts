@@ -12,7 +12,12 @@ import {
 import type { Server, Socket } from 'socket.io';
 import { randomUUID } from 'node:crypto';
 import { REACTIONS } from '@bingo/shared';
-import type { MarkCellAck, MarkCellRequest } from '@bingo/shared';
+import type {
+  MarkCellAck,
+  MarkCellRequest,
+  SubmitAnswerAck,
+  SubmitAnswerRequest,
+} from '@bingo/shared';
 
 /** Una reacción por jugador cada tres segundos: anima, no inunda. */
 const REACTION_COOLDOWN_MS = 3000;
@@ -195,6 +200,24 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     if (role !== 'PLAYER') return { ok: false, message: 'Solo los jugadores marcan' };
     if (!body?.cellId) return { ok: false, message: 'cellId requerido' };
     return this.engine.markCell(roomId, participantId, body.cellId);
+  }
+
+  /**
+   * Respuesta a una pregunta con opciones.
+   *
+   * El ack solo confirma que se ha registrado: decir aquí si es correcta sería
+   * decir la solución antes del reveal.
+   */
+  @SubscribeMessage('player:answer')
+  async submitAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: SubmitAnswerRequest,
+  ): Promise<SubmitAnswerAck> {
+    const { participantId, roomId, role } = this.data(client);
+    if (role !== 'PLAYER') return { ok: false, message: 'Solo los jugadores responden' };
+    if (typeof body?.optionIndex !== 'number')
+      return { ok: false, message: 'optionIndex requerido' };
+    return this.engine.submitAnswer(roomId, participantId, body.optionIndex);
   }
 
   /**
