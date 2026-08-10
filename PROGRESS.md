@@ -4,8 +4,8 @@
 - **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
   plataforma de juegos musicales.
 - **Rama actual**: `epic/gramola-platform`.
-- **Fase**: 7 de 12 terminadas. Cuatro modos jugables: bingo (dos variantes),
-  quiz, adivina y supervivencia.
+- **Fase**: 8 de 12 terminadas. **Los cinco modos del catálogo son jugables**:
+  bingo (dos variantes), quiz, adivina, supervivencia y mixto.
 
 ## Épica Gramola: estado por fases
 
@@ -19,7 +19,7 @@
 | 5    | Quiz musical                               | Terminada |
 | 6    | Adivina la canción                         | Terminada |
 | 7    | Supervivencia                              | Terminada |
-| 8    | Modo mixto                                 | Pendiente |
+| 8    | Modo mixto                                 | Terminada |
 | 9    | Experiencia transversal (Show, resultados) | Pendiente |
 | 10   | Regresión                                  | Pendiente |
 | 11   | Calidad                                    | Pendiente |
@@ -115,15 +115,26 @@
   superviviente y aguantar con una vida.
 - Migración aditiva `20260808...add_player_life_state`.
 
+### Fase 8 — Modo mixto (`feat/mixed-mode`)
+
+- `MixedHandler` registrado: ya no queda ningún modo como `PROXIMAMENTE`.
+- Reparto calculado una vez por partida, por resto mayor, para que ningún tipo
+  con peso desaparezca en partidas cortas.
+- Intercalado proporcional: la variedad aparece en las primeras rondas, no a
+  mitad de partida.
+- Dos presets: equilibrado y solo reconocimiento. El dominio admite reparto
+  personalizado, aunque el wizard aún no lo edita.
+- El bingo queda fuera de la mezcla y se dice en la interfaz.
+
 ## Validaciones ejecutadas en esta épica
 
-Ejecutadas el 2026-08-08 sobre `feat/survival-mode`:
+Ejecutadas el 2026-08-08 sobre `feat/mixed-mode`:
 
 | Comprobación     | Resultado                                          |
 | ---------------- | -------------------------------------------------- |
 | `pnpm lint`      | 8/8 paquetes sin errores                           |
 | `pnpm typecheck` | 8/8 paquetes sin errores                           |
-| `pnpm test`      | 236 tests (shared 94, music-providers 24, api 118) |
+| `pnpm test`      | 251 tests (shared 94, music-providers 24, api 133) |
 | `pnpm build`     | 5/5 paquetes compilados                            |
 | Migración        | Aplicada sobre la base de datos con datos reales   |
 
@@ -147,7 +158,8 @@ Tras las fases 3 y 4 se han ejecutado por separado, sin ningún fallo:
 
 | Suite                                              | Resultado |
 | -------------------------------------------------- | --------- |
-| `survival.spec.ts` (nueva)                         | 4/4       |
+| `mixed.spec.ts` (nueva)                            | 3/3       |
+| `survival.spec.ts`                                 | 4/4       |
 | `guess.spec.ts`                                    | 4/4       |
 | `quiz.spec.ts`                                     | 4/4       |
 | `bingo-variants.spec.ts`                           | 4/4       |
@@ -174,16 +186,19 @@ GitHub Actions.
 
 ## Pendiente de la épica
 
-Las fases 8 a 12 siguen sin empezar. En concreto, **no existen todavía**: modo
-mixto, adaptación de The Show y de la ceremonia a cada modo, ni la revancha.
+Las fases 9 a 12 siguen sin empezar. En concreto, **no existen todavía**: la
+adaptación de The Show y de la ceremonia a cada modo, ni la revancha.
 
 El resumen entre rondas y la ceremonia final siguen contando la partida en
-lenguaje de bingo aunque el modo sea otro: funcionan, pero no están adaptados.
-Es justo lo que toca en la fase 9.
+lenguaje de bingo aunque el modo sea otro: funcionan y no rompen nada, pero no
+están adaptados. Es justo lo que toca en la fase 9.
 
-El catálogo marca esos modos como `PROXIMAMENTE` y el registro se niega a
-resolver un handler que no existe, de forma que ninguno puede iniciarse por
-error desde la interfaz ni desde la API.
+Tampoco se ha editado el reparto personalizado del modo mixto desde el wizard:
+el dominio lo admite, la interfaz solo ofrece los dos presets.
+
+Ya no queda ningún modo del catálogo sin implementar. El registro sigue
+negándose a resolver un handler inexistente, que es lo que protegerá a los
+modos futuros de anunciarse antes de tiempo.
 
 ## Errores conocidos (heredados de v0.5.2)
 

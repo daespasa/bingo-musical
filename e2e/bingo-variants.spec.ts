@@ -17,7 +17,7 @@ test.describe('Variantes del bingo', () => {
 
     await expect(page.getByRole('group', { name: '¿A qué quieres jugar?' })).toBeVisible();
 
-    // El bingo es el único jugable de principio a fin ahora mismo.
+    // El bingo viene elegido de partida: es el modo insignia.
     const bingo = page.getByRole('radio', { name: /Bingo musical/ });
     await expect(bingo).toBeEnabled();
     await expect(bingo).toHaveAttribute('aria-checked', 'true');
