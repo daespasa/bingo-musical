@@ -281,3 +281,35 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Decisión**: cada intento se persiste en `PlayerAnswer` con su número de intento.
 - **Contexto**: interesa saber con cuántos intentos se acertó y por qué camino (exacta, normalizada, alias o errata), no solo si se acertó.
 - **Consecuencias**: The Show puede contar cuántos aciertos colaron por errata, que es de las cosas que más gracia hacen del modo. Las respuestas equivocadas **no** se enseñan en público: se cuentan, no se exponen.
+
+## 2026-08-08 — Supervivencia no duplica evaluadores: deriva la configuración del modo de ronda
+
+- **Decisión**: al arrancar una sala de Supervivencia, el motor deriva una configuración de quiz o de respuesta libre y la deja en el runtime. A partir de ahí, la generación de preguntas, el envío de respuestas, la persistencia y la puntuación pasan por el mismo código que los modos originales.
+- **Contexto**: Supervivencia usa rondas de otro modo. Reimplementarlas habría significado mantener dos veces la parte difícil, que es justamente la generación de distractores y la comparación difusa de respuestas.
+- **Alternativas**: un handler con su propio generador y su propio evaluador; copiar el código de ambos modos.
+- **Elección**: derivar la configuración. Supervivencia solo aporta lo suyo —vidas, eliminación, espectador y final de partida—, en `survival-rules.ts`, que es lógica pura y por tanto comprobable a fondo.
+- **Consecuencias**: arreglar el _fuzzy_ arregla también Supervivencia. El precio es que la configuración derivada fija algunos valores (cuatro opciones, un intento); si en el futuro conviene exponerlos, se añaden a `SurvivalConfig`.
+
+## 2026-08-08 — Las vidas se persisten y nunca las decide el cliente
+
+- **Decisión**: `PlayerLifeState` es una tabla propia. El servidor calcula quién pierde vida y quién queda eliminado a partir de la evaluación que él mismo hizo; el cliente solo manda lo que respondió.
+- **Contexto**: las vidas deciden quién sigue jugando. Si vivieran solo en memoria, una reconexión podría devolverlas; si las decidiera el cliente, cualquiera se quedaría con tres vidas para siempre.
+- **Consecuencias**: recargar la página no devuelve vidas ni resucita a nadie, y hay un E2E que lo comprueba. El envío de respuestas rechaza en el servidor a quien está eliminado, además de no ofrecerle el botón.
+
+## 2026-08-08 — Las vidas no son puntos
+
+- **Decisión**: las vidas viven fuera de `ScoreEvent` y no se convierten en puntuación.
+- **Contexto**: mezclarlas obligaría a inventar una equivalencia («¿cuántos puntos vale una vida?») que no significa nada, y rompería el ranking del resto de modos.
+- **Elección**: gana quien queda en pie, no quien más puntos hace. La puntuación sigue existiendo, pero solo como criterio de desempate y para el historial.
+
+## 2026-08-08 — El desempate de Supervivencia es determinista
+
+- **Decisión**: orden fijo —en pie antes que eliminado; entre eliminados, quien aguantó más rondas; luego más vidas, más puntuación, más aciertos y menor tiempo acumulado—.
+- **Contexto**: si al agotarse el límite de rondas quedan varias personas vivas, hace falta un ganador. Sin la última regla, dos partidas idénticas quedarían empatadas y el orden dependería del azar del `sort`.
+- **Consecuencias**: un test comprueba que ordenar dos veces la misma lista da el mismo resultado.
+
+## 2026-08-08 — No responder cuesta vida, pero es configurable
+
+- **Decisión**: por defecto callarse cuesta una vida; el anfitrión puede desactivarlo.
+- **Contexto**: sin coste, la estrategia ganadora es no responder nunca, que vacía el juego. Pero hay grupos donde dudar y quedarse callado no debería castigarse igual que fallar.
+- **Consecuencias**: la regla está en `applyRoundOutcome`, no repartida por el motor, y tiene test para las dos configuraciones.

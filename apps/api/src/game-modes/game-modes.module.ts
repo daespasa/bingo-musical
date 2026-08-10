@@ -3,6 +3,7 @@ import { GameModeRegistry } from './game-mode.registry';
 import { MusicBingoHandler } from './music-bingo.handler';
 import { MultipleChoiceHandler } from './multiple-choice.handler';
 import { FreeTextHandler } from './free-text.handler';
+import { SurvivalHandler } from './survival.handler';
 
 /**
  * Global porque el registro lo necesitan tanto la creación de partidas como el
@@ -10,7 +11,13 @@ import { FreeTextHandler } from './free-text.handler';
  */
 @Global()
 @Module({
-  providers: [MusicBingoHandler, MultipleChoiceHandler, FreeTextHandler, GameModeRegistry],
+  providers: [
+    MusicBingoHandler,
+    MultipleChoiceHandler,
+    FreeTextHandler,
+    SurvivalHandler,
+    GameModeRegistry,
+  ],
   exports: [GameModeRegistry],
 })
 export class GameModesModule {}

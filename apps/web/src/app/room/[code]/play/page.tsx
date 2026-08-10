@@ -19,6 +19,7 @@ import { useRoundAudio } from '@/hooks/use-round-audio';
 import { BingoCardGrid } from '@/components/bingo-card';
 import { QuizOptions } from '@/components/quiz-options';
 import { GuessInput } from '@/components/guess-input';
+import { MyLives, SurvivalStandings } from '@/components/lives';
 import { ReactionBar } from '@/components/reactions';
 import { RoundSummary } from '@/components/round-summary';
 import { Leaderboard } from '@/components/leaderboard';
@@ -128,6 +129,15 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
   }
 
   const state = room.state;
+  // Quien está eliminado mira, no responde. El servidor lo rechazaría igual;
+  // esto solo evita ofrecer un botón que no va a hacer nada.
+  const eliminado = room.myLives?.eliminated === true;
+  // El máximo con el que se empezó, para dibujar los corazones vacíos.
+  const maxLives = Math.max(
+    room.myLives?.lives ?? 0,
+    ...room.survivalStandings.map((s) => s.lives),
+    1,
+  );
   const roundHint =
     state?.gameMode === 'MULTIPLE_CHOICE'
       ? 'Elige la respuesta correcta'
@@ -236,12 +246,13 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
             audioError={audio.audioError}
             prepare={room.prepare}
           />
+          <MyLives myLives={room.myLives} max={maxLives} />
           {room.question && (
             <QuizOptions
               question={room.question}
               myAnswer={room.myAnswer}
               distribution={room.distribution}
-              disabled={!room.connected || room.paused || !room.answersOpen}
+              disabled={!room.connected || room.paused || !room.answersOpen || eliminado}
               onAnswerAction={(index) => void room.submitAnswer(index)}
             />
           )}
@@ -251,7 +262,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
               attempts={room.myAttempts}
               attemptsLeft={attemptsLeft}
               evaluation={room.guessEvaluation}
-              disabled={!room.connected || room.paused || !room.answersOpen}
+              disabled={!room.connected || room.paused || !room.answersOpen || eliminado}
               onSubmitAction={(text) => {
                 void room.submitTextAnswer(text).then((ack) => {
                   setAttemptsLeft(ack.ok ? (ack.attemptsLeft ?? null) : attemptsLeft);
@@ -262,6 +273,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
               }}
             />
           )}
+          <SurvivalStandings standings={room.survivalStandings} />
           {state.card && (
             <BingoCardGrid
               card={state.card}

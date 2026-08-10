@@ -30,8 +30,9 @@ describe('catálogo de modos', () => {
       'MUSIC_BINGO',
       'MULTIPLE_CHOICE',
       'FREE_TEXT',
+      'SURVIVAL',
     ]);
-    expect(isPlayableGameMode('SURVIVAL')).toBe(false);
+    expect(isPlayableGameMode('MIXED')).toBe(false);
     expect(isPlayableGameMode('NO_EXISTE')).toBe(false);
   });
 

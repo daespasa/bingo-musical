@@ -58,6 +58,10 @@ export class RoomStateService {
             : 'HIDDEN_UNTIL_REVEAL',
       },
       gameMode: room.game.mode,
+      // Las vidas salen del runtime, que es la autoridad; reconectar no las
+      // devuelve ni resucita a nadie.
+      survivalStandings: this.engine.survivalStandingsView(roomId),
+      myLives: this.engine.livesFor(roomId, forParticipantId),
       participants: room.participants.map((p) => ({
         id: p.id,
         alias: p.alias,
