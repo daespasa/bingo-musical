@@ -9,6 +9,7 @@ import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, sanitizeAlias, normalizeText } fr
 import type { Room } from '@bingo/database';
 import { PrismaService } from '../prisma.service';
 import { GuestTokenService } from './guest-token.service';
+import { GamesService } from '../games/games.service';
 
 const ROOM_TTL_MS = 1000 * 60 * 60 * 12; // 12 horas
 const GUEST_TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
@@ -29,6 +30,7 @@ export class RoomsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly guestTokens: GuestTokenService,
+    private readonly games: GamesService,
   ) {}
 
   private generateCode(): string {
@@ -37,6 +39,28 @@ export class RoomsService {
       code += ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)];
     }
     return code;
+  }
+
+  /**
+   * Revancha: misma partida, sala nueva.
+   *
+   * Duplica la partida en lugar de reabrir la anterior, para que el historial
+   * de la que acaba de terminar quede intacto: sus rondas, su ranking y su
+   * resultado siguen siendo consultables.
+   */
+  async rematch(hostId: string, code: string, mode: 'PROJECTOR' | 'REMOTE'): Promise<Room> {
+    const previous = await this.prisma.room.findUnique({
+      where: { code: code.toUpperCase() },
+      include: { game: true },
+    });
+    if (!previous) throw new NotFoundException('Sala no encontrada');
+    if (previous.hostId !== hostId) {
+      throw new ForbiddenException('Solo el anfitrión puede convocar la revancha');
+    }
+
+    // La copia conserva modo, configuración, colección y reglas.
+    const copy = await this.games.duplicate(hostId, previous.gameId);
+    return this.create(hostId, copy.id, mode);
   }
 
   async create(hostId: string, gameId: string, mode: 'PROJECTOR' | 'REMOTE'): Promise<Room> {

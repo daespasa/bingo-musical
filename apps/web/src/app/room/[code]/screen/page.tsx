@@ -198,7 +198,7 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
           )}
           {room.roundResults && (
             <div className="w-full max-w-2xl text-left">
-              <RoundSummary results={room.roundResults} />
+              <RoundSummary results={room.roundResults} guessEvaluation={room.guessEvaluation} />
             </div>
           )}
           <div className="w-full max-w-2xl text-left text-xl">
