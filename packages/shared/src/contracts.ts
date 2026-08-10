@@ -64,6 +64,35 @@ export type RoundView = {
   question: QuizQuestionView | null;
   /** Si quien pide el estado ya respondió, y qué opción eligió. */
   myAnswer: { optionIndex: number } | null;
+  /** El enunciado de la ronda de respuesta libre, sin la solución. */
+  freeText: FreeTextQuestionView | null;
+  /** Intentos ya gastados por quien pide el estado, en orden. */
+  myAttempts: string[];
+};
+
+/** Lo que de una ronda de respuesta libre puede ver quien juega. */
+export type FreeTextQuestionView = {
+  type: 'SONG_TITLE' | 'ARTIST' | 'TITLE_AND_ARTIST';
+  prompt: string;
+};
+
+/** Cómo se resolvió una ronda de respuesta libre. Solo tras el reveal. */
+export type GuessEvaluationPayload = {
+  roundId: string;
+  correctText: string;
+  correctCount: number;
+  answeredCount: number;
+  totalPlayers: number;
+  /** Cuántos aciertos llegaron por cada camino. */
+  byType: { EXACT: number; ALIAS: number; NORMALIZED: number; FUZZY: number };
+};
+
+export type SubmitTextAnswerRequest = { text: string };
+export type SubmitTextAnswerAck = {
+  ok: boolean;
+  message?: string;
+  /** Intentos restantes; `null` significa ilimitados. */
+  attemptsLeft?: number | null;
 };
 
 export type RoomStatePayload = {
@@ -125,6 +154,8 @@ export type RoundPreparePayload = {
    * propósito, para que no pueda colarse al añadir datos a la ronda.
    */
   question: QuizQuestionView | null;
+  /** El enunciado de la ronda de respuesta libre, sin la solución. */
+  freeText: FreeTextQuestionView | null;
 };
 
 /** Lo que de una pregunta puede ver quien juega antes del reveal. */
@@ -220,6 +251,7 @@ export const ClientEvents = {
   AudioDriftReport: 'audio:drift-report',
   CardMark: 'card:mark',
   PlayerAnswer: 'player:answer',
+  PlayerTextAnswer: 'player:text-answer',
   ClaimLine: 'claim:line',
   ClaimBingo: 'claim:bingo',
   HostStart: 'host:start',
@@ -285,6 +317,7 @@ export const ServerEvents = {
   CardUpdated: 'card:updated',
   QuizAnswerSubmitted: 'quiz:answer-submitted',
   QuizDistributionRevealed: 'quiz:distribution-revealed',
+  GuessEvaluationRevealed: 'guess:evaluation-revealed',
   ClaimAccepted: 'claim:accepted',
   ClaimRejected: 'claim:rejected',
   LeaderboardUpdated: 'leaderboard:updated',

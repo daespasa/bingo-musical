@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   completedRows,
   createRng,
+  normalizeAnswer,
   effectiveValidPositions,
   isFullCard,
   seededShuffle,
@@ -11,6 +12,7 @@ import {
   readGameModeConfig,
   type GameMode,
   type LeaderboardEntry,
+  type FreeTextConfig,
   type MultipleChoiceConfig,
   type MusicBingoConfig,
   type RoundView,
@@ -20,6 +22,11 @@ import { PrismaService } from '../prisma.service';
 import { GameModeRegistry } from '../game-modes/game-mode.registry';
 import { revealedInfo } from '../game-modes/music-bingo.handler';
 import { toPublicQuizRound, type QuizRoundPayload } from '../game-modes/multiple-choice.handler';
+import {
+  toPublicFreeTextRound,
+  type FreeTextResult,
+  type FreeTextRoundPayload,
+} from '../game-modes/free-text.handler';
 import type { RoundTrack } from '../game-modes/game-mode-handler';
 import { CardsService } from './cards.service';
 
@@ -58,8 +65,20 @@ type RoundRuntime = {
    * viaja al cliente pasa antes por `toPublicQuizRound`.
    */
   question: (QuizRoundPayload & { questionId: string; optionIds: string[] }) | null;
+  /**
+   * La ronda de respuesta libre. Igual que `question`, incluye la solución y
+   * solo sale hacia la red a través de `toPublicFreeTextRound`.
+   */
+  freeText: (FreeTextRoundPayload & { questionId: string }) | null;
   /** Qué ha respondido cada participante en esta ronda. */
   answers: Map<string, { optionIndex: number; correct: boolean; latencyMs: number }>;
+  /**
+   * Respuestas escritas por participante, en orden de intento.
+   *
+   * Se guardan todas: interesa saber cuántos intentos hizo falta y con qué se
+   * acertó, no solo el veredicto final.
+   */
+  textAnswers: Map<string, Array<{ text: string; evaluation: FreeTextResult; latencyMs: number }>>;
 };
 
 type RoomRuntime = {
@@ -75,6 +94,7 @@ type RoomRuntime = {
   /** Modo de la partida, leído de la fila persistida y fijo mientras dura. */
   mode: GameMode;
   quizConfig: MultipleChoiceConfig | null;
+  freeTextConfig: FreeTextConfig | null;
   tracks: Map<string, RoundTrack>;
   order: string[]; // trackIds en orden de ronda
   phase: EnginePhase;
@@ -139,6 +159,12 @@ export class GameEngineService {
       // Sin la solución: reconectar no puede ser una forma de averiguarla.
       question: r.question ? toPublicQuizRound(r.question) : null,
       myAnswer: myAnswer ? { optionIndex: myAnswer.optionIndex } : null,
+      freeText: r.freeText ? toPublicFreeTextRound(r.freeText) : null,
+      // Los intentos ya gastados, sin decir si acertaron: reconectar no puede
+      // servir para averiguar la solución ni para recuperar intentos.
+      myAttempts: forParticipantId
+        ? (r.textAnswers.get(forParticipantId) ?? []).map((attempt) => attempt.text)
+        : [],
     };
   }
 
@@ -259,6 +285,7 @@ export class GameEngineService {
         ? (storedConfig as MusicBingoConfig)
         : readGameModeConfig('MUSIC_BINGO', null);
     const quizConfig = mode === 'MULTIPLE_CHOICE' ? (storedConfig as MultipleChoiceConfig) : null;
+    const freeTextConfig = mode === 'FREE_TEXT' ? (storedConfig as FreeTextConfig) : null;
 
     const tracks = new Map<string, RoundTrack>();
     for (const ct of room.game.collection.tracks) {
@@ -286,6 +313,7 @@ export class GameEngineService {
       bingoConfig,
       mode,
       quizConfig,
+      freeTextConfig,
       tracks,
       order,
       phase: 'LOBBY',
@@ -357,12 +385,17 @@ export class GameEngineService {
       preloadReady: new Set(),
       fastest: null,
       question: null,
+      freeText: null,
       answers: new Map(),
+      textAnswers: new Map(),
     };
     rt.phase = 'PREPARING_AUDIO';
 
     if (rt.mode === 'MULTIPLE_CHOICE' && rt.quizConfig) {
       rt.currentRound.question = await this.buildAndStoreQuestion(rt, round.id, index, track);
+    }
+    if (rt.mode === 'FREE_TEXT' && rt.freeTextConfig) {
+      rt.currentRound.freeText = await this.buildAndStoreFreeTextRound(rt, round.id, index, track);
     }
 
     this.emitRoom(rt, 'round:prepare', {
@@ -375,6 +408,7 @@ export class GameEngineService {
       revealed: revealedInfo(rt.bingoConfig, track),
       // La pregunta viaja ya despojada de la respuesta correcta.
       question: rt.currentRound.question ? toPublicQuizRound(rt.currentRound.question) : null,
+      freeText: rt.currentRound.freeText ? toPublicFreeTextRound(rt.currentRound.freeText) : null,
     });
 
     // Programar cuando todos estén listos o venza el timeout
@@ -429,6 +463,42 @@ export class GameEngineService {
       questionId: question.id,
       optionIds: question.options.map((option) => option.id),
     };
+  }
+
+  /**
+   * Construye y persiste la ronda de respuesta libre.
+   *
+   * Se guarda como `RoundQuestion` igual que el quiz, pero sin opciones: la
+   * tabla ya distingue el tipo, y así el historial no necesita dos formas de
+   * contar lo mismo.
+   */
+  private async buildAndStoreFreeTextRound(
+    rt: RoomRuntime,
+    roundId: string,
+    index: number,
+    track: RoundTrack,
+  ): Promise<FreeTextRoundPayload & { questionId: string }> {
+    const handler = this.modes.resolve('FREE_TEXT');
+    const payload = await handler.createRound({
+      roomId: rt.roomId,
+      config: rt.freeTextConfig!,
+      index,
+      totalRounds: rt.order.length,
+      track,
+      pool: [...rt.tracks.values()],
+    });
+
+    await this.prisma.roundQuestion.deleteMany({ where: { roundId } });
+    const question = await this.prisma.roundQuestion.create({
+      data: {
+        roundId,
+        type: payload.type === 'ARTIST' ? 'ARTIST' : 'SONG_TITLE',
+        prompt: payload.prompt,
+        correctText: payload.expected.text,
+      },
+    });
+
+    return { ...payload, questionId: question.id };
   }
 
   reportPreload(roomId: string, participantId: string, ready: boolean): void {
@@ -504,8 +574,10 @@ export class GameEngineService {
       where: { id: r.roundId },
       data: { status: 'REVEALING', revealedAt: new Date() },
     });
-    // La puntuación del quiz se aplica al cerrar, no al responder.
+    // La puntuación de los modos que preguntan se aplica al cerrar, no al
+    // responder.
     await this.scoreQuizRound(rt, r);
+    await this.scoreFreeTextRound(rt, r);
 
     this.emitRoom(rt, 'round:revealed', {
       roundId: r.roundId,
@@ -528,6 +600,40 @@ export class GameEngineService {
         totalPlayers: rt.scores.size,
       });
       await this.addQuizHighlights(rt, r, counts);
+    }
+
+    if (r.freeText) {
+      // Ahora sí puede viajar la solución, junto con cómo se acertó: saber que
+      // una respuesta coló por errata es parte de la gracia del modo.
+      const attempts = [...r.textAnswers.values()];
+      const aciertos = attempts
+        .map((list) => list.find((a) => a.evaluation.correct))
+        .filter((a): a is NonNullable<typeof a> => a !== undefined);
+
+      const byType = { EXACT: 0, ALIAS: 0, NORMALIZED: 0, FUZZY: 0 };
+      for (const acierto of aciertos) {
+        const key = acierto.evaluation.matchType;
+        if (key in byType) byType[key as keyof typeof byType] += 1;
+      }
+
+      this.emitRoom(rt, 'guess:evaluation-revealed', {
+        roundId: r.roundId,
+        correctText: r.freeText.expected.text,
+        correctCount: aciertos.length,
+        answeredCount: r.textAnswers.size,
+        totalPlayers: rt.scores.size,
+        byType,
+      });
+
+      if (aciertos.length === 0 && r.textAnswers.size > 0) {
+        rt.highlights.push({ type: 'NOBODY_CORRECT', alias: '—', roundIndex: r.index, data: {} });
+        this.emitRoom(rt, 'highlight:created', {
+          type: 'NOBODY_CORRECT',
+          alias: '—',
+          roundIndex: r.index,
+          data: {},
+        });
+      }
     }
 
     // Highlight: respuesta más rápida de la ronda
@@ -1022,6 +1128,160 @@ export class GameEngineService {
     });
 
     return { ok: true };
+  }
+
+  /**
+   * Registra una respuesta escrita.
+   *
+   * Devuelve si se ha admitido el intento y cuántos quedan, pero **no** si es
+   * correcta: igual que en el quiz, saberlo antes del reveal sería saber la
+   * solución. La evaluación se guarda en el servidor y se aplica al cerrar.
+   */
+  async submitTextAnswer(
+    roomId: string,
+    participantId: string,
+    text: string,
+  ): Promise<{ ok: boolean; message?: string; attemptsLeft?: number | null }> {
+    const rt = this.rooms.get(roomId);
+    const r = rt?.currentRound;
+    if (!rt || !r || !r.freeText || !['PLAYING', 'ANSWER_WINDOW'].includes(rt.phase)) {
+      return { ok: false, message: 'No hay pregunta abierta' };
+    }
+    if (!rt.scores.has(participantId)) {
+      return { ok: false, message: 'Solo pueden responder los jugadores' };
+    }
+
+    const clean = text.trim().slice(0, 120);
+    if (clean.length === 0) return { ok: false, message: 'Escribe una respuesta' };
+
+    const previous = r.textAnswers.get(participantId) ?? [];
+    const maxAttempts = rt.freeTextConfig?.attempts ?? 1;
+
+    // Con un acierto ya registrado no se sigue intentando: la ronda está
+    // resuelta para esta persona.
+    if (previous.some((attempt) => attempt.evaluation.correct)) {
+      return { ok: false, message: 'Ya has acertado' };
+    }
+    if (maxAttempts !== null && previous.length >= maxAttempts) {
+      return { ok: false, message: 'No te quedan intentos' };
+    }
+
+    // Anti-spam: repetir la misma respuesta no gasta intento ni se registra
+    // dos veces, pero tampoco cuela.
+    const normalizedNew = normalizeAnswer(clean);
+    if (previous.some((attempt) => normalizeAnswer(attempt.text) === normalizedNew)) {
+      return { ok: false, message: 'Ya has probado esa respuesta' };
+    }
+
+    const handler = this.modes.resolve('FREE_TEXT');
+    const latencyMs = r.startsAt ? Math.max(0, Date.now() - r.startsAt) : 0;
+    const evaluation = await handler.evaluateAnswer({
+      roomId,
+      config: rt.freeTextConfig!,
+      participantId,
+      round: r.freeText,
+      answer: { text: clean },
+      latencyMs,
+    });
+
+    const attempt = previous.length + 1;
+    previous.push({ text: clean, evaluation, latencyMs });
+    r.textAnswers.set(participantId, previous);
+
+    await this.prisma.playerAnswer.upsert({
+      where: { roundId_participantId_attempt: { roundId: r.roundId, participantId, attempt } },
+      update: { freeText: clean, isCorrect: evaluation.correct, latencyMs },
+      create: {
+        roundId: r.roundId,
+        questionId: r.freeText.questionId,
+        participantId,
+        freeText: clean,
+        isCorrect: evaluation.correct,
+        latencyMs,
+      },
+    });
+
+    this.emitRoom(rt, 'quiz:answer-submitted', {
+      answeredCount: r.textAnswers.size,
+      totalPlayers: rt.scores.size,
+    });
+
+    return {
+      ok: true,
+      attemptsLeft: maxAttempts === null ? null : Math.max(0, maxAttempts - attempt),
+    };
+  }
+
+  /**
+   * Aplica la puntuación de las respuestas escritas al cerrarse la ronda.
+   *
+   * Igual que en el quiz: si el marcador se moviera al responder, delataría
+   * quién ha acertado antes de revelar la solución.
+   */
+  private async scoreFreeTextRound(rt: RoomRuntime, r: RoundRuntime): Promise<void> {
+    if (!r.freeText || !rt.freeTextConfig) return;
+    const handler = this.modes.resolve('FREE_TEXT');
+    const s = rt.settings;
+
+    const resolved = [...r.textAnswers.entries()]
+      .map(([participantId, attempts]) => {
+        const winner = attempts.find((attempt) => attempt.evaluation.correct);
+        return { participantId, winner, attempts };
+      })
+      .sort((a, b) => (a.winner?.latencyMs ?? Infinity) - (b.winner?.latencyMs ?? Infinity));
+
+    for (const { participantId, winner } of resolved) {
+      const streakBefore = rt.streaks.get(participantId) ?? 0;
+      const correct = winner !== undefined;
+
+      const events = handler.calculateScore({
+        config: rt.freeTextConfig,
+        participantId,
+        result: winner?.evaluation ?? {
+          accepted: false,
+          correct: false,
+          normalizedInput: '',
+          matchType: 'REJECTED',
+        },
+        latencyMs: winner?.latencyMs ?? 0,
+        streak: streakBefore,
+        windowMs: s.snippetDurationMs + s.answerWindowMs,
+        scoring: s,
+      });
+
+      if (correct) {
+        rt.streaks.set(participantId, streakBefore + 1);
+        rt.correctMarks.set(participantId, (rt.correctMarks.get(participantId) ?? 0) + 1);
+        if (!r.fastest || winner.latencyMs < r.fastest.latencyMs) {
+          r.fastest = {
+            participantId,
+            alias: rt.aliases.get(participantId) ?? '???',
+            latencyMs: winner.latencyMs,
+          };
+        }
+      } else {
+        rt.streaks.set(participantId, 0);
+      }
+
+      const points = events.reduce((total, event) => total + event.points, 0);
+      rt.scores.set(participantId, (rt.scores.get(participantId) ?? 0) + points);
+
+      for (const event of events) {
+        await this.prisma.scoreEvent.create({
+          data: {
+            roomId: rt.roomId,
+            participantId,
+            roundId: r.roundId,
+            type: event.type as never,
+            points: event.points,
+          },
+        });
+      }
+    }
+
+    for (const participantId of rt.scores.keys()) {
+      if (!r.textAnswers.has(participantId)) rt.streaks.set(participantId, 0);
+    }
   }
 
   /**

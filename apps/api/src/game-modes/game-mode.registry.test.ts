@@ -4,9 +4,14 @@ import { defaultConfigForMode } from '@bingo/shared';
 import { GameModeRegistry } from './game-mode.registry';
 import { MusicBingoHandler, revealedInfo } from './music-bingo.handler';
 import { MultipleChoiceHandler } from './multiple-choice.handler';
+import { FreeTextHandler } from './free-text.handler';
 import type { ScoringSettings } from './game-mode-handler';
 
-const registry = new GameModeRegistry(new MusicBingoHandler(), new MultipleChoiceHandler());
+const registry = new GameModeRegistry(
+  new MusicBingoHandler(),
+  new MultipleChoiceHandler(),
+  new FreeTextHandler(),
+);
 
 const TRACK = {
   id: 'track-1',
@@ -33,7 +38,7 @@ describe('registro de modos', () => {
   });
 
   it('solo declara soportado lo que tiene handler', () => {
-    expect(registry.supportedModes()).toEqual(['MUSIC_BINGO', 'MULTIPLE_CHOICE']);
+    expect(registry.supportedModes()).toEqual(['MUSIC_BINGO', 'MULTIPLE_CHOICE', 'FREE_TEXT']);
     expect(registry.isSupported('SURVIVAL')).toBe(false);
     expect(registry.isSupported('MIXED')).toBe(false);
   });

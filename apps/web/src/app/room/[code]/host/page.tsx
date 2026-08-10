@@ -96,6 +96,14 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
   const players = state?.participants.filter((p) => p.role === 'PLAYER') ?? [];
   const inLobby = state?.status === 'LOBBY';
   const autoReveal = state?.settings.autoReveal ?? true;
+  // La pista depende del modo: en una partida sin cartones, preguntar «¿la
+  // tienes en el cartón?» no significa nada.
+  const roundHint =
+    state?.gameMode === 'MULTIPLE_CHOICE'
+      ? 'Elige la respuesta correcta'
+      : state?.gameMode === 'FREE_TEXT'
+        ? 'Escribe lo que estás escuchando'
+        : '¿La tienes en el cartón?';
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-6">
@@ -220,6 +228,7 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
             prepare={room.prepare}
             revealed={room.revealed}
             nowPlaying={room.nowPlaying}
+            hint={roundHint}
             paused={room.paused}
             playing={audio.playing}
             audioError={audio.audioError}

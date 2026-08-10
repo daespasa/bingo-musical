@@ -14,6 +14,7 @@ export function RoundStatus({
   prepare,
   revealed,
   nowPlaying,
+  hint = '¿La tienes en el cartón?',
   paused,
   playing,
   audioError,
@@ -23,6 +24,12 @@ export function RoundStatus({
   revealed: RoundRevealedPayload | null;
   /** Canción identificada desde el principio, en bingo clásico. */
   nowPlaying?: { title: string; artist: string } | null;
+  /**
+   * Qué se espera de quien juega mientras suena. Depende del modo: en una
+   * partida sin cartones, preguntar «¿la tienes en el cartón?» no significa
+   * nada.
+   */
+  hint?: string;
   paused: boolean;
   playing: boolean;
   audioError: string | null;
@@ -77,9 +84,7 @@ export function RoundStatus({
           <p className="font-display text-lg leading-tight">
             {playing ? '¡Suena la canción!' : 'Escucha…'}
           </p>
-          <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">
-            ¿La tienes en el cartón?
-          </p>
+          <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{hint}</p>
         </div>
       );
     } else {

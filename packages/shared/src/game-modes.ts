@@ -98,7 +98,7 @@ export const GAME_MODE_CATALOG: readonly GameModeDescriptor[] = [
     difficulty: 'EXIGENTE',
     supportsProjector: true,
     supportsRemote: true,
-    availability: 'PROXIMAMENTE',
+    availability: 'DISPONIBLE',
   },
   {
     id: 'SURVIVAL',

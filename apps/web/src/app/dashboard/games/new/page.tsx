@@ -10,6 +10,7 @@ import {
   BINGO_VARIANTS,
   type BingoRevealMode,
   type GameMode,
+  type FreeTextQuestionType,
   type MultipleChoiceQuestionType,
 } from '@bingo/shared';
 import { api, ApiError } from '@/lib/api';
@@ -24,6 +25,10 @@ type FormData = {
   /** Tipos de pregunta del quiz. Al menos uno. */
   questionTypes: MultipleChoiceQuestionType[];
   optionCount: number;
+  /** Qué se pide escribir en «Adivina la canción». */
+  guessType: FreeTextQuestionType;
+  /** Intentos permitidos; `null` es ilimitado hasta que acabe el tiempo. */
+  attempts: number | null;
   cardSize: number;
   freeCenter: boolean;
   snippetDurationMs: number;
@@ -54,6 +59,12 @@ const QUIZ_QUESTION_TYPES: Array<{
   { id: 'DECADE', label: 'Década', help: '¿De qué década es? Necesita año en la colección.' },
 ];
 
+/** Qué se pide escribir en «Adivina la canción». */
+const GUESS_TYPES: Array<{ id: FreeTextQuestionType; label: string; help: string }> = [
+  { id: 'SONG_TITLE', label: 'Título', help: 'Escribe cómo se llama la canción.' },
+  { id: 'ARTIST', label: 'Artista', help: 'Escribe de quién es. Vale el artista principal.' },
+];
+
 const RULE_TOGGLES = [
   ['freeCenter', 'Centro libre', 'La casilla central cuenta como acertada (3×3 y 5×5).'],
   ['lineEnabled', 'Premio por línea', 'Los jugadores pueden cantar línea.'],
@@ -82,6 +93,8 @@ export default function NewGamePage() {
       revealMode: 'HIDDEN_UNTIL_REVEAL',
       questionTypes: ['SONG_TITLE'],
       optionCount: 4,
+      guessType: 'SONG_TITLE',
+      attempts: 1,
       cardSize: 3,
       freeCenter: false,
       snippetDurationMs: 15000,
@@ -101,6 +114,8 @@ export default function NewGamePage() {
   const mode = watch('mode');
   const revealMode = watch('revealMode');
   const questionTypes = watch('questionTypes');
+  const guessType = watch('guessType');
+  const attempts = watch('attempts');
 
   // Al menos un tipo de pregunta: sin ninguno no habría nada que preguntar.
   const toggleQuestionType = (tipo: MultipleChoiceQuestionType) => {
@@ -132,7 +147,13 @@ export default function NewGamePage() {
                   questionTypes: data.questionTypes,
                   optionCount: Number(data.optionCount),
                 }
-              : { mode: data.mode, revealMode: data.revealMode },
+              : data.mode === 'FREE_TEXT'
+                ? {
+                    mode: 'FREE_TEXT',
+                    questionTypes: [data.guessType],
+                    attempts: data.attempts === null ? null : Number(data.attempts),
+                  }
+                : { mode: data.mode, revealMode: data.revealMode },
           settings: {
             cardSize: Number(data.cardSize),
             freeCenter: data.freeCenter,
@@ -248,6 +269,61 @@ export default function NewGamePage() {
                 <option value={3}>3</option>
                 <option value={4}>4</option>
               </select>
+            </div>
+          </div>
+        )}
+
+        {mode === 'FREE_TEXT' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">¿Qué hay que escribir?</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {GUESS_TYPES.map((tipo) => (
+                  <button
+                    key={tipo.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={guessType === tipo.id}
+                    onClick={() => setValue('guessType', tipo.id)}
+                    className={clsx(
+                      'rounded-xl border p-4 text-left transition',
+                      guessType === tipo.id
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                    )}
+                  >
+                    <span className="font-semibold">{tipo.label}</span>
+                    <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                      {tipo.help}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="mt-5">
+              <label className="label" htmlFor="attempts">
+                Intentos por ronda
+              </label>
+              <select
+                id="attempts"
+                className="input"
+                value={attempts === null ? 'null' : String(attempts)}
+                onChange={(event) =>
+                  setValue(
+                    'attempts',
+                    event.target.value === 'null' ? null : Number(event.target.value),
+                  )
+                }
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="null">Ilimitados hasta que acabe el tiempo</option>
+              </select>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                Se aceptan erratas razonables y da igual acentos, mayúsculas o «feat».
+              </p>
             </div>
           </div>
         )}

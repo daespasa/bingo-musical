@@ -75,7 +75,7 @@ export async function createGameAndOpenRoom(
     /** Variante del bingo. Por defecto, a ciegas: el bingo de siempre. */
     variant?: 'Bingo a ciegas' | 'Bingo clásico';
     /** Modo de juego. Por defecto, bingo musical. */
-    mode?: 'Bingo musical' | 'Quiz musical';
+    mode?: 'Bingo musical' | 'Quiz musical' | 'Adivina la canción';
   } = {
     name: 'E2E',
   },

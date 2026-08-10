@@ -26,7 +26,11 @@ describe('catálogo de modos', () => {
   it('solo anuncia como disponible lo que se puede jugar de principio a fin', () => {
     // Si esto falla es que se ha marcado un modo disponible sin implementarlo,
     // que es exactamente lo que no debe llegar al selector.
-    expect(playableGameModes().map((mode) => mode.id)).toEqual(['MUSIC_BINGO', 'MULTIPLE_CHOICE']);
+    expect(playableGameModes().map((mode) => mode.id)).toEqual([
+      'MUSIC_BINGO',
+      'MULTIPLE_CHOICE',
+      'FREE_TEXT',
+    ]);
     expect(isPlayableGameMode('SURVIVAL')).toBe(false);
     expect(isPlayableGameMode('NO_EXISTE')).toBe(false);
   });
