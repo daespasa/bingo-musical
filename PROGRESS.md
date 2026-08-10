@@ -4,8 +4,9 @@
 - **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
   plataforma de juegos musicales.
 - **Rama actual**: `epic/gramola-platform`.
-- **Fase**: 8 de 12 terminadas. **Los cinco modos del catálogo son jugables**:
-  bingo (dos variantes), quiz, adivina, supervivencia y mixto.
+- **Fase**: 9 de 12 terminadas. **Los cinco modos del catálogo son jugables**:
+  bingo (dos variantes), quiz, adivina, supervivencia y mixto, cada uno con su
+  resumen entre rondas y su ceremonia.
 
 ## Épica Gramola: estado por fases
 
@@ -20,7 +21,7 @@
 | 6    | Adivina la canción                         | Terminada |
 | 7    | Supervivencia                              | Terminada |
 | 8    | Modo mixto                                 | Terminada |
-| 9    | Experiencia transversal (Show, resultados) | Pendiente |
+| 9    | Experiencia transversal (Show, resultados) | Terminada |
 | 10   | Regresión                                  | Pendiente |
 | 11   | Calidad                                    | Pendiente |
 | 12   | Release                                    | Pendiente |
@@ -126,15 +127,30 @@
   personalizado, aunque el wizard aún no lo edita.
 - El bingo queda fuera de la mezcla y se dice en la interfaz.
 
+### Fase 9 — Experiencia transversal (`feat/mode-aware-show`)
+
+- El resumen entre rondas cuenta la ronda con las palabras del modo, sin
+  duplicar el componente: bingo «la tenían», el resto «la acertaron»,
+  supervivencia añade caídas y supervivientes, adivina añade cuántas colaron
+  por errata.
+- Corregido un fallo real: los aciertos se contaban siempre con marcas de
+  cartón, así que en todos los modos nuevos el resumen decía «no la tenía
+  nadie». `totalPlayers` pasa además a contar jugadores, no participantes.
+- La ceremonia añade el orden de caída en supervivencia y renombra la
+  clasificación cuando el modo lo pide.
+- **Revancha**: duplica la partida y abre una sala nueva, para no sobrescribir
+  el historial de la que acaba de terminar. Solo el anfitrión.
+
 ## Validaciones ejecutadas en esta épica
 
-Ejecutadas el 2026-08-08 sobre `feat/mixed-mode`:
+Ejecutadas el 2026-08-08 sobre `feat/mode-aware-show`:
 
 | Comprobación     | Resultado                                          |
 | ---------------- | -------------------------------------------------- |
 | `pnpm lint`      | 8/8 paquetes sin errores                           |
 | `pnpm typecheck` | 8/8 paquetes sin errores                           |
 | `pnpm test`      | 251 tests (shared 94, music-providers 24, api 133) |
+| `pnpm build`     | 5/5 paquetes compilados                            |
 | `pnpm build`     | 5/5 paquetes compilados                            |
 | Migración        | Aplicada sobre la base de datos con datos reales   |
 
@@ -158,7 +174,8 @@ Tras las fases 3 y 4 se han ejecutado por separado, sin ningún fallo:
 
 | Suite                                              | Resultado |
 | -------------------------------------------------- | --------- |
-| `mixed.spec.ts` (nueva)                            | 3/3       |
+| `the-show-modes.spec.ts` (nueva)                   | 4/4       |
+| `mixed.spec.ts`                                    | 3/3       |
 | `survival.spec.ts`                                 | 4/4       |
 | `guess.spec.ts`                                    | 4/4       |
 | `quiz.spec.ts`                                     | 4/4       |
@@ -186,15 +203,17 @@ GitHub Actions.
 
 ## Pendiente de la épica
 
-Las fases 9 a 12 siguen sin empezar. En concreto, **no existen todavía**: la
-adaptación de The Show y de la ceremonia a cada modo, ni la revancha.
+Quedan las fases 10 a 12: regresión completa, calidad y release.
 
-El resumen entre rondas y la ceremonia final siguen contando la partida en
-lenguaje de bingo aunque el modo sea otro: funcionan y no rompen nada, pero no
-están adaptados. Es justo lo que toca en la fase 9.
+Pendientes menores conocidos:
 
-Tampoco se ha editado el reparto personalizado del modo mixto desde el wizard:
-el dominio lo admite, la interfaz solo ofrece los dos presets.
+- El reparto **personalizado** del modo mixto existe en el dominio pero el
+  wizard solo ofrece los dos presets.
+- El panel del presentador (§26) no muestra información privada al anfitrión
+  —siguiente canción, respuesta correcta, quién ha respondido—; los controles
+  sí están todos.
+- El runtime de partida sigue viviendo en memoria: reiniciar la API con una
+  sala en curso la pierde. Es deuda heredada de v0.5.2, no de esta épica.
 
 Ya no queda ningún modo del catálogo sin implementar. El registro sigue
 negándose a resolver un handler inexistente, que es lo que protegerá a los
