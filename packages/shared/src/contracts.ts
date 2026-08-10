@@ -261,6 +261,10 @@ export type GameFinishedPayload = {
   highlights: HighlightPayload[];
   totalRounds: number;
   durationMs: number;
+  /** El modo, para que la ceremonia premie lo que corresponde. */
+  gameMode: GameMode;
+  /** Orden de eliminación, de la primera caída a la última. Solo Supervivencia. */
+  eliminationOrder: string[];
 };
 
 export type RoomErrorPayload = { code: string; message: string };
@@ -326,6 +330,12 @@ export type RoundResultsPayload = {
   streaks: Array<{ alias: string; streak: number }>;
   /** Quién ha adelantado a quién desde la ronda anterior. */
   climbers: Array<{ alias: string; from: number; to: number }>;
+  /** El modo, para que el resumen cuente la ronda con sus palabras. */
+  gameMode: GameMode;
+  /** Alias de quienes han caído en esta ronda. Vacío fuera de Supervivencia. */
+  eliminated: string[];
+  /** Cuántos siguen en pie. Nulo fuera de Supervivencia. */
+  survivorsLeft: number | null;
 };
 
 export const ServerEvents = {

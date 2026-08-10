@@ -303,7 +303,9 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
               </button>
             )}
           </div>
-          {room.roundResults && <RoundSummary results={room.roundResults} />}
+          {room.roundResults && (
+            <RoundSummary results={room.roundResults} guessEvaluation={room.guessEvaluation} />
+          )}
 
           <section className="card p-3">
             <h2 className="eyebrow mb-2">Anima a la sala</h2>

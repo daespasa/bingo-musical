@@ -329,3 +329,23 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Alternativas**: repartir cartón al inicio y usarlo solo en las rondas de bingo; una ronda de bingo con cartón de un solo uso.
 - **Elección**: dejarlo fuera, decirlo en la interfaz y documentarlo como trabajo futuro. La spec ya contemplaba esta salida: es mejor no anunciarlo que anunciarlo a medias.
 - **Consecuencias**: el dominio no lo impide —`MixedRoundDefinition` puede ganar un `kind` nuevo—, pero hoy no existe y la interfaz lo dice explícitamente.
+
+## 2026-08-08 — El resumen entre rondas se generaliza, no se duplica
+
+- **Decisión**: `RoundSummary` sigue siendo un solo componente con la misma estructura en todos los modos; lo que cambia es el titular y una línea extra cuando el modo tiene algo propio que contar.
+- **Contexto**: la alternativa era un componente por modo. Habría multiplicado por cinco un bloque que en el 80 % dice lo mismo —quién fue más rápido, rachas, quién sube en la clasificación— y habría hecho que arreglar un detalle exigiera arreglarlo cinco veces.
+- **Consecuencias**: en bingo se «tiene» la canción en el cartón; en los modos que preguntan se «acierta»; supervivencia añade quién ha caído y cuántos quedan; la respuesta libre añade cuántos colaron por errata.
+
+## 2026-08-08 — El recuento de aciertos depende del modo
+
+- **Decisión**: `correctCount` sale de las respuestas en los modos que preguntan y de las marcas de cartón solo en bingo.
+- **Contexto**: se contaba siempre con `playerMark.count`, que en quiz, adivina, supervivencia y mixto es cero. El resumen decía «no la tenía nadie» en todas las rondas de todos los modos nuevos, aunque las hubiera acertado todo el mundo.
+- **Consecuencias**: de paso, `totalPlayers` pasa a contar jugadores y no participantes: el anfitrión y la pantalla de proyección no responden, y contarlos falseaba el «N de M».
+
+## 2026-08-08 — La revancha duplica la partida en lugar de reabrir la sala
+
+- **Decisión**: `POST /rooms/:code/rematch` crea una partida gemela —mismo modo, misma configuración, misma colección y mismas reglas— y una sala nueva.
+- **Contexto**: reabrir la sala anterior habría sobrescrito sus rondas, su ranking y su resultado. El historial de una partida terminada tiene que quedarse como está.
+- **Alternativas**: reutilizar la sala; crear una sala nueva sobre la misma partida.
+- **Elección**: duplicar. Crear otra sala sobre la misma partida habría mezclado los resultados de las dos en el historial de esa partida.
+- **Consecuencias**: solo el anfitrión puede convocarla, y la sala nueva empieza en su lobby, así que pueden entrar jugadores distintos. La partida anterior sigue consultable.

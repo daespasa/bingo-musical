@@ -804,16 +804,40 @@ export class GameEngineService {
       .sort((a, b) => b.from - b.to - (a.from - a.to))
       .slice(0, 3);
 
-    const correctCount = await this.prisma.playerMark.count({
-      where: { roundId: r.roundId, isCorrect: true },
-    });
+    // Cuántos acertaron se cuenta distinto en cada modo: en bingo son marcas
+    // de cartón, en los modos que preguntan son respuestas. Contar siempre
+    // marcas hacía que el resumen dijera «no la tenía nadie» en todos los
+    // modos nuevos.
+    const correctCount = r.question
+      ? [...r.answers.values()].filter((a) => a.correct).length
+      : r.freeText
+        ? [...r.textAnswers.values()].filter((attempts) =>
+            attempts.some((attempt) => attempt.evaluation.correct),
+          ).length
+        : await this.prisma.playerMark.count({
+            where: { roundId: r.roundId, isCorrect: true },
+          });
+
+    // Quién ha caído en esta ronda, para contarlo en el resumen.
+    const eliminatedThisRound = rt.survivalConfig
+      ? [...rt.lives.entries()]
+          .filter(([, state]) => state.eliminatedAtRound === r.index)
+          .map(([participantId]) => rt.aliases.get(participantId) ?? '???')
+      : [];
 
     this.emitRoom(rt, 'round:results', {
       roundId: r.roundId,
       index: r.index,
       fastest: r.fastest ? { alias: r.fastest.alias, latencyMs: r.fastest.latencyMs } : null,
       correctCount,
-      totalPlayers: rt.aliases.size,
+      // Los jugadores, no todos los participantes: el anfitrión y la pantalla
+      // de proyección no responden y contarlos falseaba el «N de M».
+      totalPlayers: rt.scores.size,
+      gameMode: rt.mode,
+      eliminated: eliminatedThisRound,
+      survivorsLeft: rt.survivalConfig
+        ? [...rt.lives.values()].filter((state) => isActive(state)).length
+        : null,
       streaks: [...rt.streaks.entries()]
         .filter(([, streak]) => streak >= 2)
         .map(([participantId, streak]) => ({
@@ -967,6 +991,15 @@ export class GameEngineService {
       highlights: rt.highlights,
       totalRounds,
       durationMs,
+      gameMode: rt.mode,
+      // De la primera caída a la última: es el orden con el que se cuenta la
+      // partida al terminar.
+      eliminationOrder: rt.survivalConfig
+        ? [...rt.lives.entries()]
+            .filter(([, state]) => state.eliminationOrder !== null)
+            .sort((a, b) => (a[1].eliminationOrder ?? 0) - (b[1].eliminationOrder ?? 0))
+            .map(([participantId]) => rt.aliases.get(participantId) ?? '???')
+        : [],
     };
     this.emitRoom(rt, 'game:finished', payload);
   }

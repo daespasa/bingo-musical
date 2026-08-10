@@ -87,7 +87,7 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
   }
 
   if (room.finished) {
-    return <PodiumCeremony finished={room.finished} code={code} />;
+    return <PodiumCeremony finished={room.finished} code={code} canRematch />;
   }
 
   const state = room.state;
