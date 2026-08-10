@@ -4,7 +4,8 @@
 - **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
   plataforma de juegos musicales.
 - **Rama actual**: `epic/gramola-platform`.
-- **Fase**: 6 de 12 terminadas (marca, dominio, selector, bingo clásico, quiz y adivina).
+- **Fase**: 7 de 12 terminadas. Cuatro modos jugables: bingo (dos variantes),
+  quiz, adivina y supervivencia.
 
 ## Épica Gramola: estado por fases
 
@@ -17,7 +18,7 @@
 | 4    | Bingo clásico (revelado desde el inicio)   | Terminada |
 | 5    | Quiz musical                               | Terminada |
 | 6    | Adivina la canción                         | Terminada |
-| 7    | Supervivencia                              | Pendiente |
+| 7    | Supervivencia                              | Terminada |
 | 8    | Modo mixto                                 | Pendiente |
 | 9    | Experiencia transversal (Show, resultados) | Pendiente |
 | 10   | Regresión                                  | Pendiente |
@@ -96,17 +97,35 @@
 - Al revelar se cuenta cuántos acertaron y por qué camino (exacta, alias,
   normalizada o errata). Las respuestas equivocadas no se enseñan en público.
 
+### Fase 7 — Supervivencia (`feat/survival-mode`)
+
+- `SurvivalHandler` registrado: el modo ya es `DISPONIBLE`.
+- No duplica evaluadores: el motor deriva la configuración del quiz o de la
+  respuesta libre, y toda la maquinaria existente se reutiliza.
+- `survival-rules.ts`: lógica pura de vidas, eliminación, clasificación y final
+  de partida, con 24 tests.
+- `PlayerLifeState` persistido: recargar no devuelve vidas ni resucita a nadie.
+- Quien está eliminado ve la partida entera pero el servidor le rechaza
+  cualquier respuesta; el botón tampoco se le ofrece.
+- Vidas en texto además de corazones, en una región viva que las anuncia al
+  perderlas.
+- Desempate determinista: en pie > rondas aguantadas > vidas > puntos >
+  aciertos > menor tiempo.
+- Highlights propios: primera eliminación, caída múltiple, último
+  superviviente y aguantar con una vida.
+- Migración aditiva `20260808...add_player_life_state`.
+
 ## Validaciones ejecutadas en esta épica
 
-Ejecutadas el 2026-08-08 sobre `feat/free-text-guess`:
+Ejecutadas el 2026-08-08 sobre `feat/survival-mode`:
 
-| Comprobación     | Resultado                                         |
-| ---------------- | ------------------------------------------------- |
-| `pnpm lint`      | 8/8 paquetes sin errores                          |
-| `pnpm typecheck` | 8/8 paquetes sin errores                          |
-| `pnpm test`      | 212 tests (shared 94, music-providers 24, api 94) |
-| `pnpm build`     | 5/5 paquetes compilados                           |
-| Migración        | Aplicada sobre la base de datos con datos reales  |
+| Comprobación     | Resultado                                          |
+| ---------------- | -------------------------------------------------- |
+| `pnpm lint`      | 8/8 paquetes sin errores                           |
+| `pnpm typecheck` | 8/8 paquetes sin errores                           |
+| `pnpm test`      | 236 tests (shared 94, music-providers 24, api 118) |
+| `pnpm build`     | 5/5 paquetes compilados                            |
+| Migración        | Aplicada sobre la base de datos con datos reales   |
 
 Baseline de partida (`v0.5.2`, mismo día): lint y typecheck en verde, 94 tests.
 
@@ -128,7 +147,8 @@ Tras las fases 3 y 4 se han ejecutado por separado, sin ningún fallo:
 
 | Suite                                              | Resultado |
 | -------------------------------------------------- | --------- |
-| `guess.spec.ts` (nueva)                            | 4/4       |
+| `survival.spec.ts` (nueva)                         | 4/4       |
+| `guess.spec.ts`                                    | 4/4       |
 | `quiz.spec.ts`                                     | 4/4       |
 | `bingo-variants.spec.ts`                           | 4/4       |
 | `gameplay` + `game-rules` + `the-show` (regresión) | 8/8       |
@@ -154,9 +174,12 @@ GitHub Actions.
 
 ## Pendiente de la épica
 
-Las fases 7 a 12 siguen sin empezar. En concreto, **no existen todavía**:
-supervivencia, modo mixto, adaptación de The Show y de la ceremonia a cada
-modo, ni la revancha.
+Las fases 8 a 12 siguen sin empezar. En concreto, **no existen todavía**: modo
+mixto, adaptación de The Show y de la ceremonia a cada modo, ni la revancha.
+
+El resumen entre rondas y la ceremonia final siguen contando la partida en
+lenguaje de bingo aunque el modo sea otro: funcionan, pero no están adaptados.
+Es justo lo que toca en la fase 9.
 
 El catálogo marca esos modos como `PROXIMAMENTE` y el registro se niega a
 resolver un handler que no existe, de forma que ninguno puede iniciarse por
