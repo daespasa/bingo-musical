@@ -4,7 +4,7 @@
 - **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
   plataforma de juegos musicales.
 - **Rama actual**: `epic/gramola-platform`.
-- **Fase**: 5 de 12 terminadas (marca, dominio, selector, bingo clásico y quiz).
+- **Fase**: 6 de 12 terminadas (marca, dominio, selector, bingo clásico, quiz y adivina).
 
 ## Épica Gramola: estado por fases
 
@@ -16,7 +16,7 @@
 | 3    | Selector de modo y wizard                  | Terminada |
 | 4    | Bingo clásico (revelado desde el inicio)   | Terminada |
 | 5    | Quiz musical                               | Terminada |
-| 6    | Adivina la canción                         | Pendiente |
+| 6    | Adivina la canción                         | Terminada |
 | 7    | Supervivencia                              | Pendiente |
 | 8    | Modo mixto                                 | Pendiente |
 | 9    | Experiencia transversal (Show, resultados) | Pendiente |
@@ -78,15 +78,33 @@
 - Las 20 pistas demo reciben año, repartidas en cinco décadas.
 - Migración aditiva `20260808...add_quiz_questions_and_release_year`.
 
+### Fase 6 — Adivina la canción (`feat/free-text-guess`)
+
+- `FreeTextHandler` registrado: el modo ya es `DISPONIBLE`.
+- `answer-matching.ts` en `@bingo/shared`, aparte de `normalizeText` para no
+  tocar las claves normalizadas ya persistidas.
+- Normalización: mayúsculas, acentos, puntuación, apóstrofes, guiones,
+  `&`/`and`/`y` y sufijos técnicos (remaster, radio edit, live, deluxe…), solo
+  al final o entre paréntesis.
+- Fuzzy Damerau-Levenshtein con tolerancia por longitud: 0 hasta cinco letras,
+  1 hasta ocho, 2 hasta doce, 3 por encima, más un 80 % de parecido mínimo.
+- Política de colaboraciones: vale el artista principal, no un invitado suelto.
+- Intentos configurables (1, 2, 3 o ilimitados), enfriamiento de 900 ms por
+  jugador y rechazo de respuestas repetidas.
+- Ni el ack ni el marcador delatan el acierto; la puntuación se aplica al
+  cerrar la ronda.
+- Al revelar se cuenta cuántos acertaron y por qué camino (exacta, alias,
+  normalizada o errata). Las respuestas equivocadas no se enseñan en público.
+
 ## Validaciones ejecutadas en esta épica
 
-Ejecutadas el 2026-08-08 sobre `feat/music-quiz`:
+Ejecutadas el 2026-08-08 sobre `feat/free-text-guess`:
 
 | Comprobación     | Resultado                                         |
 | ---------------- | ------------------------------------------------- |
 | `pnpm lint`      | 8/8 paquetes sin errores                          |
 | `pnpm typecheck` | 8/8 paquetes sin errores                          |
-| `pnpm test`      | 163 tests (shared 59, music-providers 24, api 80) |
+| `pnpm test`      | 212 tests (shared 94, music-providers 24, api 94) |
 | `pnpm build`     | 5/5 paquetes compilados                           |
 | Migración        | Aplicada sobre la base de datos con datos reales  |
 
@@ -110,7 +128,8 @@ Tras las fases 3 y 4 se han ejecutado por separado, sin ningún fallo:
 
 | Suite                                              | Resultado |
 | -------------------------------------------------- | --------- |
-| `quiz.spec.ts` (nueva)                             | 4/4       |
+| `guess.spec.ts` (nueva)                            | 4/4       |
+| `quiz.spec.ts`                                     | 4/4       |
 | `bingo-variants.spec.ts`                           | 4/4       |
 | `gameplay` + `game-rules` + `the-show` (regresión) | 8/8       |
 
@@ -135,9 +154,9 @@ GitHub Actions.
 
 ## Pendiente de la épica
 
-Las fases 6 a 12 siguen sin empezar. En concreto, **no existen todavía**:
-adivina la canción, supervivencia, modo mixto, adaptación de The Show y de la
-ceremonia a cada modo, ni la revancha.
+Las fases 7 a 12 siguen sin empezar. En concreto, **no existen todavía**:
+supervivencia, modo mixto, adaptación de The Show y de la ceremonia a cada
+modo, ni la revancha.
 
 El catálogo marca esos modos como `PROXIMAMENTE` y el registro se niega a
 resolver un handler que no existe, de forma que ninguno puede iniciarse por
