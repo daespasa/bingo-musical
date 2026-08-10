@@ -17,10 +17,19 @@ import type {
   MarkCellRequest,
   SubmitAnswerAck,
   SubmitAnswerRequest,
+  SubmitTextAnswerAck,
+  SubmitTextAnswerRequest,
 } from '@bingo/shared';
 
 /** Una reacción por jugador cada tres segundos: anima, no inunda. */
 const REACTION_COOLDOWN_MS = 3000;
+/**
+ * Enfriamiento entre respuestas escritas.
+ *
+ * Corto para no estorbar a quien escribe deprisa, suficiente para que probar
+ * el diccionario entero durante la ventana de respuesta no sea viable.
+ */
+const TEXT_ANSWER_COOLDOWN_MS = 900;
 import { PrismaService } from '../prisma.service';
 import { GuestTokenService } from '../rooms/guest-token.service';
 import { GameEngineService } from './game-engine.service';
@@ -218,6 +227,35 @@ export class GameGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     if (typeof body?.optionIndex !== 'number')
       return { ok: false, message: 'optionIndex requerido' };
     return this.engine.submitAnswer(roomId, participantId, body.optionIndex);
+  }
+
+  /** Última respuesta escrita de cada jugador, para el enfriamiento. */
+  private readonly lastTextAnswerAt = new Map<string, number>();
+
+  /**
+   * Respuesta escrita.
+   *
+   * Con varios intentos permitidos, escribir es barato y se puede probar a
+   * fuerza bruta: por eso hay un enfriamiento por jugador además del límite
+   * de intentos. El ack tampoco dice si es correcta.
+   */
+  @SubscribeMessage('player:text-answer')
+  async submitTextAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: SubmitTextAnswerRequest,
+  ): Promise<SubmitTextAnswerAck> {
+    const { participantId, roomId, role } = this.data(client);
+    if (role !== 'PLAYER') return { ok: false, message: 'Solo los jugadores responden' };
+    if (typeof body?.text !== 'string') return { ok: false, message: 'text requerido' };
+
+    const now = Date.now();
+    const last = this.lastTextAnswerAt.get(participantId) ?? 0;
+    if (now - last < TEXT_ANSWER_COOLDOWN_MS) {
+      return { ok: false, message: 'Espera un momento antes de volver a probar' };
+    }
+    this.lastTextAnswerAt.set(participantId, now);
+
+    return this.engine.submitTextAnswer(roomId, participantId, body.text);
   }
 
   /**

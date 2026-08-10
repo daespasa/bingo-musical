@@ -246,3 +246,38 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Decisión**: las 20 pistas demo reciben año, con cuatro pistas en cada una de cinco décadas.
 - **Contexto**: las preguntas de década necesitan distractores creíbles. Con todas las pistas en la misma década, la pregunta se responde sola.
 - **Elección**: años inventados y deterministas, como el resto de los metadatos demo. El seed los aplica también a las pistas ya creadas, para que una instalación anterior no se quede sin ellos.
+
+## 2026-08-08 — La comparación de respuestas vive aparte de `normalizeText`
+
+- **Decisión**: `answer-matching.ts` es un módulo nuevo, con su propia normalización, en lugar de reutilizar `normalizeText`.
+- **Contexto**: `normalizeText` alimenta `Track.normalizedTitle` y `Artist.normalizedName`, que son **claves de búsqueda ya persistidas**. Cambiar su comportamiento para que tolere erratas rompería las búsquedas y los `upsert` de todo el catálogo.
+- **Alternativas**: ampliar `normalizeText`; añadirle un parámetro de modo.
+- **Elección**: dos funciones para dos problemas distintos. Normalizar una clave de base de datos y juzgar lo que alguien teclea con prisa en el móvil no son lo mismo.
+- **Consecuencias**: ninguna migración de datos ni riesgo sobre el catálogo existente.
+
+## 2026-08-08 — El fuzzy es conservador por longitud, no por porcentaje
+
+- **Decisión**: la tolerancia a erratas depende de la longitud de la respuesta esperada: 0 hasta cinco letras, 1 hasta ocho, 2 hasta doce y 3 por encima. Además se exige un parecido global mínimo del 80 %.
+- **Contexto**: un umbral porcentual único es demasiado laxo con las respuestas cortas. Con solo el 80 % de parecido, «Ella» se daba por buena para «Bella» —lo detectó un test antes de que llegara a ninguna parte—, igual que «Sal» por «Sol» o «Casa» por «Cosa». Son canciones distintas, no erratas.
+- **Alternativas**: umbral porcentual único; distancia fija; aceptar solo exacto.
+- **Elección**: distancia de Damerau-Levenshtein (cuenta la transposición de dos letras contiguas como **un** error, que es la errata típica del pulgar) con umbrales por tramos de longitud. Así «tit me pregunto» vale para «Titi Me Preguntó», y ninguna palabra de cuatro letras vale por otra.
+- **Consecuencias**: hay ocho tests dedicados exclusivamente a comprobar que el fuzzy **no** cuela. Si alguien afloja los umbrales, fallan.
+
+## 2026-08-08 — Política explícita de artistas y colaboraciones
+
+- **Decisión**: se acepta el artista principal aunque la respuesta canónica incluya colaboradores; **no** se acepta un colaborador suelto.
+- **Contexto**: «Bad Bunny feat. Otro» debe poder responderse con «Bad Bunny», que es quien identifica la canción. Aceptar «Otro» a secas daría por buena una respuesta que no la identifica, y con canciones de muchos artistas invitados convertiría el modo en una lotería.
+- **Elección**: `primaryArtist` corta por `feat.`, `ft.`, `&`, `,`, `con`, `with`, `vs`, `x` e `y`. Solo la parte de delante entra como forma aceptable, y solo en preguntas de artista: en un título, lo que va tras la coma sigue siendo parte del título.
+- **Consecuencias**: la política está en código y en tests, no en la cabeza de nadie.
+
+## 2026-08-08 — Ni el ack ni el intento delatan el acierto
+
+- **Decisión**: enviar una respuesta escrita devuelve si se ha registrado y cuántos intentos quedan, nunca si es correcta. La puntuación se aplica al cerrar la ronda.
+- **Contexto**: es el mismo razonamiento que en el quiz. Además, aquí es más grave: con varios intentos, un ack que dijera «incorrecta» convertiría el modo en un juego de adivinar por descarte contra el servidor.
+- **Consecuencias**: hay un enfriamiento de 900 ms por jugador además del límite de intentos, para que probar a fuerza bruta durante la ventana no sea viable. Repetir una respuesta ya probada no gasta intento pero tampoco cuela.
+
+## 2026-08-08 — Se guardan todos los intentos, no solo el veredicto
+
+- **Decisión**: cada intento se persiste en `PlayerAnswer` con su número de intento.
+- **Contexto**: interesa saber con cuántos intentos se acertó y por qué camino (exacta, normalizada, alias o errata), no solo si se acertó.
+- **Consecuencias**: The Show puede contar cuántos aciertos colaron por errata, que es de las cosas que más gracia hacen del modo. Las respuestas equivocadas **no** se enseñan en público: se cuentan, no se exponen.

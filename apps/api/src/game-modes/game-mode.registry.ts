@@ -3,6 +3,7 @@ import { describeGameMode, type ConfigForMode, type GameMode } from '@bingo/shar
 import type { GameModeHandler } from './game-mode-handler';
 import { MusicBingoHandler } from './music-bingo.handler';
 import { MultipleChoiceHandler } from './multiple-choice.handler';
+import { FreeTextHandler } from './free-text.handler';
 
 /**
  * Resuelve el handler de cada modo.
@@ -31,7 +32,7 @@ type AnyGameModeHandler = { [M in GameMode]: GameModeHandler<M> }[GameMode];
 type HandlerByMode = {
   MUSIC_BINGO: MusicBingoHandler;
   MULTIPLE_CHOICE: MultipleChoiceHandler;
-  FREE_TEXT: GameModeHandler<'FREE_TEXT'>;
+  FREE_TEXT: FreeTextHandler;
   SURVIVAL: GameModeHandler<'SURVIVAL'>;
   MIXED: GameModeHandler<'MIXED'>;
 };
@@ -40,9 +41,14 @@ type HandlerByMode = {
 export class GameModeRegistry {
   private readonly handlers = new Map<GameMode, AnyGameModeHandler>();
 
-  constructor(musicBingo: MusicBingoHandler, multipleChoice: MultipleChoiceHandler) {
+  constructor(
+    musicBingo: MusicBingoHandler,
+    multipleChoice: MultipleChoiceHandler,
+    freeText: FreeTextHandler,
+  ) {
     this.register(musicBingo);
     this.register(multipleChoice);
+    this.register(freeText);
   }
 
   private register(handler: AnyGameModeHandler): void {

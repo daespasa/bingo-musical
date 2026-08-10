@@ -18,6 +18,7 @@ import { useRoom } from '@/hooks/use-room';
 import { useRoundAudio } from '@/hooks/use-round-audio';
 import { BingoCardGrid } from '@/components/bingo-card';
 import { QuizOptions } from '@/components/quiz-options';
+import { GuessInput } from '@/components/guess-input';
 import { ReactionBar } from '@/components/reactions';
 import { RoundSummary } from '@/components/round-summary';
 import { Leaderboard } from '@/components/leaderboard';
@@ -38,6 +39,9 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
   const [noSession, setNoSession] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
+  // Intentos restantes en respuesta libre. Lo dice el servidor en cada ack:
+  // el cliente no lleva la cuenta por su cuenta.
+  const [attemptsLeft, setAttemptsLeft] = useState<number | null | undefined>(undefined);
 
   useEffect(() => {
     const session = loadGuestSession(code);
@@ -124,6 +128,12 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
   }
 
   const state = room.state;
+  const roundHint =
+    state?.gameMode === 'MULTIPLE_CHOICE'
+      ? 'Elige la respuesta correcta'
+      : state?.gameMode === 'FREE_TEXT'
+        ? 'Escribe lo que estás escuchando'
+        : '¿La tienes en el cartón?';
   const players = state?.participants.filter((p) => p.role === 'PLAYER') ?? [];
 
   return (
@@ -220,6 +230,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
             schedule={room.schedule}
             revealed={room.revealed}
             nowPlaying={room.nowPlaying}
+            hint={roundHint}
             paused={room.paused}
             playing={audio.playing}
             audioError={audio.audioError}
@@ -232,6 +243,23 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
               distribution={room.distribution}
               disabled={!room.connected || room.paused || !room.answersOpen}
               onAnswerAction={(index) => void room.submitAnswer(index)}
+            />
+          )}
+          {room.freeText && (
+            <GuessInput
+              question={room.freeText}
+              attempts={room.myAttempts}
+              attemptsLeft={attemptsLeft}
+              evaluation={room.guessEvaluation}
+              disabled={!room.connected || room.paused || !room.answersOpen}
+              onSubmitAction={(text) => {
+                void room.submitTextAnswer(text).then((ack) => {
+                  setAttemptsLeft(ack.ok ? (ack.attemptsLeft ?? null) : attemptsLeft);
+                  if (!ack.ok && ack.message) {
+                    setToast({ tone: 'error', text: ack.message });
+                  }
+                });
+              }}
             />
           )}
           {state.card && (

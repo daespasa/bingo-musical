@@ -22,6 +22,9 @@ import type {
   QuizAnswerSubmittedPayload,
   QuizDistributionPayload,
   SubmitAnswerAck,
+  FreeTextQuestionView,
+  GuessEvaluationPayload,
+  SubmitTextAnswerAck,
 } from '@bingo/shared';
 import { createRoomSocket } from '@/lib/socket';
 
@@ -55,6 +58,13 @@ export type RoomConnection = {
   /** Solución y reparto de respuestas. Solo llega tras cerrar la ronda. */
   distribution: QuizDistributionPayload | null;
   submitAnswer: (optionIndex: number) => Promise<SubmitAnswerAck>;
+  /** Enunciado de la ronda de respuesta libre, sin la solución. */
+  freeText: FreeTextQuestionView | null;
+  /** Intentos ya escritos en esta ronda, en orden. */
+  myAttempts: string[];
+  /** Cómo se resolvió la ronda escrita. Solo tras el reveal. */
+  guessEvaluation: GuessEvaluationPayload | null;
+  submitTextAnswer: (text: string) => Promise<SubmitTextAnswerAck>;
   finished: GameFinishedPayload | null;
   lastClaim: ClaimResultPayload | null;
   /** Reclamaciones aceptadas de la partida, en orden de llegada. */
@@ -94,6 +104,9 @@ export function useRoom(token: string | null): RoomConnection {
   const [answerProgress, setAnswerProgress] = useState<QuizAnswerSubmittedPayload | null>(null);
   const [distribution, setDistribution] = useState<QuizDistributionPayload | null>(null);
   const [answersOpen, setAnswersOpen] = useState(false);
+  const [freeText, setFreeText] = useState<FreeTextQuestionView | null>(null);
+  const [myAttempts, setMyAttempts] = useState<string[]>([]);
+  const [guessEvaluation, setGuessEvaluation] = useState<GuessEvaluationPayload | null>(null);
   const [finished, setFinished] = useState<GameFinishedPayload | null>(null);
   const [lastClaim, setLastClaim] = useState<ClaimResultPayload | null>(null);
   const [acceptedClaims, setAcceptedClaims] = useState<ClaimResultPayload[]>([]);
@@ -129,6 +142,8 @@ export function useRoom(token: string | null): RoomConnection {
           // reconectar no puede servir para responder dos veces.
           setQuestion(s.round?.question ?? null);
           setMyAnswer(s.round?.myAnswer?.optionIndex ?? null);
+          setFreeText(s.round?.freeText ?? null);
+          setMyAttempts(s.round?.myAttempts ?? []);
         }
       }),
     );
@@ -142,6 +157,9 @@ export function useRoom(token: string | null): RoomConnection {
         setPrepare(d);
         setNowPlaying(d.revealed);
         setQuestion(d.question);
+        setFreeText(d.freeText);
+        setMyAttempts([]);
+        setGuessEvaluation(null);
         setMyAnswer(null);
         setAnswerProgress(null);
         setDistribution(null);
@@ -198,6 +216,10 @@ export function useRoom(token: string | null): RoomConnection {
     socket.on(
       'quiz:distribution-revealed',
       p<QuizDistributionPayload>((d) => setDistribution(d)),
+    );
+    socket.on(
+      'guess:evaluation-revealed',
+      p<GuessEvaluationPayload>((d) => setGuessEvaluation(d)),
     );
     socket.on('round:awaiting-reveal', () => setAwaitingReveal(true));
     socket.on(
@@ -315,6 +337,22 @@ export function useRoom(token: string | null): RoomConnection {
     });
   }, []);
 
+  const submitTextAnswer = useCallback((text: string): Promise<SubmitTextAnswerAck> => {
+    return new Promise((resolve) => {
+      const socket = socketRef.current;
+      if (!socket) return resolve({ ok: false, message: 'Sin conexión' });
+      socket
+        .timeout(5000)
+        .emit('player:text-answer', { text }, (err: unknown, ack: SubmitTextAnswerAck) => {
+          const result: SubmitTextAnswerAck = err ? { ok: false, message: 'Tiempo agotado' } : ack;
+          // Se apunta el intento gastado. El ack no dice si es correcta: eso
+          // solo se sabe al revelarse la ronda.
+          if (result.ok) setMyAttempts((prev) => [...prev, text.trim()]);
+          resolve(result);
+        });
+    });
+  }, []);
+
   const markCell = useCallback(
     (cellId: string): Promise<MarkCellAck> => {
       return new Promise((resolve) => {
@@ -358,6 +396,10 @@ export function useRoom(token: string | null): RoomConnection {
     answerProgress,
     answersOpen,
     distribution,
+    freeText,
+    myAttempts,
+    guessEvaluation,
+    submitTextAnswer,
     submitAnswer,
     finished,
     lastClaim,
