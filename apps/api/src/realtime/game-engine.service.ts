@@ -14,6 +14,10 @@ import {
   type LeaderboardEntry,
   type FreeTextConfig,
   type SurvivalConfig,
+  type MixedConfig,
+  type MixedRoundDefinition,
+  type MultipleChoiceQuestionType,
+  type FreeTextQuestionType,
   type MultipleChoiceConfig,
   type MusicBingoConfig,
   type RoundView,
@@ -29,6 +33,7 @@ import {
   type FreeTextRoundPayload,
 } from '../game-modes/free-text.handler';
 import type { RoundTrack } from '../game-modes/game-mode-handler';
+import { buildMixedPlan, roundDefinitionAt } from '../game-modes/mixed-plan';
 import {
   applyRoundOutcome,
   initialLifeState,
@@ -106,6 +111,13 @@ type RoomRuntime = {
   quizConfig: MultipleChoiceConfig | null;
   freeTextConfig: FreeTextConfig | null;
   survivalConfig: SurvivalConfig | null;
+  /**
+   * Reparto de rondas del modo mixto, calculado una vez al empezar.
+   *
+   * Se guarda porque tiene que ser el mismo durante toda la partida: si se
+   * recalculara por ronda con otro total, cambiaría la mezcla a mitad.
+   */
+  mixedPlan: MixedRoundDefinition[] | null;
   /**
    * Vidas por participante. Se refleja en `PlayerLifeState`, que es la
    * autoridad: el cliente nunca decide vidas ni eliminación.
@@ -305,10 +317,29 @@ export class GameEngineService {
     const quizConfig = mode === 'MULTIPLE_CHOICE' ? (storedConfig as MultipleChoiceConfig) : null;
     const freeTextConfig = mode === 'FREE_TEXT' ? (storedConfig as FreeTextConfig) : null;
     const survivalConfig = mode === 'SURVIVAL' ? (storedConfig as SurvivalConfig) : null;
+    const mixedConfig = mode === 'MIXED' ? (storedConfig as MixedConfig) : null;
 
     // Supervivencia no monta una ronda propia: usa la del quiz o la de la
     // respuesta libre. Derivando aquí su configuración, toda la maquinaria de
     // preguntas, respuestas y persistencia funciona sin duplicar nada.
+    const quizGenerico: MultipleChoiceConfig = {
+      mode: 'MULTIPLE_CHOICE',
+      configVersion: 1,
+      questionTypes: ['SONG_TITLE'],
+      optionCount: 4,
+      showOptionsFromStart: true,
+      allowChangeAnswer: false,
+      wrongAnswerPenalty: 0,
+      distractorDifficulty: 'MEDIA',
+    };
+    const freeTextGenerico: FreeTextConfig = {
+      mode: 'FREE_TEXT',
+      configVersion: 1,
+      questionTypes: ['SONG_TITLE'],
+      attempts: 1,
+      fuzzyEnabled: true,
+    };
+
     const quizForSurvival: MultipleChoiceConfig | null =
       survivalConfig?.roundKind === 'MULTIPLE_CHOICE'
         ? {
@@ -358,9 +389,14 @@ export class GameEngineService {
       settings,
       bingoConfig,
       mode,
-      quizConfig: quizConfig ?? quizForSurvival,
-      freeTextConfig: freeTextConfig ?? freeTextForSurvival,
+      // En mixto se dejan los dos: cuál se usa lo decide el plan en cada ronda.
+      quizConfig: quizConfig ?? quizForSurvival ?? (mixedConfig ? quizGenerico : null),
+      freeTextConfig:
+        freeTextConfig ?? freeTextForSurvival ?? (mixedConfig ? freeTextGenerico : null),
       survivalConfig,
+      // El plan necesita saber cuántas rondas hay, y eso solo se sabe con el
+      // orden ya construido.
+      mixedPlan: mixedConfig ? buildMixedPlan(mixedConfig, order.length) : null,
       lives: new Map(),
       survivalStats: new Map(),
       tracks,
@@ -456,11 +492,33 @@ export class GameEngineService {
     };
     rt.phase = 'PREPARING_AUDIO';
 
-    if ((rt.mode === 'MULTIPLE_CHOICE' || rt.mode === 'SURVIVAL') && rt.quizConfig) {
-      rt.currentRound.question = await this.buildAndStoreQuestion(rt, round.id, index, track);
+    // En mixto es el reparto quien decide el reto de esta ronda; en los demás
+    // modos, el propio modo.
+    const mixedRound = rt.mixedPlan ? roundDefinitionAt(rt.mixedPlan, index) : null;
+    const conOpciones = mixedRound
+      ? mixedRound.kind === 'MULTIPLE_CHOICE'
+      : rt.mode === 'MULTIPLE_CHOICE' || rt.mode === 'SURVIVAL';
+    const conTexto = mixedRound
+      ? mixedRound.kind === 'FREE_TEXT'
+      : rt.mode === 'FREE_TEXT' || rt.mode === 'SURVIVAL';
+
+    if (conOpciones && rt.quizConfig) {
+      rt.currentRound.question = await this.buildAndStoreQuestion(
+        rt,
+        round.id,
+        index,
+        track,
+        mixedRound?.questionType,
+      );
     }
-    if ((rt.mode === 'FREE_TEXT' || rt.mode === 'SURVIVAL') && rt.freeTextConfig) {
-      rt.currentRound.freeText = await this.buildAndStoreFreeTextRound(rt, round.id, index, track);
+    if (conTexto && rt.freeTextConfig) {
+      rt.currentRound.freeText = await this.buildAndStoreFreeTextRound(
+        rt,
+        round.id,
+        index,
+        track,
+        mixedRound?.questionType === 'ARTIST' ? 'ARTIST' : 'SONG_TITLE',
+      );
     }
 
     this.emitRoom(rt, 'round:prepare', {
@@ -492,11 +550,13 @@ export class GameEngineService {
     roundId: string,
     index: number,
     track: RoundTrack,
+    /** Tipo impuesto por el reparto del modo mixto, si lo hay. */
+    questionType?: MultipleChoiceQuestionType,
   ): Promise<QuizRoundPayload & { questionId: string; optionIds: string[] }> {
     const handler = this.modes.resolve('MULTIPLE_CHOICE');
     const payload = await handler.createRound({
       roomId: rt.roomId,
-      config: rt.quizConfig!,
+      config: questionType ? { ...rt.quizConfig!, questionTypes: [questionType] } : rt.quizConfig!,
       index,
       totalRounds: rt.order.length,
       track,
@@ -542,11 +602,15 @@ export class GameEngineService {
     roundId: string,
     index: number,
     track: RoundTrack,
+    /** Tipo impuesto por el reparto del modo mixto, si lo hay. */
+    questionType?: FreeTextQuestionType,
   ): Promise<FreeTextRoundPayload & { questionId: string }> {
     const handler = this.modes.resolve('FREE_TEXT');
     const payload = await handler.createRound({
       roomId: rt.roomId,
-      config: rt.freeTextConfig!,
+      config: questionType
+        ? { ...rt.freeTextConfig!, questionTypes: [questionType] }
+        : rt.freeTextConfig!,
       index,
       totalRounds: rt.order.length,
       track,

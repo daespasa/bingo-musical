@@ -75,7 +75,7 @@ export async function createGameAndOpenRoom(
     /** Variante del bingo. Por defecto, a ciegas: el bingo de siempre. */
     variant?: 'Bingo a ciegas' | 'Bingo clásico';
     /** Modo de juego. Por defecto, bingo musical. */
-    mode?: 'Bingo musical' | 'Quiz musical' | 'Adivina la canción' | 'Supervivencia';
+    mode?: 'Bingo musical' | 'Quiz musical' | 'Adivina la canción' | 'Supervivencia' | 'Modo mixto';
     /** Vidas iniciales en Supervivencia. */
     lives?: 1 | 2 | 3 | 5;
   } = {

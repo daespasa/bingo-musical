@@ -17,23 +17,19 @@ test.describe('Variantes del bingo', () => {
 
     await expect(page.getByRole('group', { name: '¿A qué quieres jugar?' })).toBeVisible();
 
-    // El bingo es el único jugable de principio a fin ahora mismo.
+    // El bingo viene elegido de partida: es el modo insignia.
     const bingo = page.getByRole('radio', { name: /Bingo musical/ });
     await expect(bingo).toBeEnabled();
     await expect(bingo).toHaveAttribute('aria-checked', 'true');
 
-    // Quiz, respuesta libre y supervivencia ya se juegan de principio a fin.
-    for (const nombre of [/Quiz musical/, /Adivina la canción/, /Supervivencia/]) {
-      await expect(page.getByRole('radio', { name: nombre })).toBeEnabled();
-    }
-
-    // Los que aún no existen se anuncian, pero no se pueden elegir: una
-    // tarjeta que no lleva a ninguna parte es peor que no enseñar la tarjeta.
-    for (const nombre of [/Modo mixto/]) {
+    // Los cinco modos del catálogo se juegan ya de principio a fin, así que
+    // ninguno debe salir como «Próximamente».
+    for (const nombre of [/Quiz musical/, /Adivina la canción/, /Supervivencia/, /Modo mixto/]) {
       const tarjeta = page.getByRole('radio', { name: nombre });
-      await expect(tarjeta).toBeDisabled();
-      await expect(tarjeta).toContainText('Próximamente');
+      await expect(tarjeta).toBeEnabled();
+      await expect(tarjeta).not.toContainText('Próximamente');
     }
+    await expect(page.getByText('Próximamente')).toHaveCount(0);
   });
 
   test('bingo a ciegas oculta la canción hasta el revelado', async ({ browser, page }) => {

@@ -6,6 +6,7 @@ import { MusicBingoHandler, revealedInfo } from './music-bingo.handler';
 import { MultipleChoiceHandler } from './multiple-choice.handler';
 import { FreeTextHandler } from './free-text.handler';
 import { SurvivalHandler } from './survival.handler';
+import { MixedHandler } from './mixed.handler';
 import type { ScoringSettings } from './game-mode-handler';
 
 const quiz = new MultipleChoiceHandler();
@@ -15,6 +16,7 @@ const registry = new GameModeRegistry(
   quiz,
   freeText,
   new SurvivalHandler(quiz, freeText),
+  new MixedHandler(quiz, freeText),
 );
 
 const TRACK = {
@@ -47,14 +49,15 @@ describe('registro de modos', () => {
       'MULTIPLE_CHOICE',
       'FREE_TEXT',
       'SURVIVAL',
+      'MIXED',
     ]);
-    expect(registry.isSupported('MIXED')).toBe(false);
   });
 
   it('se niega a empezar una partida de un modo sin handler', () => {
-    // Es preferible negarse que abrir una sala que nadie sabe conducir.
-    expect(() => registry.resolve('MIXED')).toThrow(BadRequestException);
-    expect(() => registry.resolve('MIXED')).toThrow(/Modo mixto/);
+    // Es preferible negarse que abrir una sala que nadie sabe conducir. Hoy
+    // todos los modos del catálogo tienen handler, así que se comprueba con
+    // uno que no existe.
+    expect(() => registry.resolve('KARAOKE' as never)).toThrow();
   });
 
   it('valida la configuración con el esquema del modo', () => {

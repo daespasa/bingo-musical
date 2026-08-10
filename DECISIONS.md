@@ -313,3 +313,19 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Decisión**: por defecto callarse cuesta una vida; el anfitrión puede desactivarlo.
 - **Contexto**: sin coste, la estrategia ganadora es no responder nunca, que vacía el juego. Pero hay grupos donde dudar y quedarse callado no debería castigarse igual que fallar.
 - **Consecuencias**: la regla está en `applyRoundOutcome`, no repartida por el motor, y tiene test para las dos configuraciones.
+
+## 2026-08-08 — El modo mixto reparte con resto mayor e intercalado proporcional
+
+- **Decisión**: el reparto de rondas se calcula una vez al empezar, por el método del resto mayor, y luego se intercala eligiendo en cada paso el tipo más atrasado respecto a su cuota.
+- **Contexto**: dos problemas distintos. El primero, el redondeo: con cinco rondas, un tipo con el 10 % da 0,5 y desaparecería al truncar. El segundo, el orden: la primera versión tomaba el tipo con más rondas pendientes, y como el reparto equilibrado tiene tres entradas con opciones y solo dos de escribir, **las primeras rondas salían todas de opciones**. Lo destapó un E2E que recorría cuatro rondas y solo encontraba un tipo.
+- **Alternativas**: barajar el plan al azar; alternar estrictamente entre tipos.
+- **Elección**: resto mayor para las cantidades y reparto proporcional —(usadas + 0,5) / cuota— para el orden. Barajar al azar habría dado rachas igual de malas y, sobre todo, habría dejado de ser determinista.
+- **Consecuencias**: el plan es reproducible, así que quien reconecta recibe la misma ronda que el resto. Hay tests para el reparto exacto en partidas largas, para que ningún tipo con peso desaparezca en partidas cortas y para que la variedad aparezca dentro de las cuatro primeras rondas.
+
+## 2026-08-08 — El bingo no entra en el modo mixto
+
+- **Decisión**: mixto combina rondas con opciones y de respuesta libre; el bingo queda fuera y no se anuncia dentro de la mezcla.
+- **Contexto**: el bingo se juega sobre un cartón repartido al empezar y validado durante toda la partida. Meterlo como una ronda suelta obligaría a repartir cartones para una sola canción, o a mantener un cartón vivo entre rondas de otro tipo, y a rehacer la validación de marcas para ese caso.
+- **Alternativas**: repartir cartón al inicio y usarlo solo en las rondas de bingo; una ronda de bingo con cartón de un solo uso.
+- **Elección**: dejarlo fuera, decirlo en la interfaz y documentarlo como trabajo futuro. La spec ya contemplaba esta salida: es mejor no anunciarlo que anunciarlo a medias.
+- **Consecuencias**: el dominio no lo impide —`MixedRoundDefinition` puede ganar un `kind` nuevo—, pero hoy no existe y la interfaz lo dice explícitamente.
