@@ -6,6 +6,7 @@ import {
   Award,
   Flag,
   Flame,
+  Heart,
   Medal,
   Megaphone,
   Repeat,
@@ -32,6 +33,15 @@ const HIGHLIGHTS: Record<
   ALL_CORRECT: { label: 'Acertaron todos', Icon: Sparkles, className: 'text-emerald-500' },
   NOBODY_CORRECT: { label: 'No acertó nadie', Icon: Megaphone, className: 'text-slate-500' },
   POPULAR_DISTRACTOR: { label: 'La trampa favorita', Icon: Repeat, className: 'text-rose-500' },
+  // Supervivencia
+  FIRST_ELIMINATION: { label: 'Primera eliminación', Icon: Heart, className: 'text-rose-500' },
+  LAST_SURVIVOR: { label: 'Último superviviente', Icon: Trophy, className: 'text-amber-500' },
+  MULTIPLE_ELIMINATION: { label: 'Caída múltiple', Icon: Heart, className: 'text-accent-500' },
+  SURVIVED_ON_ONE_LIFE: {
+    label: 'Aguantó con una vida',
+    Icon: Flame,
+    className: 'text-orange-500',
+  },
 };
 
 const CONFETTI_COLORS = ['#a855f7', '#f43f5e', '#fbbf24', '#34d399', '#38bdf8'];

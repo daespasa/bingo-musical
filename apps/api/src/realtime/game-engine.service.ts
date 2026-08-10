@@ -13,6 +13,7 @@ import {
   type GameMode,
   type LeaderboardEntry,
   type FreeTextConfig,
+  type SurvivalConfig,
   type MultipleChoiceConfig,
   type MusicBingoConfig,
   type RoundView,
@@ -28,6 +29,15 @@ import {
   type FreeTextRoundPayload,
 } from '../game-modes/free-text.handler';
 import type { RoundTrack } from '../game-modes/game-mode-handler';
+import {
+  applyRoundOutcome,
+  initialLifeState,
+  isActive,
+  isSurvivalFinished,
+  sortStandings,
+  type LifeState,
+  type SurvivalStanding,
+} from '../game-modes/survival-rules';
 import { CardsService } from './cards.service';
 
 export type EnginePhase =
@@ -95,6 +105,14 @@ type RoomRuntime = {
   mode: GameMode;
   quizConfig: MultipleChoiceConfig | null;
   freeTextConfig: FreeTextConfig | null;
+  survivalConfig: SurvivalConfig | null;
+  /**
+   * Vidas por participante. Se refleja en `PlayerLifeState`, que es la
+   * autoridad: el cliente nunca decide vidas ni eliminación.
+   */
+  lives: Map<string, LifeState>;
+  /** Aciertos y tiempo acumulado, para el desempate determinista. */
+  survivalStats: Map<string, { correctAnswers: number; totalLatencyMs: number }>;
   tracks: Map<string, RoundTrack>;
   order: string[]; // trackIds en orden de ronda
   phase: EnginePhase;
@@ -286,6 +304,34 @@ export class GameEngineService {
         : readGameModeConfig('MUSIC_BINGO', null);
     const quizConfig = mode === 'MULTIPLE_CHOICE' ? (storedConfig as MultipleChoiceConfig) : null;
     const freeTextConfig = mode === 'FREE_TEXT' ? (storedConfig as FreeTextConfig) : null;
+    const survivalConfig = mode === 'SURVIVAL' ? (storedConfig as SurvivalConfig) : null;
+
+    // Supervivencia no monta una ronda propia: usa la del quiz o la de la
+    // respuesta libre. Derivando aquí su configuración, toda la maquinaria de
+    // preguntas, respuestas y persistencia funciona sin duplicar nada.
+    const quizForSurvival: MultipleChoiceConfig | null =
+      survivalConfig?.roundKind === 'MULTIPLE_CHOICE'
+        ? {
+            mode: 'MULTIPLE_CHOICE',
+            configVersion: survivalConfig.configVersion,
+            questionTypes: ['SONG_TITLE'],
+            optionCount: 4,
+            showOptionsFromStart: true,
+            allowChangeAnswer: false,
+            wrongAnswerPenalty: 0,
+            distractorDifficulty: 'MEDIA',
+          }
+        : null;
+    const freeTextForSurvival: FreeTextConfig | null =
+      survivalConfig?.roundKind === 'FREE_TEXT'
+        ? {
+            mode: 'FREE_TEXT',
+            configVersion: survivalConfig.configVersion,
+            questionTypes: ['SONG_TITLE'],
+            attempts: 1,
+            fuzzyEnabled: true,
+          }
+        : null;
 
     const tracks = new Map<string, RoundTrack>();
     for (const ct of room.game.collection.tracks) {
@@ -312,8 +358,11 @@ export class GameEngineService {
       settings,
       bingoConfig,
       mode,
-      quizConfig,
-      freeTextConfig,
+      quizConfig: quizConfig ?? quizForSurvival,
+      freeTextConfig: freeTextConfig ?? freeTextForSurvival,
+      survivalConfig,
+      lives: new Map(),
+      survivalStats: new Map(),
       tracks,
       order,
       phase: 'LOBBY',
@@ -338,9 +387,25 @@ export class GameEngineService {
         rt.scores.set(p.id, 0);
         rt.streaks.set(p.id, 0);
         rt.correctMarks.set(p.id, 0);
+        if (survivalConfig) {
+          rt.lives.set(p.id, initialLifeState(survivalConfig));
+          rt.survivalStats.set(p.id, { correctAnswers: 0, totalLatencyMs: 0 });
+        }
       }
     }
     this.rooms.set(roomId, rt);
+
+    // Las vidas se persisten desde el principio: son la autoridad sobre quién
+    // sigue jugando y tienen que sobrevivir a una reconexión.
+    if (survivalConfig) {
+      for (const [participantId, state] of rt.lives) {
+        await this.prisma.playerLifeState.upsert({
+          where: { participantId },
+          update: { lives: state.lives, eliminatedAtRound: null, eliminationOrder: null },
+          create: { roomId, participantId, lives: state.lives },
+        });
+      }
+    }
 
     // Los cartones son del bingo. Los modos de pregunta no reparten nada:
     // generarlos igualmente dejaría filas huérfanas y confundiría al historial.
@@ -391,10 +456,10 @@ export class GameEngineService {
     };
     rt.phase = 'PREPARING_AUDIO';
 
-    if (rt.mode === 'MULTIPLE_CHOICE' && rt.quizConfig) {
+    if ((rt.mode === 'MULTIPLE_CHOICE' || rt.mode === 'SURVIVAL') && rt.quizConfig) {
       rt.currentRound.question = await this.buildAndStoreQuestion(rt, round.id, index, track);
     }
-    if (rt.mode === 'FREE_TEXT' && rt.freeTextConfig) {
+    if ((rt.mode === 'FREE_TEXT' || rt.mode === 'SURVIVAL') && rt.freeTextConfig) {
       rt.currentRound.freeText = await this.buildAndStoreFreeTextRound(rt, round.id, index, track);
     }
 
@@ -578,6 +643,7 @@ export class GameEngineService {
     // responder.
     await this.scoreQuizRound(rt, r);
     await this.scoreFreeTextRound(rt, r);
+    await this.applySurvivalRound(rt, r);
 
     this.emitRoom(rt, 'round:revealed', {
       roundId: r.roundId,
@@ -842,6 +908,188 @@ export class GameEngineService {
   }
 
   /**
+   * Aplica las reglas de vidas al cerrarse la ronda.
+   *
+   * El cliente nunca decide esto: solo manda lo que respondió. Quién pierde
+   * vida, quién queda eliminado y quién gana lo calcula el servidor a partir
+   * de la evaluación que él mismo hizo.
+   */
+  private async applySurvivalRound(rt: RoomRuntime, r: RoundRuntime): Promise<void> {
+    const config = rt.survivalConfig;
+    if (!config) return;
+
+    const eliminadosAntes = [...rt.lives.values()].filter((s) => !isActive(s)).length;
+    let eliminadosAhora = 0;
+    const caidos: string[] = [];
+
+    for (const [participantId, state] of rt.lives) {
+      if (!isActive(state)) continue;
+
+      // El resultado sale de la respuesta que el servidor ya evaluó, sea del
+      // quiz o de la respuesta libre.
+      const quizAnswer = r.answers.get(participantId);
+      const textAttempts = r.textAnswers.get(participantId);
+      const answered = quizAnswer !== undefined || (textAttempts?.length ?? 0) > 0;
+      const correct =
+        quizAnswer?.correct === true ||
+        (textAttempts?.some((attempt) => attempt.evaluation.correct) ?? false);
+
+      const stats = rt.survivalStats.get(participantId) ?? {
+        correctAnswers: 0,
+        totalLatencyMs: 0,
+      };
+      const latencyMs =
+        quizAnswer?.latencyMs ??
+        textAttempts?.find((a) => a.evaluation.correct)?.latencyMs ??
+        rt.settings.snippetDurationMs + rt.settings.answerWindowMs;
+      if (correct) stats.correctAnswers += 1;
+      stats.totalLatencyMs += latencyMs;
+      rt.survivalStats.set(participantId, stats);
+
+      const next = applyRoundOutcome({
+        state,
+        outcome: { answered, correct },
+        config,
+        roundIndex: r.index,
+        // La racha ya se actualizó al puntuar, así que aquí se descuenta la
+        // de esta misma ronda para no contarla dos veces.
+        streakBefore: Math.max(0, (rt.streaks.get(participantId) ?? 0) - (correct ? 1 : 0)),
+        eliminatedSoFar: eliminadosAntes + eliminadosAhora,
+      });
+
+      if (next.lives !== state.lives || next.eliminatedAtRound !== state.eliminatedAtRound) {
+        rt.lives.set(participantId, next);
+        await this.prisma.playerLifeState.update({
+          where: { participantId },
+          data: {
+            lives: next.lives,
+            eliminatedAtRound: next.eliminatedAtRound,
+            eliminationOrder: next.eliminationOrder,
+          },
+        });
+
+        // A quien le pasa, se le dice en privado: así el cliente conoce sus
+        // vidas sin tener que buscarse en una lista.
+        this.emitParticipant(rt, participantId, 'survival:my-lives', {
+          lives: next.lives,
+          eliminated: !isActive(next),
+        });
+
+        if (next.lives < state.lives) {
+          this.emitRoom(rt, 'survival:life-lost', {
+            participantId,
+            alias: rt.aliases.get(participantId) ?? '???',
+            lives: next.lives,
+          });
+        }
+        if (!isActive(next)) {
+          eliminadosAhora += 1;
+          caidos.push(participantId);
+          this.emitRoom(rt, 'survival:player-eliminated', {
+            participantId,
+            alias: rt.aliases.get(participantId) ?? '???',
+            roundIndex: r.index,
+          });
+        }
+      }
+    }
+
+    const standings = this.survivalStandings(rt);
+    this.emitRoom(rt, 'survival:standings-updated', { standings: this.publicStandings(rt) });
+
+    if (eliminadosAntes === 0 && caidos.length > 0) {
+      await this.addHighlight(rt, 'FIRST_ELIMINATION', caidos[0]!, r.index, {});
+    }
+    if (caidos.length >= 2) {
+      rt.highlights.push({
+        type: 'MULTIPLE_ELIMINATION',
+        alias: '—',
+        roundIndex: r.index,
+        data: { count: caidos.length },
+      });
+      this.emitRoom(rt, 'highlight:created', {
+        type: 'MULTIPLE_ELIMINATION',
+        alias: '—',
+        roundIndex: r.index,
+        data: { count: caidos.length },
+      });
+    }
+
+    // Fin de partida por las reglas del modo, no por agotar canciones.
+    if (
+      isSurvivalFinished({
+        standings,
+        roundIndex: r.index + 1,
+        totalRounds: rt.order.length,
+        config,
+      })
+    ) {
+      const superviviente = standings.find((s) => s.eliminatedAtRound === null);
+      if (superviviente) {
+        await this.addHighlight(rt, 'LAST_SURVIVOR', superviviente.participantId, r.index, {
+          lives: superviviente.lives,
+        });
+        if (superviviente.lives === 1) {
+          await this.addHighlight(
+            rt,
+            'SURVIVED_ON_ONE_LIFE',
+            superviviente.participantId,
+            r.index,
+            {},
+          );
+        }
+      }
+      this.after(rt, 1500, () => void this.finish(rt.roomId));
+    }
+  }
+
+  /** Clasificación de Supervivencia, ya ordenada con el desempate del modo. */
+  private survivalStandings(rt: RoomRuntime): SurvivalStanding[] {
+    const entries: SurvivalStanding[] = [...rt.lives.entries()].map(([participantId, state]) => {
+      const stats = rt.survivalStats.get(participantId) ?? {
+        correctAnswers: 0,
+        totalLatencyMs: 0,
+      };
+      return {
+        participantId,
+        lives: state.lives,
+        eliminatedAtRound: state.eliminatedAtRound,
+        eliminationOrder: state.eliminationOrder,
+        score: rt.scores.get(participantId) ?? 0,
+        correctAnswers: stats.correctAnswers,
+        totalLatencyMs: stats.totalLatencyMs,
+      };
+    });
+    return sortStandings(entries);
+  }
+
+  /** Clasificación de vidas para el estado de sala. Vacía fuera del modo. */
+  survivalStandingsView(roomId: string) {
+    const rt = this.rooms.get(roomId);
+    if (!rt?.survivalConfig) return [];
+    return this.publicStandings(rt);
+  }
+
+  /** Vidas de una persona concreta. Nulo fuera de Supervivencia. */
+  livesFor(roomId: string, participantId: string) {
+    const rt = this.rooms.get(roomId);
+    const state = rt?.survivalConfig ? rt.lives.get(participantId) : undefined;
+    if (!state) return null;
+    return { lives: state.lives, eliminated: !isActive(state) };
+  }
+
+  /** La clasificación tal y como la ve la sala, con alias en vez de ids. */
+  private publicStandings(rt: RoomRuntime) {
+    return this.survivalStandings(rt).map((entry) => ({
+      participantId: entry.participantId,
+      alias: rt.aliases.get(entry.participantId) ?? '???',
+      lives: entry.lives,
+      eliminated: entry.eliminatedAtRound !== null,
+      eliminatedAtRound: entry.eliminatedAtRound,
+    }));
+  }
+
+  /**
    * Momentos destacados propios del quiz.
    *
    * Solo se generan cuando cuentan algo: una ronda que casi nadie falla no es
@@ -1080,6 +1328,12 @@ export class GameEngineService {
     if (!rt.scores.has(participantId)) {
       return { ok: false, message: 'Solo pueden responder los jugadores' };
     }
+    // Quien se quedó sin vidas es espectador: lo ve todo, pero no responde.
+    // Se comprueba en el servidor porque el cliente no decide esto.
+    const lifeState = rt.lives.get(participantId);
+    if (lifeState && !isActive(lifeState)) {
+      return { ok: false, message: 'Estás eliminado: ya solo miras' };
+    }
     if (optionIndex < 0 || optionIndex >= r.question.options.length) {
       return { ok: false, message: 'Opción no válida' };
     }
@@ -1149,6 +1403,12 @@ export class GameEngineService {
     }
     if (!rt.scores.has(participantId)) {
       return { ok: false, message: 'Solo pueden responder los jugadores' };
+    }
+    // Quien se quedó sin vidas es espectador: lo ve todo, pero no responde.
+    // Se comprueba en el servidor porque el cliente no decide esto.
+    const lifeState = rt.lives.get(participantId);
+    if (lifeState && !isActive(lifeState)) {
+      return { ok: false, message: 'Estás eliminado: ya solo miras' };
     }
 
     const clean = text.trim().slice(0, 120);

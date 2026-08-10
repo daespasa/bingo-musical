@@ -25,6 +25,9 @@ import type {
   FreeTextQuestionView,
   GuessEvaluationPayload,
   SubmitTextAnswerAck,
+  SurvivalStandingView,
+  SurvivalStandingsPayload,
+  MyLivesView,
 } from '@bingo/shared';
 import { createRoomSocket } from '@/lib/socket';
 
@@ -65,6 +68,10 @@ export type RoomConnection = {
   /** Cómo se resolvió la ronda escrita. Solo tras el reveal. */
   guessEvaluation: GuessEvaluationPayload | null;
   submitTextAnswer: (text: string) => Promise<SubmitTextAnswerAck>;
+  /** Clasificación de vidas. Vacía fuera de Supervivencia. */
+  survivalStandings: SurvivalStandingView[];
+  /** Mis vidas y si estoy eliminado. Nulo fuera de Supervivencia. */
+  myLives: MyLivesView;
   finished: GameFinishedPayload | null;
   lastClaim: ClaimResultPayload | null;
   /** Reclamaciones aceptadas de la partida, en orden de llegada. */
@@ -107,6 +114,8 @@ export function useRoom(token: string | null): RoomConnection {
   const [freeText, setFreeText] = useState<FreeTextQuestionView | null>(null);
   const [myAttempts, setMyAttempts] = useState<string[]>([]);
   const [guessEvaluation, setGuessEvaluation] = useState<GuessEvaluationPayload | null>(null);
+  const [survivalStandings, setSurvivalStandings] = useState<SurvivalStandingView[]>([]);
+  const [myLives, setMyLives] = useState<MyLivesView>(null);
   const [finished, setFinished] = useState<GameFinishedPayload | null>(null);
   const [lastClaim, setLastClaim] = useState<ClaimResultPayload | null>(null);
   const [acceptedClaims, setAcceptedClaims] = useState<ClaimResultPayload[]>([]);
@@ -144,6 +153,9 @@ export function useRoom(token: string | null): RoomConnection {
           setMyAnswer(s.round?.myAnswer?.optionIndex ?? null);
           setFreeText(s.round?.freeText ?? null);
           setMyAttempts(s.round?.myAttempts ?? []);
+          // Las vidas las manda el servidor: reconectar no las devuelve.
+          setSurvivalStandings(s.survivalStandings ?? []);
+          setMyLives(s.myLives ?? null);
         }
       }),
     );
@@ -216,6 +228,16 @@ export function useRoom(token: string | null): RoomConnection {
     socket.on(
       'quiz:distribution-revealed',
       p<QuizDistributionPayload>((d) => setDistribution(d)),
+    );
+    socket.on(
+      'survival:standings-updated',
+      p<SurvivalStandingsPayload>((d) => setSurvivalStandings(d.standings)),
+    );
+    // Las vidas propias llegan en privado: el cliente no tiene que buscarse
+    // en la lista, y sobre todo no las decide él.
+    socket.on(
+      'survival:my-lives',
+      p<{ lives: number; eliminated: boolean }>((d) => setMyLives(d)),
     );
     socket.on(
       'guess:evaluation-revealed',
@@ -400,6 +422,8 @@ export function useRoom(token: string | null): RoomConnection {
     myAttempts,
     guessEvaluation,
     submitTextAnswer,
+    survivalStandings,
+    myLives,
     submitAnswer,
     finished,
     lastClaim,

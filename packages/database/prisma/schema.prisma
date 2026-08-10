@@ -136,6 +136,11 @@ enum HighlightType {
   ALL_CORRECT
   NOBODY_CORRECT
   POPULAR_DISTRACTOR
+  // Supervivencia
+  FIRST_ELIMINATION
+  LAST_SURVIVOR
+  MULTIPLE_ELIMINATION
+  SURVIVED_ON_ONE_LIFE
 }
 
 /// Qué se pregunta sobre la canción que suena.
@@ -373,6 +378,7 @@ model Room {
   highlights   Highlight[]
   result       GameResult?
   auditLogs    AuditLog[]
+  lifeStates   PlayerLifeState[]
 
   @@index([status])
   @@index([expiresAt])
@@ -401,6 +407,7 @@ model RoomParticipant {
   scoreEvents    ScoreEvent[]
   highlights     Highlight[]
   wonResults     GameResult[]
+  lifeState      PlayerLifeState?
 
   @@unique([roomId, aliasNormalized])
   @@index([roomId])
@@ -533,6 +540,27 @@ model AnswerOption {
 
   @@unique([questionId, position])
   @@index([questionId])
+}
+
+/// Vidas de una persona en una partida de supervivencia.
+///
+/// Se persiste, y no solo en memoria, porque es lo que decide quién sigue
+/// jugando: una reconexión no puede devolver vidas ni resucitar a nadie. Las
+/// vidas **no** son puntos y no viajan por `ScoreEvent`.
+model PlayerLifeState {
+  id                String          @id @default(uuid())
+  roomId            String
+  room              Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId     String          @unique
+  participant       RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  lives             Int
+  /// Índice de la ronda en la que se quedó sin vidas. Nulo = sigue en juego.
+  eliminatedAtRound Int?
+  /// Orden de eliminación, para la ceremonia. Nulo mientras siga en juego.
+  eliminationOrder  Int?
+  updatedAt         DateTime        @updatedAt
+
+  @@index([roomId])
 }
 
 /// La respuesta de una persona a una ronda.

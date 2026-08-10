@@ -5,12 +5,16 @@ import { GameModeRegistry } from './game-mode.registry';
 import { MusicBingoHandler, revealedInfo } from './music-bingo.handler';
 import { MultipleChoiceHandler } from './multiple-choice.handler';
 import { FreeTextHandler } from './free-text.handler';
+import { SurvivalHandler } from './survival.handler';
 import type { ScoringSettings } from './game-mode-handler';
 
+const quiz = new MultipleChoiceHandler();
+const freeText = new FreeTextHandler();
 const registry = new GameModeRegistry(
   new MusicBingoHandler(),
-  new MultipleChoiceHandler(),
-  new FreeTextHandler(),
+  quiz,
+  freeText,
+  new SurvivalHandler(quiz, freeText),
 );
 
 const TRACK = {
@@ -38,15 +42,19 @@ describe('registro de modos', () => {
   });
 
   it('solo declara soportado lo que tiene handler', () => {
-    expect(registry.supportedModes()).toEqual(['MUSIC_BINGO', 'MULTIPLE_CHOICE', 'FREE_TEXT']);
-    expect(registry.isSupported('SURVIVAL')).toBe(false);
+    expect(registry.supportedModes()).toEqual([
+      'MUSIC_BINGO',
+      'MULTIPLE_CHOICE',
+      'FREE_TEXT',
+      'SURVIVAL',
+    ]);
     expect(registry.isSupported('MIXED')).toBe(false);
   });
 
   it('se niega a empezar una partida de un modo sin handler', () => {
     // Es preferible negarse que abrir una sala que nadie sabe conducir.
-    expect(() => registry.resolve('SURVIVAL')).toThrow(BadRequestException);
-    expect(() => registry.resolve('SURVIVAL')).toThrow(/Supervivencia/);
+    expect(() => registry.resolve('MIXED')).toThrow(BadRequestException);
+    expect(() => registry.resolve('MIXED')).toThrow(/Modo mixto/);
   });
 
   it('valida la configuración con el esquema del modo', () => {

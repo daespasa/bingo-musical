@@ -75,7 +75,9 @@ export async function createGameAndOpenRoom(
     /** Variante del bingo. Por defecto, a ciegas: el bingo de siempre. */
     variant?: 'Bingo a ciegas' | 'Bingo clásico';
     /** Modo de juego. Por defecto, bingo musical. */
-    mode?: 'Bingo musical' | 'Quiz musical' | 'Adivina la canción';
+    mode?: 'Bingo musical' | 'Quiz musical' | 'Adivina la canción' | 'Supervivencia';
+    /** Vidas iniciales en Supervivencia. */
+    lives?: 1 | 2 | 3 | 5;
   } = {
     name: 'E2E',
   },
@@ -86,6 +88,12 @@ export async function createGameAndOpenRoom(
   }
   if (options.variant) {
     await page.getByRole('radio', { name: new RegExp(options.variant) }).click();
+  }
+  if (options.lives) {
+    await page
+      .getByRole('group', { name: 'Vidas por jugador' })
+      .getByRole('radio', { name: String(options.lives), exact: true })
+      .click();
   }
   await page.getByLabel('Nombre de la partida').fill(options.name);
   await demoCollectionCard(page).click();

@@ -29,6 +29,11 @@ type FormData = {
   guessType: FreeTextQuestionType;
   /** Intentos permitidos; `null` es ilimitado hasta que acabe el tiempo. */
   attempts: number | null;
+  /** Vidas iniciales en Supervivencia. */
+  lives: number;
+  /** Con qué tipo de ronda se juega Supervivencia. */
+  survivalRoundKind: 'MULTIPLE_CHOICE' | 'FREE_TEXT';
+  loseLifeOnNoAnswer: boolean;
   cardSize: number;
   freeCenter: boolean;
   snippetDurationMs: number;
@@ -95,6 +100,9 @@ export default function NewGamePage() {
       optionCount: 4,
       guessType: 'SONG_TITLE',
       attempts: 1,
+      lives: 3,
+      survivalRoundKind: 'MULTIPLE_CHOICE',
+      loseLifeOnNoAnswer: true,
       cardSize: 3,
       freeCenter: false,
       snippetDurationMs: 15000,
@@ -116,6 +124,8 @@ export default function NewGamePage() {
   const questionTypes = watch('questionTypes');
   const guessType = watch('guessType');
   const attempts = watch('attempts');
+  const lives = watch('lives');
+  const survivalRoundKind = watch('survivalRoundKind');
 
   // Al menos un tipo de pregunta: sin ninguno no habría nada que preguntar.
   const toggleQuestionType = (tipo: MultipleChoiceQuestionType) => {
@@ -147,13 +157,20 @@ export default function NewGamePage() {
                   questionTypes: data.questionTypes,
                   optionCount: Number(data.optionCount),
                 }
-              : data.mode === 'FREE_TEXT'
+              : data.mode === 'SURVIVAL'
                 ? {
-                    mode: 'FREE_TEXT',
-                    questionTypes: [data.guessType],
-                    attempts: data.attempts === null ? null : Number(data.attempts),
+                    mode: 'SURVIVAL',
+                    lives: Number(data.lives),
+                    roundKind: data.survivalRoundKind,
+                    loseLifeOnNoAnswer: data.loseLifeOnNoAnswer,
                   }
-                : { mode: data.mode, revealMode: data.revealMode },
+                : data.mode === 'FREE_TEXT'
+                  ? {
+                      mode: 'FREE_TEXT',
+                      questionTypes: [data.guessType],
+                      attempts: data.attempts === null ? null : Number(data.attempts),
+                    }
+                  : { mode: data.mode, revealMode: data.revealMode },
           settings: {
             cardSize: Number(data.cardSize),
             freeCenter: data.freeCenter,
@@ -270,6 +287,78 @@ export default function NewGamePage() {
                 <option value={4}>4</option>
               </select>
             </div>
+          </div>
+        )}
+
+        {mode === 'SURVIVAL' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">Vidas por jugador</legend>
+              <div className="flex gap-2">
+                {[1, 2, 3, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    role="radio"
+                    aria-checked={Number(lives) === n}
+                    onClick={() => setValue('lives', n)}
+                    className={clsx(
+                      'flex-1 rounded-xl border py-3 font-semibold transition',
+                      Number(lives) === n
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 dark:border-slate-700',
+                    )}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="mt-5">
+              <legend className="label">¿Cómo se responde?</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    ['MULTIPLE_CHOICE', 'Con opciones', 'Cuatro respuestas: elige la correcta.'],
+                    ['FREE_TEXT', 'Respuesta libre', 'Sin opciones: escribe el título.'],
+                  ] as const
+                ).map(([id, label, help]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={survivalRoundKind === id}
+                    onClick={() => setValue('survivalRoundKind', id)}
+                    className={clsx(
+                      'rounded-xl border p-4 text-left transition',
+                      survivalRoundKind === id
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                    )}
+                  >
+                    <span className="font-semibold">{label}</span>
+                    <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                      {help}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <label className="mt-5 flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-brand-600"
+                {...register('loseLifeOnNoAnswer')}
+              />
+              <span>
+                <span className="font-medium">No responder cuesta una vida</span>
+                <span className="block text-slate-500 dark:text-slate-400">
+                  Desactívalo si prefieres que dudar y callarse no penalice igual que fallar.
+                </span>
+              </span>
+            </label>
           </div>
         )}
 

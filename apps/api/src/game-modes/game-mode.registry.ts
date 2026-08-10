@@ -4,6 +4,7 @@ import type { GameModeHandler } from './game-mode-handler';
 import { MusicBingoHandler } from './music-bingo.handler';
 import { MultipleChoiceHandler } from './multiple-choice.handler';
 import { FreeTextHandler } from './free-text.handler';
+import { SurvivalHandler } from './survival.handler';
 
 /**
  * Resuelve el handler de cada modo.
@@ -33,7 +34,7 @@ type HandlerByMode = {
   MUSIC_BINGO: MusicBingoHandler;
   MULTIPLE_CHOICE: MultipleChoiceHandler;
   FREE_TEXT: FreeTextHandler;
-  SURVIVAL: GameModeHandler<'SURVIVAL'>;
+  SURVIVAL: SurvivalHandler;
   MIXED: GameModeHandler<'MIXED'>;
 };
 
@@ -45,10 +46,12 @@ export class GameModeRegistry {
     musicBingo: MusicBingoHandler,
     multipleChoice: MultipleChoiceHandler,
     freeText: FreeTextHandler,
+    survival: SurvivalHandler,
   ) {
     this.register(musicBingo);
     this.register(multipleChoice);
     this.register(freeText);
+    this.register(survival);
   }
 
   private register(handler: AnyGameModeHandler): void {

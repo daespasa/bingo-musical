@@ -70,6 +70,9 @@ export type RoundView = {
   myAttempts: string[];
 };
 
+/** Vidas propias en Supervivencia. Nulo en los demás modos. */
+export type MyLivesView = { lives: number; eliminated: boolean } | null;
+
 /** Lo que de una ronda de respuesta libre puede ver quien juega. */
 export type FreeTextQuestionView = {
   type: 'SONG_TITLE' | 'ARTIST' | 'TITLE_AND_ARTIST';
@@ -85,6 +88,23 @@ export type GuessEvaluationPayload = {
   totalPlayers: number;
   /** Cuántos aciertos llegaron por cada camino. */
   byType: { EXACT: number; ALIAS: number; NORMALIZED: number; FUZZY: number };
+};
+
+/** Estado de vidas de una persona, tal y como lo ve la sala. */
+export type SurvivalStandingView = {
+  participantId: string;
+  alias: string;
+  lives: number;
+  eliminated: boolean;
+  eliminatedAtRound: number | null;
+};
+
+export type SurvivalStandingsPayload = { standings: SurvivalStandingView[] };
+export type SurvivalLifeLostPayload = { participantId: string; alias: string; lives: number };
+export type SurvivalEliminatedPayload = {
+  participantId: string;
+  alias: string;
+  roundIndex: number;
 };
 
 export type SubmitTextAnswerRequest = { text: string };
@@ -123,6 +143,10 @@ export type RoomStatePayload = {
   leaderboard: LeaderboardEntry[];
   card: CardView | null; // solo para el jugador actual
   locked: boolean;
+  /** Clasificación de vidas. Vacía fuera de Supervivencia. */
+  survivalStandings: SurvivalStandingView[];
+  /** Vidas de quien pide el estado, para que reconectar no las devuelva. */
+  myLives: MyLivesView;
 };
 
 export type RoundSchedulePayload = {
@@ -220,7 +244,12 @@ export type HighlightPayload = {
     | 'ONLY_CORRECT'
     | 'ALL_CORRECT'
     | 'NOBODY_CORRECT'
-    | 'POPULAR_DISTRACTOR';
+    | 'POPULAR_DISTRACTOR'
+    // Supervivencia
+    | 'FIRST_ELIMINATION'
+    | 'LAST_SURVIVOR'
+    | 'MULTIPLE_ELIMINATION'
+    | 'SURVIVED_ON_ONE_LIFE';
   alias: string;
   roundIndex: number | null;
   data?: Record<string, unknown>;
@@ -318,6 +347,10 @@ export const ServerEvents = {
   QuizAnswerSubmitted: 'quiz:answer-submitted',
   QuizDistributionRevealed: 'quiz:distribution-revealed',
   GuessEvaluationRevealed: 'guess:evaluation-revealed',
+  SurvivalLifeLost: 'survival:life-lost',
+  SurvivalPlayerEliminated: 'survival:player-eliminated',
+  SurvivalStandingsUpdated: 'survival:standings-updated',
+  SurvivalMyLives: 'survival:my-lives',
   ClaimAccepted: 'claim:accepted',
   ClaimRejected: 'claim:rejected',
   LeaderboardUpdated: 'leaderboard:updated',

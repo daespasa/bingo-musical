@@ -22,13 +22,14 @@ test.describe('Variantes del bingo', () => {
     await expect(bingo).toBeEnabled();
     await expect(bingo).toHaveAttribute('aria-checked', 'true');
 
-    // El quiz y la respuesta libre ya se juegan de principio a fin.
-    await expect(page.getByRole('radio', { name: /Quiz musical/ })).toBeEnabled();
-    await expect(page.getByRole('radio', { name: /Adivina la canción/ })).toBeEnabled();
+    // Quiz, respuesta libre y supervivencia ya se juegan de principio a fin.
+    for (const nombre of [/Quiz musical/, /Adivina la canción/, /Supervivencia/]) {
+      await expect(page.getByRole('radio', { name: nombre })).toBeEnabled();
+    }
 
     // Los que aún no existen se anuncian, pero no se pueden elegir: una
     // tarjeta que no lleva a ninguna parte es peor que no enseñar la tarjeta.
-    for (const nombre of [/Supervivencia/, /Modo mixto/]) {
+    for (const nombre of [/Modo mixto/]) {
       const tarjeta = page.getByRole('radio', { name: nombre });
       await expect(tarjeta).toBeDisabled();
       await expect(tarjeta).toContainText('Próximamente');
