@@ -34,6 +34,8 @@ type FormData = {
   /** Con qué tipo de ronda se juega Supervivencia. */
   survivalRoundKind: 'MULTIPLE_CHOICE' | 'FREE_TEXT';
   loseLifeOnNoAnswer: boolean;
+  /** Reparto de rondas del modo mixto. */
+  mixedPreset: 'EQUILIBRADO' | 'SOLO_RECONOCIMIENTO';
   cardSize: number;
   freeCenter: boolean;
   snippetDurationMs: number;
@@ -70,6 +72,24 @@ const GUESS_TYPES: Array<{ id: FreeTextQuestionType; label: string; help: string
   { id: 'ARTIST', label: 'Artista', help: 'Escribe de quién es. Vale el artista principal.' },
 ];
 
+/** Repartos de ronda del modo mixto. */
+const MIXED_PRESETS: Array<{
+  id: 'EQUILIBRADO' | 'SOLO_RECONOCIMIENTO';
+  label: string;
+  help: string;
+}> = [
+  {
+    id: 'EQUILIBRADO',
+    label: 'Equilibrado',
+    help: 'Un poco de todo: título, artista y década, con y sin opciones.',
+  },
+  {
+    id: 'SOLO_RECONOCIMIENTO',
+    label: 'Solo reconocimiento',
+    help: 'Todo a escribir, sin opciones que ayuden. Para grupos rodados.',
+  },
+];
+
 const RULE_TOGGLES = [
   ['freeCenter', 'Centro libre', 'La casilla central cuenta como acertada (3×3 y 5×5).'],
   ['lineEnabled', 'Premio por línea', 'Los jugadores pueden cantar línea.'],
@@ -103,6 +123,7 @@ export default function NewGamePage() {
       lives: 3,
       survivalRoundKind: 'MULTIPLE_CHOICE',
       loseLifeOnNoAnswer: true,
+      mixedPreset: 'EQUILIBRADO',
       cardSize: 3,
       freeCenter: false,
       snippetDurationMs: 15000,
@@ -126,6 +147,7 @@ export default function NewGamePage() {
   const attempts = watch('attempts');
   const lives = watch('lives');
   const survivalRoundKind = watch('survivalRoundKind');
+  const mixedPreset = watch('mixedPreset');
 
   // Al menos un tipo de pregunta: sin ninguno no habría nada que preguntar.
   const toggleQuestionType = (tipo: MultipleChoiceQuestionType) => {
@@ -157,20 +179,22 @@ export default function NewGamePage() {
                   questionTypes: data.questionTypes,
                   optionCount: Number(data.optionCount),
                 }
-              : data.mode === 'SURVIVAL'
-                ? {
-                    mode: 'SURVIVAL',
-                    lives: Number(data.lives),
-                    roundKind: data.survivalRoundKind,
-                    loseLifeOnNoAnswer: data.loseLifeOnNoAnswer,
-                  }
-                : data.mode === 'FREE_TEXT'
+              : data.mode === 'MIXED'
+                ? { mode: 'MIXED', preset: data.mixedPreset }
+                : data.mode === 'SURVIVAL'
                   ? {
-                      mode: 'FREE_TEXT',
-                      questionTypes: [data.guessType],
-                      attempts: data.attempts === null ? null : Number(data.attempts),
+                      mode: 'SURVIVAL',
+                      lives: Number(data.lives),
+                      roundKind: data.survivalRoundKind,
+                      loseLifeOnNoAnswer: data.loseLifeOnNoAnswer,
                     }
-                  : { mode: data.mode, revealMode: data.revealMode },
+                  : data.mode === 'FREE_TEXT'
+                    ? {
+                        mode: 'FREE_TEXT',
+                        questionTypes: [data.guessType],
+                        attempts: data.attempts === null ? null : Number(data.attempts),
+                      }
+                    : { mode: data.mode, revealMode: data.revealMode },
           settings: {
             cardSize: Number(data.cardSize),
             freeCenter: data.freeCenter,
@@ -287,6 +311,39 @@ export default function NewGamePage() {
                 <option value={4}>4</option>
               </select>
             </div>
+          </div>
+        )}
+
+        {mode === 'MIXED' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">¿Cómo se reparten las rondas?</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {MIXED_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={mixedPreset === preset.id}
+                    onClick={() => setValue('mixedPreset', preset.id)}
+                    className={clsx(
+                      'rounded-xl border p-4 text-left transition',
+                      mixedPreset === preset.id
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                    )}
+                  >
+                    <span className="font-semibold">{preset.label}</span>
+                    <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                      {preset.help}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                El bingo no entra en la mezcla: se juega con cartón y no encaja en una ronda suelta.
+              </p>
+            </fieldset>
           </div>
         )}
 

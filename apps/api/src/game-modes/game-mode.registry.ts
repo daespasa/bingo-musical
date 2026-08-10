@@ -5,6 +5,7 @@ import { MusicBingoHandler } from './music-bingo.handler';
 import { MultipleChoiceHandler } from './multiple-choice.handler';
 import { FreeTextHandler } from './free-text.handler';
 import { SurvivalHandler } from './survival.handler';
+import { MixedHandler } from './mixed.handler';
 
 /**
  * Resuelve el handler de cada modo.
@@ -35,7 +36,7 @@ type HandlerByMode = {
   MULTIPLE_CHOICE: MultipleChoiceHandler;
   FREE_TEXT: FreeTextHandler;
   SURVIVAL: SurvivalHandler;
-  MIXED: GameModeHandler<'MIXED'>;
+  MIXED: MixedHandler;
 };
 
 @Injectable()
@@ -47,11 +48,13 @@ export class GameModeRegistry {
     multipleChoice: MultipleChoiceHandler,
     freeText: FreeTextHandler,
     survival: SurvivalHandler,
+    mixed: MixedHandler,
   ) {
     this.register(musicBingo);
     this.register(multipleChoice);
     this.register(freeText);
     this.register(survival);
+    this.register(mixed);
   }
 
   private register(handler: AnyGameModeHandler): void {

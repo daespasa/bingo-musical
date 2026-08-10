@@ -4,6 +4,7 @@ import { MusicBingoHandler } from './music-bingo.handler';
 import { MultipleChoiceHandler } from './multiple-choice.handler';
 import { FreeTextHandler } from './free-text.handler';
 import { SurvivalHandler } from './survival.handler';
+import { MixedHandler } from './mixed.handler';
 
 /**
  * Global porque el registro lo necesitan tanto la creación de partidas como el
@@ -16,6 +17,7 @@ import { SurvivalHandler } from './survival.handler';
     MultipleChoiceHandler,
     FreeTextHandler,
     SurvivalHandler,
+    MixedHandler,
     GameModeRegistry,
   ],
   exports: [GameModeRegistry],

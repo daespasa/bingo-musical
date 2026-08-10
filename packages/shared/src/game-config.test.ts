@@ -31,9 +31,12 @@ describe('catálogo de modos', () => {
       'MULTIPLE_CHOICE',
       'FREE_TEXT',
       'SURVIVAL',
+      'MIXED',
     ]);
-    expect(isPlayableGameMode('MIXED')).toBe(false);
+    // Ya no queda ningún modo del catálogo por implementar; lo que no existe
+    // sigue sin ser jugable.
     expect(isPlayableGameMode('NO_EXISTE')).toBe(false);
+    expect(isPlayableGameMode('SONG_DUEL')).toBe(false);
   });
 
   it('falla al describir un modo desconocido', () => {
