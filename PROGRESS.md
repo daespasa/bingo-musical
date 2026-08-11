@@ -4,7 +4,7 @@
 - **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
   plataforma de juegos musicales.
 - **Rama actual**: `epic/gramola-platform`.
-- **Fase**: 9 de 12 terminadas. **Los cinco modos del catálogo son jugables**:
+- **Fase**: 11 de 12 terminadas. **Los cinco modos del catálogo son jugables**:
   bingo (dos variantes), quiz, adivina, supervivencia y mixto, cada uno con su
   resumen entre rondas y su ceremonia.
 
@@ -22,8 +22,8 @@
 | 7    | Supervivencia                              | Terminada |
 | 8    | Modo mixto                                 | Terminada |
 | 9    | Experiencia transversal (Show, resultados) | Terminada |
-| 10   | Regresión                                  | Pendiente |
-| 11   | Calidad                                    | Pendiente |
+| 10   | Regresión                                  | Terminada |
+| 11   | Calidad                                    | Terminada |
 | 12   | Release                                    | Pendiente |
 
 ### Fase 1 — Marca (`feat/gramola-brand`)
@@ -156,7 +156,21 @@ Ejecutadas el 2026-08-08 sobre `feat/mode-aware-show`:
 
 Baseline de partida (`v0.5.2`, mismo día): lint y typecheck en verde, 94 tests.
 
-### E2E: la suite no está en verde, y no es culpa de esta épica
+### E2E: la suite entera pasa por primera vez
+
+`pnpm test:e2e`: **48/48 en verde** (14,7 min), incluidas las cinco suites de
+modos nuevas. Es la primera vez que la suite completa termina sin fallos: en
+`v0.5.2` tampoco lo hacía.
+
+El fallo intermitente que se arrastraba desde antes de la épica **no era
+aleatorio ni era del código de producción**. La primera hipótesis —agotar el
+_rate limiting_— se comprobó y resultó falsa: una ejecución completa no produjo
+ni un solo 429. La causa real estaba en el helper de sesión compartida de los
+E2E, que daba por válida una sesión ya revocada porque solo miraba la URL y un
+enlace estático que se renderiza antes de resolver la sesión. Detalle en
+`DECISIONS.md`.
+
+### Histórico del problema (antes del arreglo)
 
 `pnpm test:e2e` se ha ejecutado tres veces sobre la épica y dos sobre `main`:
 
@@ -190,8 +204,8 @@ este entorno** y no debe arrastrarse. Queda como problema conocido a investigar
 antes de la release: los tests comparten una sola sesión desde `c185a1e` y
 dependen de temporización real de audio, que son los dos sospechosos.
 
-**No ejecutados todavía en esta épica**: `docker compose --profile full build` y
-GitHub Actions.
+**No ejecutado todavía**: `docker compose --profile full build` y GitHub Actions.
+`docker compose config` sí valida correctamente.
 
 ## Compatibilidad verificada
 
@@ -203,7 +217,12 @@ GitHub Actions.
 
 ## Pendiente de la épica
 
-Quedan las fases 10 a 12: regresión completa, calidad y release.
+Queda la fase 12: release (changelog, versión, integración en `main` y tag).
+
+Regresión comprobada sobre la base de datos real: 366 partidas con los cinco
+modos en uso, 52 resultados históricos, 28 usuarios, 11 colecciones y las 6
+temáticas intactas. `docker compose config` válido y los volúmenes
+`bingo-musical_bingo-pgdata` y `bingo-musical_bingo-redisdata` sin tocar.
 
 Pendientes menores conocidos:
 

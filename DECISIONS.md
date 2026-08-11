@@ -349,3 +349,11 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Alternativas**: reutilizar la sala; crear una sala nueva sobre la misma partida.
 - **Elección**: duplicar. Crear otra sala sobre la misma partida habría mezclado los resultados de las dos en el historial de esa partida.
 - **Consecuencias**: solo el anfitrión puede convocarla, y la sala nueva empieza en su lobby, así que pueden entrar jugadores distintos. La partida anterior sigue consultable.
+
+## 2026-08-11 — El fallo intermitente de los E2E no era aleatorio
+
+- **Decisión**: el helper de sesión compartida valida la sesión con un dato que solo llega con sesión válida, y las pruebas que la invalidan a propósito lo dicen explícitamente.
+- **Contexto**: desde antes de esta épica, la suite completa fallaba con un test distinto en cada ejecución mientras que cada test pasaba aislado. La primera hipótesis —agotar el _rate limiting_— resultó **falsa**: una ejecución completa no produjo ni un solo 429.
+- **Causa real**: las pruebas comparten una sesión para no agotar el límite de accesos. El helper la daba por buena si, tras ir a `/dashboard`, la URL seguía siendo `/dashboard` y existía el enlace «Tu cuenta». Pero el middleware solo comprueba que la cookie **exista**, no que siga viva, y ese enlace se renderiza antes de resolver la sesión. Con la cookie revocada —por el propio test de cierre de sesión, o por el de cerrar las demás sesiones— el helper devolvía «sesión válida», la página se iba a `/login` un instante después y la prueba fallaba más adelante, en una navegación cualquiera. Cuál fallaba dependía del orden y de los tiempos, que es lo que la hacía parecer aleatoria.
+- **Elección**: esperar al nombre de la cuenta, que solo aparece cuando el servidor ha confirmado la sesión, y exponer `olvidarSesionCompartida()` para que las pruebas que la matan no dejen la caché mintiendo.
+- **Consecuencias**: no se ha tocado el límite de accesos, que es una protección real y sigue probada. El arreglo es de las pruebas, que era donde estaba el fallo.

@@ -51,15 +51,43 @@ export async function loginAsHost(page: Page, opciones: { fresh?: boolean } = {}
   if (sesionCompartida) {
     await page.context().addCookies(sesionCompartida);
     await page.goto('/dashboard');
-    // Si la sesión ya no vale, la aplicación devuelve al acceso
-    if (/\/dashboard/.test(page.url())) {
-      await expect(page.getByRole('link', { name: 'Tu cuenta' })).toBeVisible();
-      return;
-    }
+
+    /*
+     * Comprobar la URL no basta, y comprobar que existe el enlace «Tu cuenta»
+     * tampoco: la cookie puede seguir presente pero estar revocada en el
+     * servidor —tras un cierre de sesión o al cerrar las demás sesiones— y el
+     * middleware solo mira que exista. La página empieza a renderizarse en
+     * /dashboard y solo se va a /login cuando el cliente resuelve la sesión.
+     *
+     * Así que se espera a un dato que únicamente llega con sesión válida: el
+     * nombre de la cuenta. Sin esto, el helper daba por buena una sesión
+     * muerta y la prueba fallaba más tarde, en una navegación cualquiera.
+     */
+    const sigueValida = await page
+      .getByRole('link', { name: 'Tu cuenta' })
+      .filter({ hasText: 'Anfitrión Demo' })
+      .waitFor({ state: 'visible', timeout: 5_000 })
+      .then(
+        () => true,
+        () => false,
+      );
+    if (sigueValida) return;
+
     sesionCompartida = null;
     await page.context().clearCookies();
   }
   await entrarPorFormulario(page);
+}
+
+/**
+ * Olvida la sesión compartida.
+ *
+ * La llaman las pruebas que la invalidan a propósito (cerrar sesión, cerrar
+ * las demás sesiones). Sin esto, la siguiente prueba pagaría la comprobación
+ * de arriba en balde antes de volver a entrar.
+ */
+export function olvidarSesionCompartida(): void {
+  sesionCompartida = null;
 }
 
 /**
