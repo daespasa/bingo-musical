@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loginAsHost } from './helpers';
+import { loginAsHost, olvidarSesionCompartida } from './helpers';
 
 test.describe('Cuenta y navegación', () => {
   test('el header marca en qué sección estás', async ({ page }) => {
@@ -95,6 +95,9 @@ test.describe('Sesión caducada', () => {
     // El primero se entera en cuanto vuelve a pedir algo
     await paginaPrimero.goto('/dashboard');
     await expect(paginaPrimero).toHaveURL(/\/login/, { timeout: 15_000 });
+
+    // Aquí se han cerrado sesiones ajenas: la compartida puede ser una de ellas.
+    olvidarSesionCompartida();
 
     await primero.close();
     await segundo.close();
