@@ -2,6 +2,84 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [0.6.0] - 2026-08-11
+
+**Bingo Musical pasa a llamarse Gramola** y deja de ser un solo juego para
+convertirse en una plataforma de juegos musicales en directo. El bingo sigue
+siendo el modo insignia; ahora comparte motor con otros cuatro.
+
+### Added
+
+- **Cuatro modos de juego nuevos**, además del bingo:
+  - **Quiz musical**: escucha el fragmento y elige entre 2 y 4 opciones. Pregunta
+    por título, artista o década, con distractores tomados de la propia
+    colección. Al revelar se ve el reparto de respuestas.
+  - **Adivina la canción**: sin opciones, se escribe la respuesta. Se aceptan
+    acentos, mayúsculas, puntuación, «feat», «&» y erratas razonables, con
+    intentos configurables.
+  - **Supervivencia**: cada error cuesta una vida y gana quien queda en pie.
+    Quien cae sigue viendo la partida como espectador.
+  - **Modo mixto**: cada ronda cambia de reto, con el reparto que elija el
+    anfitrión.
+- **Bingo clásico**, segunda variante del bingo: la canción se ve desde el
+  primer segundo, así que el reto es encontrarla en el cartón y no reconocerla
+  de oído. Pensado para grupos con niveles musicales muy distintos; fallar una
+  casilla no resta.
+- **Selector de modo** al crear la partida, con jugadores recomendados,
+  dificultad, soporte de proyector y de juego remoto.
+- **Revancha** al terminar: crea una sala nueva con la misma configuración sin
+  tocar el historial de la partida anterior.
+- **Año de publicación** en las pistas, que alimenta las preguntas de década.
+  Las 20 pistas demo se reparten entre cinco décadas.
+
+### Changed
+
+- **La marca visible pasa a ser Gramola** en metadata, PWA, cabeceras, portada,
+  aviso de instalación y Swagger, centralizada en una única constante.
+- **`Game` representa cualquier partida.** El modo se persiste y el servidor
+  resuelve un handler por modo, en lugar de repartir condicionales. Añadir un
+  modo es implementar una interfaz y registrarlo.
+- **El resumen entre rondas y la ceremonia hablan el idioma de cada modo**:
+  aciertos en vez de cartones, erratas que colaron, caídas y supervivientes,
+  orden de eliminación.
+- El historial muestra el modo y la variante de cada partida.
+
+### Fixed
+
+- **El resumen decía «no la tenía nadie» en todos los modos nuevos.** Los
+  aciertos se contaban siempre como marcas de cartón. De paso, el «N de M»
+  contaba participantes en vez de jugadores, así que incluía al anfitrión y a
+  la pantalla de proyección.
+- **La imagen de Docker no se construía fuera de un checkout limpio.** Faltaba
+  un `.dockerignore`, así que el contexto arrastraba los `node_modules` del
+  host —enlaces simbólicos de pnpm— y los dejaba caer encima de los del
+  contenedor.
+- **La suite E2E completa nunca había pasado entera.** Fallaba un test distinto
+  en cada ejecución porque el ayudante de sesión compartida daba por válida una
+  sesión ya revocada.
+
+### Security
+
+- En los modos que preguntan, **la solución no sale del servidor antes del
+  revelado**: ni en el payload, ni en el acuse de recibo, ni moviendo el
+  marcador. Cubierto por tests de unidad y por E2E que inspeccionan el HTML
+  servido y el objeto `window`.
+- La comparación difusa de respuestas es deliberadamente conservadora: la
+  tolerancia depende de la longitud, así que ninguna palabra corta vale por
+  otra. Sin IA ni servicios externos.
+- Las vidas de Supervivencia se persisten y las decide siempre el servidor:
+  reconectar no las devuelve, y quien está eliminado no puede responder.
+
+### Migrations
+
+Tres migraciones, todas aditivas y verificadas sobre una base de datos con
+datos reales. Las partidas anteriores quedan como `MUSIC_BINGO` sin reescribir
+ninguna fila.
+
+- `add_game_mode_and_config`
+- `add_quiz_questions_and_release_year`
+- `add_player_life_state`
+
 ## [0.5.2] - 2026-08-07
 
 ### Fixed

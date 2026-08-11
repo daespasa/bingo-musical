@@ -1,5 +1,64 @@
 # Decisiones técnicas
 
+Registro de por qué el proyecto está hecho como está. Cada entrada recoge la
+decisión, el contexto que la obligó, las alternativas descartadas y lo que
+costó tomarla. Orden cronológico; la más reciente al final.
+
+<details>
+<summary><strong>Índice de decisiones (49)</strong></summary>
+
+- [2026-08-05 — Gestor de paquetes y monorepo](#2026-08-05-gestor-de-paquetes-y-monorepo)
+- [2026-08-05 — Volúmenes Docker nombrados en lugar de bind mounts](#2026-08-05-volúmenes-docker-nombrados-en-lugar-de-bind-mounts)
+- [2026-08-05 — ESLint 9 flat config única en la raíz](#2026-08-05-eslint-9-flat-config-única-en-la-raíz)
+- [2026-08-05 — Estrategia de integración de ramas](#2026-08-05-estrategia-de-integración-de-ramas)
+- [2026-08-05 — Tailwind CSS 3.4 (no v4)](#2026-08-05-tailwind-css-34-no-v4)
+- [2026-08-05 — Audio demo generado por script](#2026-08-05-audio-demo-generado-por-script)
+- [2026-08-05 — Estructura del monorepo sin `packages/ui` ni `packages/config`](#2026-08-05-estructura-del-monorepo-sin-packagesui-ni-packagesconfig)
+- [2026-08-05 — Iconografía con lucide-react en lugar de emojis](#2026-08-05-iconografía-con-lucide-react-en-lugar-de-emojis)
+- [2026-08-05 — Revelado y avance de ronda configurables por partida](#2026-08-05-revelado-y-avance-de-ronda-configurables-por-partida)
+- [2026-08-05 — El servidor devuelve el veredicto de cada marca](#2026-08-05-el-servidor-devuelve-el-veredicto-de-cada-marca)
+- [2026-08-05 — Google OAuth implementado a mano](#2026-08-05-google-oauth-implementado-a-mano)
+- [2026-08-05 — Iconos PNG generados con un codificador propio](#2026-08-05-iconos-png-generados-con-un-codificador-propio)
+- [2026-08-05 — El service worker nunca cachea la API](#2026-08-05-el-service-worker-nunca-cachea-la-api)
+- [2026-08-06 — `@bingo/shared` se consume compilado y sin watcher](#2026-08-06-@bingoshared-se-consume-compilado-y-sin-watcher)
+- [2026-08-07 — El producto pasa a llamarse Gramola](#2026-08-07-el-producto-pasa-a-llamarse-gramola)
+- [2026-08-07 — Qué se renombra y qué no](#2026-08-07-qué-se-renombra-y-qué-no)
+- [2026-08-07 — Renombrar el repositorio y el subdominio: todavía no](#2026-08-07-renombrar-el-repositorio-y-el-subdominio-todavía-no)
+- [2026-08-07 — `Game` representa cualquier partida, con handlers por modo](#2026-08-07-game-representa-cualquier-partida-con-handlers-por-modo)
+- [2026-08-07 — El cliente nunca elige el handler](#2026-08-07-el-cliente-nunca-elige-el-handler)
+- [2026-08-07 — La configuración de cada modo va en JSON validado, no en columnas nullable](#2026-08-07-la-configuración-de-cada-modo-va-en-json-validado-no-en-columnas-nullable)
+- [2026-08-07 — Las partidas anteriores son MUSIC_BINGO sin tocar ninguna fila](#2026-08-07-las-partidas-anteriores-son-music_bingo-sin-tocar-ninguna-fila)
+- [2026-08-07 — Las variantes del bingo no duplican el motor](#2026-08-07-las-variantes-del-bingo-no-duplican-el-motor)
+- [2026-08-07 — El selector de modo se añade al formulario, no lo convierte en pasos](#2026-08-07-el-selector-de-modo-se-añade-al-formulario-no-lo-convierte-en-pasos)
+- [2026-08-07 — Los modos no jugables se enseñan, pero deshabilitados](#2026-08-07-los-modos-no-jugables-se-enseñan-pero-deshabilitados)
+- [2026-08-07 — En bingo clásico, fallar una casilla no resta](#2026-08-07-en-bingo-clásico-fallar-una-casilla-no-resta)
+- [2026-08-07 — La canción visible se muestra junto al estado de la ronda, no en su lugar](#2026-08-07-la-canción-visible-se-muestra-junto-al-estado-de-la-ronda-no-en-su-lugar)
+- [2026-08-08 — La solución del quiz no sale del servidor antes del reveal](#2026-08-08-la-solución-del-quiz-no-sale-del-servidor-antes-del-reveal)
+- [2026-08-08 — Ni el ack ni el ranking delatan el acierto](#2026-08-08-ni-el-ack-ni-el-ranking-delatan-el-acierto)
+- [2026-08-08 — Las opciones se ven antes de poder pulsarse](#2026-08-08-las-opciones-se-ven-antes-de-poder-pulsarse)
+- [2026-08-08 — Los distractores salen de la propia colección](#2026-08-08-los-distractores-salen-de-la-propia-colección)
+- [2026-08-08 — La pregunta se genera con semilla estable y se persiste](#2026-08-08-la-pregunta-se-genera-con-semilla-estable-y-se-persiste)
+- [2026-08-08 — Fallar en el quiz no resta por defecto](#2026-08-08-fallar-en-el-quiz-no-resta-por-defecto)
+- [2026-08-08 — Los años del catálogo demo se reparten por décadas](#2026-08-08-los-años-del-catálogo-demo-se-reparten-por-décadas)
+- [2026-08-08 — La comparación de respuestas vive aparte de `normalizeText`](#2026-08-08-la-comparación-de-respuestas-vive-aparte-de-normalizetext)
+- [2026-08-08 — El fuzzy es conservador por longitud, no por porcentaje](#2026-08-08-el-fuzzy-es-conservador-por-longitud-no-por-porcentaje)
+- [2026-08-08 — Política explícita de artistas y colaboraciones](#2026-08-08-política-explícita-de-artistas-y-colaboraciones)
+- [2026-08-08 — Ni el ack ni el intento delatan el acierto](#2026-08-08-ni-el-ack-ni-el-intento-delatan-el-acierto)
+- [2026-08-08 — Se guardan todos los intentos, no solo el veredicto](#2026-08-08-se-guardan-todos-los-intentos-no-solo-el-veredicto)
+- [2026-08-08 — Supervivencia no duplica evaluadores: deriva la configuración del modo de ronda](#2026-08-08-supervivencia-no-duplica-evaluadores-deriva-la-configuración-del-modo-de-ronda)
+- [2026-08-08 — Las vidas se persisten y nunca las decide el cliente](#2026-08-08-las-vidas-se-persisten-y-nunca-las-decide-el-cliente)
+- [2026-08-08 — Las vidas no son puntos](#2026-08-08-las-vidas-no-son-puntos)
+- [2026-08-08 — El desempate de Supervivencia es determinista](#2026-08-08-el-desempate-de-supervivencia-es-determinista)
+- [2026-08-08 — No responder cuesta vida, pero es configurable](#2026-08-08-no-responder-cuesta-vida-pero-es-configurable)
+- [2026-08-08 — El modo mixto reparte con resto mayor e intercalado proporcional](#2026-08-08-el-modo-mixto-reparte-con-resto-mayor-e-intercalado-proporcional)
+- [2026-08-08 — El bingo no entra en el modo mixto](#2026-08-08-el-bingo-no-entra-en-el-modo-mixto)
+- [2026-08-08 — El resumen entre rondas se generaliza, no se duplica](#2026-08-08-el-resumen-entre-rondas-se-generaliza-no-se-duplica)
+- [2026-08-08 — El recuento de aciertos depende del modo](#2026-08-08-el-recuento-de-aciertos-depende-del-modo)
+- [2026-08-08 — La revancha duplica la partida en lugar de reabrir la sala](#2026-08-08-la-revancha-duplica-la-partida-en-lugar-de-reabrir-la-sala)
+- [2026-08-11 — El fallo intermitente de los E2E no era aleatorio](#2026-08-11-el-fallo-intermitente-de-los-e2e-no-era-aleatorio)
+
+</details>
+
 ## 2026-08-05 — Gestor de paquetes y monorepo
 
 - **Decisión**: pnpm workspaces + Turborepo.
@@ -357,3 +416,11 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Causa real**: las pruebas comparten una sesión para no agotar el límite de accesos. El helper la daba por buena si, tras ir a `/dashboard`, la URL seguía siendo `/dashboard` y existía el enlace «Tu cuenta». Pero el middleware solo comprueba que la cookie **exista**, no que siga viva, y ese enlace se renderiza antes de resolver la sesión. Con la cookie revocada —por el propio test de cierre de sesión, o por el de cerrar las demás sesiones— el helper devolvía «sesión válida», la página se iba a `/login` un instante después y la prueba fallaba más adelante, en una navegación cualquiera. Cuál fallaba dependía del orden y de los tiempos, que es lo que la hacía parecer aleatoria.
 - **Elección**: esperar al nombre de la cuenta, que solo aparece cuando el servidor ha confirmado la sesión, y exponer `olvidarSesionCompartida()` para que las pruebas que la matan no dejen la caché mintiendo.
 - **Consecuencias**: no se ha tocado el límite de accesos, que es una protección real y sigue probada. El arreglo es de las pruebas, que era donde estaba el fallo.
+
+## 2026-08-11 — La imagen de Docker no se construía fuera de un checkout limpio
+
+- **Decisión**: añadir `.dockerignore` y copiar el esquema de Prisma antes de instalar en la imagen de la API.
+- **Contexto**: `docker compose --profile full build` era lo único de la validación final que nunca se había ejecutado en esta épica. Fallaba, y **también fallaba en `main`**: no es una regresión.
+- **Causa 1**: no existía `.dockerignore`. El contexto arrastraba los `node_modules` del host —enlaces simbólicos de pnpm que apuntan a rutas del host— y el `COPY` de cada app los dejaba caer encima de los que el contenedor acababa de instalar. Los enlaces dejaban de resolver y la construcción moría con un `Cannot find module .../next`, que parece un problema de dependencias y no lo es. La imagen solo se construía en un checkout sin `node_modules`, es decir, en CI.
+- **Causa 2**: el `postinstall` de `@bingo/database` ejecuta `prisma generate`, que necesita el esquema; el Dockerfile solo copiaba los `package.json` antes de instalar. Estaba oculto tras una capa cacheada y salió a la luz al invalidarse la caché.
+- **Consecuencias**: ambas imágenes se construyen ya en local (`bingo-web` 1,33 GB, `bingo-api` 892 MB). De paso, el contexto de construcción es mucho más pequeño.

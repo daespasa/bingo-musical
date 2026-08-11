@@ -4,7 +4,7 @@
 - **Épica actual**: `epic/gramola-platform` — convertir el bingo musical en una
   plataforma de juegos musicales.
 - **Rama actual**: `epic/gramola-platform`.
-- **Fase**: 11 de 12 terminadas. **Los cinco modos del catálogo son jugables**:
+- **Fase**: 12 de 12 terminadas. **Los cinco modos del catálogo son jugables**:
   bingo (dos variantes), quiz, adivina, supervivencia y mixto, cada uno con su
   resumen entre rondas y su ceremonia.
 
@@ -24,7 +24,7 @@
 | 9    | Experiencia transversal (Show, resultados) | Terminada |
 | 10   | Regresión                                  | Terminada |
 | 11   | Calidad                                    | Terminada |
-| 12   | Release                                    | Pendiente |
+| 12   | Release                                    | Terminada |
 
 ### Fase 1 — Marca (`feat/gramola-brand`)
 
@@ -204,8 +204,12 @@ este entorno** y no debe arrastrarse. Queda como problema conocido a investigar
 antes de la release: los tests comparten una sola sesión desde `c185a1e` y
 dependen de temporización real de audio, que son los dos sospechosos.
 
-**No ejecutado todavía**: `docker compose --profile full build` y GitHub Actions.
-`docker compose config` sí valida correctamente.
+`docker compose config` valida y **`docker compose --profile full build` pasa**
+(`bingo-web` 1,33 GB, `bingo-api` 892 MB). No pasaba: ni en esta rama ni en
+`main`. Faltaba un `.dockerignore` y el esquema de Prisma antes de instalar;
+detalle en `DECISIONS.md`.
+
+**Queda por comprobar**: GitHub Actions sobre `main` tras la integración.
 
 ## Compatibilidad verificada
 
@@ -217,7 +221,7 @@ dependen de temporización real de audio, que son los dos sospechosos.
 
 ## Pendiente de la épica
 
-Queda la fase 12: release (changelog, versión, integración en `main` y tag).
+La épica está completa. Publicada como `v0.6.0`.
 
 Regresión comprobada sobre la base de datos real: 366 partidas con los cinco
 modos en uso, 52 resultados históricos, 28 usuarios, 11 colecciones y las 6
