@@ -21,3 +21,42 @@ La API confía en cabeceras `X-Forwarded-*` solo cuando `trust proxy` está acti
 ## Reportar vulnerabilidades
 
 Abre un issue privado o contacta al mantenedor del repositorio.
+
+## Modos que preguntan
+
+En quiz, adivina, supervivencia y mixto, **la solución no sale del servidor
+antes del revelado**. Están cerradas las tres vías por las que se filtraría:
+
+- **Payload**: la ronda tiene dos formas, la interna con la respuesta y la
+  pública sin ella. Una única función es la puerta de salida hacia la red, así
+  que añadir un campo sensible a la ronda no lo cuela solo.
+- **Acuse de recibo**: responder confirma que se ha registrado el envío y nada
+  más. Un ack que dijera «correcto» revelaría la solución igual.
+- **Marcador**: la puntuación se aplica al cerrar la ronda, no al responder. Un
+  ranking que sube justo al pulsar delata el acierto ante toda la sala.
+
+Hay tests de unidad y E2E que inspeccionan el HTML servido y el objeto `window`
+buscando `correctIndex`, `correctText` e `isCorrect`.
+
+## Respuesta libre
+
+La evaluación es del servidor y con reglas explícitas: sin IA y sin servicios
+externos. La comparación difusa es deliberadamente conservadora —la tolerancia
+depende de la longitud— para que ninguna palabra corta valga por otra.
+
+Con varios intentos permitidos, escribir es barato: hay un enfriamiento por
+jugador además del límite de intentos, y repetir una respuesta ya probada no
+gasta intento ni cuela.
+
+## Supervivencia
+
+Las vidas se persisten y las decide siempre el servidor. Reconectar no las
+devuelve ni resucita a nadie, y a quien está eliminado el servidor le rechaza
+cualquier respuesta, además de no ofrecerle el botón.
+
+## Modo de juego
+
+El cliente **no puede indicar** con qué reglas evaluar su partida. El modo se
+fija al crearla, se persiste y el servidor lo lee de ahí; la configuración se
+revalida al leerla, de forma que una fila manipulada a mano tampoco cambia las
+reglas a mitad de sala.

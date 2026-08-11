@@ -1,20 +1,77 @@
 # Gramola 🎵
 
-**Juega, escucha y adivina.**
+> **Juega, escucha y adivina.**
 
-Gramola es una plataforma autoalojada de juegos musicales multijugador en tiempo real. Un anfitrión crea una sala, los jugadores entran con un código o QR desde cualquier móvil y juegan en directo. El **bingo musical** es su modo insignia; el dominio está preparado para más modos de juego.
+[![CI](https://github.com/daespasa/bingo-musical/actions/workflows/ci.yml/badge.svg)](https://github.com/daespasa/bingo-musical/actions/workflows/ci.yml)
+[![E2E](https://github.com/daespasa/bingo-musical/actions/workflows/e2e.yml/badge.svg)](https://github.com/daespasa/bingo-musical/actions/workflows/e2e.yml)
+![Versión](https://img.shields.io/badge/versión-v0.6.0-cf3a00)
+![Node](https://img.shields.io/badge/node-%E2%89%A520-5a5a5a)
+![Licencia](https://img.shields.io/badge/licencia-uso%20personal-5a5a5a)
 
-**Versión actual: v0.5.2** — MVP local jugable. Ver [PROGRESS.md](PROGRESS.md), [CHANGELOG.md](CHANGELOG.md) y el sistema visual en [DESIGN.md](DESIGN.md).
+Gramola es una plataforma **autoalojada** de juegos musicales multijugador en
+tiempo real. Un anfitrión crea una sala, los jugadores entran con un código de
+seis caracteres o un QR desde cualquier móvil, y juegan en directo. Cinco modos
+de juego sobre el mismo motor de sala, audio sincronizado y puntuación.
+
+No hace falta ninguna cuenta ni servicio de pago: se juega de principio a fin
+con la colección de música demo incluida, generada localmente y libre de
+derechos.
+
+## Índice
+
+- [Modos de juego](#modos-de-juego)
+- [Requisitos](#requisitos)
+- [Instalación y primer arranque](#instalación-y-primer-arranque)
+- [Cómo probar una partida](#cómo-probar-una-partida-con-dos-jugadores)
+- [Comandos](#comandos)
+- [Arquitectura](#arquitectura)
+- [PWA](#instalar-como-aplicación-pwa)
+- [Spotify](#música-de-spotify-opcional) · [Colecciones temáticas](#colecciones-temáticas)
+- [Google OAuth](#inicio-de-sesión-con-google-opcional)
+- [Docker](#docker) · [Despliegue](#despliegue-en-gramoladaespasacom)
+- [Seguridad](#seguridad) · [Contribuir](#contribuir) · [Licencia](#licencia)
+
+### Documentación
+
+| Documento                          | Para qué                                        |
+| ---------------------------------- | ----------------------------------------------- |
+| [PROGRESS.md](PROGRESS.md)         | Estado actual, validaciones y trabajo pendiente |
+| [CHANGELOG.md](CHANGELOG.md)       | Qué cambió en cada versión                      |
+| [DECISIONS.md](DECISIONS.md)       | Por qué se hizo así, decisión a decisión        |
+| [DESIGN.md](DESIGN.md)             | Sistema visual y accesibilidad                  |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Flujo de Git, entorno y validaciones            |
+| [SECURITY.md](SECURITY.md)         | Modelo de amenazas y límites                    |
 
 ---
+
+## Modos de juego
+
+Los cinco se juegan de principio a fin y comparten sala, código, QR, lobby,
+audio sincronizado, temporizador, ranking, momentazos, ceremonia, reacciones,
+reconexión, historial y colecciones. Solo cambia el reto.
+
+| Modo                   | Qué se hace                                                                                                                                                       | Jugadores | Dificultad |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------- |
+| **Bingo musical**      | Completa tu cartón mientras suenan tus canciones. Dos variantes: _a ciegas_ (hay que reconocerla de oído) y _clásico_ (la canción se ve desde el primer segundo). | 2–40      | Relajada   |
+| **Quiz musical**       | Escucha el fragmento y elige la respuesta correcta entre 2 y 4 opciones. Título, artista o década.                                                                | 2–60      | Media      |
+| **Adivina la canción** | Sin opciones: escribe lo que estás escuchando. Se aceptan acentos, mayúsculas, «feat» y erratas razonables.                                                       | 2–30      | Exigente   |
+| **Supervivencia**      | Cada error cuesta una vida. Gana quien queda en pie.                                                                                                              | 3–40      | Exigente   |
+| **Modo mixto**         | Cada ronda cambia de reto, con opciones y respuesta libre repartidas.                                                                                             | 2–40      | Media      |
+
+El **bingo clásico** está pensado a propósito para grupos con niveles musicales
+muy distintos —familias, mayores, asociaciones, residencias—: como la canción
+se ve, nadie queda fuera por no reconocerla de oído, y fallar una casilla no
+resta.
+
+Añadir un modo nuevo es implementar una interfaz (`GameModeHandler`) y
+registrarlo; el motor de sala, el audio y la puntuación son comunes. El detalle
+está en [DECISIONS.md](DECISIONS.md).
 
 ## Requisitos
 
 - Node.js 20 o superior
 - Docker y Docker Compose (para PostgreSQL y Redis)
 - pnpm 9 (se instala con corepack, incluido en Node)
-
-No hace falta ninguna cuenta ni servicio de pago: la aplicación es jugable de principio a fin con la colección de música demo incluida.
 
 ## Instalación y primer arranque
 
@@ -53,18 +110,25 @@ pnpm dev
 ## Cómo probar una partida con dos jugadores
 
 1. Abre http://localhost:3000/login e inicia sesión con el usuario demo.
-2. Pulsa **Nueva partida**, ponle nombre, elige la **Colección Demo** y crea la partida.
+2. Pulsa **Nueva partida**. Lo primero que se elige es **a qué jugar**: cada
+   modo trae su propia configuración debajo.
+3. Ponle nombre, elige la **Colección Demo** y crea la partida.
    - Para probar rápido, baja el fragmento a 10 s y la ventana de respuesta a 5 s.
    - En **Ritmo de la partida** decides si la canción se revela sola al acabar la ronda o si prefieres revelarla tú.
-3. Pulsa **Abrir sala (modo remoto)**. Verás el código de 6 caracteres y su QR.
-4. Abre **dos ventanas de incógnito** (o dos móviles en la misma red) en `http://localhost:3000/join/CODIGO`.
-5. En cada una escribe un alias distinto y entra. Los alias son únicos por sala.
-6. En cada ventana pulsa **Activar sonido** (el navegador exige un gesto para reproducir audio).
-7. En el panel del anfitrión pulsa **Empezar partida**.
-8. Cada jugador recibe un cartón **distinto**, generado en el servidor. Suena el fragmento y se marcan las casillas: el servidor valida cada marca, el navegador nunca decide.
-9. Prueba los controles del anfitrión: pausar, reanudar, repetir fragmento, +10 s, revelar, omitir y siguiente.
-10. Canta **¡Línea!** o **¡Bingo!**: si no la tienes, el servidor rechaza la reclamación y penaliza.
-11. Pulsa **Finalizar** para ver la ceremonia de podio, los momentazos y la clasificación final.
+4. Pulsa **Abrir sala (modo remoto)**. Verás el código de 6 caracteres y su QR.
+5. Abre **dos ventanas de incógnito** (o dos móviles en la misma red) en `http://localhost:3000/join/CODIGO`.
+6. En cada una escribe un alias distinto y entra. Los alias son únicos por sala.
+7. En cada ventana pulsa **Activar sonido** (el navegador exige un gesto para reproducir audio).
+8. En el panel del anfitrión pulsa **Empezar partida**.
+9. Juega la ronda. En bingo, cada jugador recibe un cartón **distinto** generado
+   en el servidor; en los demás modos, la pregunta o el campo de respuesta. En
+   todos, **el servidor decide**: el navegador nunca valida una marca, una
+   respuesta ni una vida.
+10. Prueba los controles del anfitrión: pausar, reanudar, repetir fragmento, +10 s, revelar, omitir y siguiente.
+11. En bingo, canta **¡Línea!** o **¡Bingo!**: si no la tienes, el servidor rechaza la reclamación y penaliza.
+12. Pulsa **Finalizar** para ver la ceremonia de podio, los momentazos y la
+    clasificación final. Desde ahí puedes convocar una **revancha**, que crea una
+    sala nueva sin tocar el historial de la que acaba de terminar.
 
 Para el **modo proyector**, abre la sala con ese modo y usa `Abrir pantalla proyector`: el audio suena solo ahí y los móviles muestran únicamente el cartón.
 
@@ -96,9 +160,12 @@ apps/
   web/    Next.js 15 (App Router), Tailwind, TanStack Query, Socket.IO client, PWA
   api/    NestJS 11, REST + Swagger, Socket.IO + Redis adapter, Prisma, Argon2id
 packages/
-  shared/           contratos WebSocket, generación de cartones, puntuación, normalización
+  shared/           contratos WebSocket, catálogo y configuración de modos,
+                    cartones, puntuación, comparación de respuestas, marca
   database/         esquema Prisma, migraciones y seed
   music-providers/  contrato PreviewProvider y encapsulado de spotify-preview-finder
+  (en api) game-modes/  un handler por modo: valida configuración, crea ronda,
+                        evalúa, puntúa y decide el final
 docker/             Dockerfiles de api y web
 e2e/                tests Playwright
 scripts/            generadores de audio demo e iconos
@@ -184,6 +251,10 @@ docker compose --profile full up -d --build
 
 Los datos viven en volúmenes nombrados (`bingo-pgdata`, `bingo-redisdata`) y sobreviven a `docker compose down`. **No uses `docker compose down -v`** salvo que quieras borrarlos.
 
+> El proyecto Compose sigue llamándose `bingo-musical` a propósito: renombrarlo
+> dejaría huérfanos los volúmenes de cualquier instalación existente. Ver
+> [DECISIONS.md](DECISIONS.md).
+
 ## Despliegue en gramola.daespasa.com
 
 La arquitectura ya está preparada para ejecutarse tras Cloudflare Tunnel (la API activa `trust proxy` y cookies `Secure` en producción). Pasos previstos en el mini-PC con CasaOS:
@@ -196,7 +267,13 @@ La arquitectura ya está preparada para ejecutarse tras Cloudflare Tunnel (la AP
 
 ## Seguridad
 
-Contraseñas con Argon2id, cookies HttpOnly con renovación deslizante, tokens de invitado firmados y ligados a una sala, validación de toda marca y reclamación en servidor, rate limiting y CORS restringido. Ver [SECURITY.md](SECURITY.md).
+Contraseñas con Argon2id, cookies HttpOnly con renovación deslizante, tokens de
+invitado firmados y ligados a una sala, rate limiting y CORS restringido.
+
+**El servidor es la única autoridad**: valida cada marca, cada respuesta y cada
+reclamación, y decide vidas y eliminaciones. En los modos que preguntan, la
+solución no sale del servidor antes del revelado —ni en el payload, ni en el
+acuse de recibo, ni moviendo el marcador—. Ver [SECURITY.md](SECURITY.md).
 
 ## Contribuir
 

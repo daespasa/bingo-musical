@@ -8,6 +8,10 @@ COPY apps/api/package.json apps/api/
 COPY packages/shared/package.json packages/shared/
 COPY packages/database/package.json packages/database/
 COPY packages/music-providers/package.json packages/music-providers/
+# El `postinstall` de @bingo/database ejecuta `prisma generate`, que necesita el
+# esquema. Se copia antes de instalar para que exista cuando se lance; si no,
+# la instalación falla con «schema.prisma: file not found».
+COPY packages/database/prisma packages/database/prisma
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.base.json ./
 COPY packages ./packages
