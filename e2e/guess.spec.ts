@@ -50,7 +50,9 @@ test.describe('Adivina la canción', () => {
     await expect(marta.page.getByText(/Sin intentos/)).toBeVisible();
 
     // Solo al revelarse aparece la solución.
-    await expect(marta.page.getByText(/^La respuesta era /)).toBeVisible({ timeout: 40_000 });
+    // Margen amplio: entre precarga, programación, fragmento y ventana de
+    // respuesta, una ronda tarda bastante, y con la máquina cargada más.
+    await expect(marta.page.getByText(/^La respuesta era /)).toBeVisible({ timeout: 90_000 });
     await expect(marta.page.getByText('No la reconoció nadie')).toBeVisible();
 
     await marta.context.close();

@@ -106,6 +106,8 @@ export async function createGameAndOpenRoom(
     mode?: 'Bingo musical' | 'Quiz musical' | 'Adivina la canción' | 'Supervivencia' | 'Modo mixto';
     /** Vidas iniciales en Supervivencia. */
     lives?: 1 | 2 | 3 | 5;
+    /** Tamaño del cartón de bingo. Por defecto, 3×3. */
+    cardSize?: 3 | 4 | 5;
   } = {
     name: 'E2E',
   },
@@ -125,6 +127,9 @@ export async function createGameAndOpenRoom(
   }
   await page.getByLabel('Nombre de la partida').fill(options.name);
   await demoCollectionCard(page).click();
+  if (options.cardSize) {
+    await page.getByRole('button', { name: `${options.cardSize} × ${options.cardSize}` }).click();
+  }
   await page.getByLabel('Duración del fragmento (s)').selectOption(options.snippetSeconds ?? '10');
   await page.getByLabel('Tiempo extra de respuesta (s)').selectOption('5');
   await page.getByLabel('Pausa de resultados entre rondas (s)').selectOption('3');

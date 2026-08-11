@@ -62,6 +62,10 @@ test.describe('Reglas del marcado', () => {
     const code = await createGameAndOpenRoom(page, {
       name: 'E2E acierto',
       snippetSeconds: '10',
+      // Cartón de 4×4: con 16 de las 20 pistas demo, la canción que suena está
+      // en el cartón el 80 % de las rondas. Con 3×3 era el 45 % y la prueba
+      // fallaba una de cada seis veces por pura mala suerte.
+      cardSize: 4,
     });
 
     const marta = await joinAsPlayer(browser, code, 'Marta');
@@ -70,7 +74,7 @@ test.describe('Reglas del marcado', () => {
 
     // Se recorre el cartón hasta acertar: solo una casilla es la de la ronda
     let hitTitle: string | null = null;
-    for (let round = 1; round <= 3 && !hitTitle; round++) {
+    for (let round = 1; round <= 5 && !hitTitle; round++) {
       await waitForRoundAcceptingMarks(marta.page);
       const cells = marta.page.getByRole('gridcell');
       const total = await cells.count();
@@ -90,7 +94,7 @@ test.describe('Reglas del marcado', () => {
         });
       }
     }
-    expect(hitTitle, 'no se acertó ninguna casilla en tres rondas').not.toBeNull();
+    expect(hitTitle, 'no se acertó ninguna casilla en cinco rondas').not.toBeNull();
 
     const hitCell = marta.page.getByRole('gridcell', { name: asPattern(hitTitle!) });
     await expect(hitCell).toHaveAttribute('aria-label', /\(acertada\)/);

@@ -13,6 +13,7 @@ import {
   Volume2,
   XCircle,
 } from 'lucide-react';
+import clsx from 'clsx';
 import { loadGuestSession } from '@/lib/types';
 import { useRoom } from '@/hooks/use-room';
 import { useRoundAudio } from '@/hooks/use-round-audio';
@@ -283,7 +284,12 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
               onMark={(cellId) => void room.markCell(cellId)}
             />
           )}
-          <div className="flex gap-3">
+          {/*
+           * Línea y bingo se cantan sobre un cartón. Sin cartón no hay nada
+           * que cantar: el servidor rechazaría la reclamación, así que ofrecer
+           * el botón sería ofrecer algo que no funciona.
+           */}
+          <div className={clsx('flex gap-3', !state.card && 'hidden')}>
             {state.settings.lineEnabled && (
               <button
                 onClick={() => void room.claim('LINE')}

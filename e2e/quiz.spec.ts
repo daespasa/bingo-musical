@@ -98,10 +98,19 @@ test.describe('Quiz musical', () => {
 
     await marta.page.reload();
 
-    // Tras recargar sigue constando como respondida: recargar no puede ser una
-    // forma de responder dos veces.
-    await waitForOptions(marta.page);
-    await expect(marta.page.getByRole('button', { name: /^Opción B:/ })).toBeDisabled();
+    /*
+     * Tras recargar sigue constando como respondida: recargar no puede ser una
+     * forma de responder dos veces.
+     *
+     * Se comprueba por el estado que ve quien juega y no por el botón. Esperar
+     * a que las opciones estén habilitadas para luego exigir que estén
+     * deshabilitadas es contradictorio: solo se cumple en un instante concreto
+     * de la reconexión, y en cuanto arranca la ronda siguiente el botón vuelve
+     * a habilitarse —correctamente, porque ya es otra pregunta—.
+     */
+    await expect(marta.page.getByText('Respuesta enviada · esperando al resto')).toBeVisible({
+      timeout: 40_000,
+    });
 
     await marta.context.close();
   });

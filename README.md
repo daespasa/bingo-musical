@@ -19,6 +19,7 @@ derechos.
 
 ## Índice
 
+- [Así se ve](#así-se-ve)
 - [Modos de juego](#modos-de-juego)
 - [Requisitos](#requisitos)
 - [Instalación y primer arranque](#instalación-y-primer-arranque)
@@ -43,6 +44,53 @@ derechos.
 | [SECURITY.md](SECURITY.md)         | Modelo de amenazas y límites                    |
 
 ---
+
+## Así se ve
+
+<p align="center">
+  <img src="docs/screenshots/01-portada.png" alt="Portada de Gramola: «Tu música. Vuestro juego.», con un cartón de bingo saliendo de una funda de disco" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/03-selector-de-modo.png" alt="Selector de modo con las cinco tarjetas: bingo, quiz, adivina, supervivencia y mixto" width="100%"></td>
+    <td width="50%"><img src="docs/screenshots/06-proyector.png" alt="Vista de proyector con el disco girando y el ranking en vivo" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Lo primero es elegir a qué jugar</em></td>
+    <td align="center"><em>Modo proyector, para jugar en una sala</em></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="25%"><img src="docs/screenshots/05-carton-jugador.png" alt="Cartón de bingo en el móvil, con casillas acertadas en verde" width="100%"></td>
+    <td width="25%"><img src="docs/screenshots/08-quiz-opciones.png" alt="Pregunta de quiz con cuatro opciones etiquetadas A, B, C y D" width="100%"></td>
+    <td width="25%"><img src="docs/screenshots/09-quiz-distribucion.png" alt="Quiz revelado: la respuesta correcta marcada y el reparto de respuestas" width="100%"></td>
+    <td width="25%"><img src="docs/screenshots/11-supervivencia-vidas.png" alt="Supervivencia: vidas en corazones y en cifra" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Bingo</em></td>
+    <td align="center"><em>Quiz</em></td>
+    <td align="center"><em>Reveal y reparto</em></td>
+    <td align="center"><em>Supervivencia</em></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/10-adivina.png" alt="Adivina la canción: campo de texto para escribir la respuesta" width="100%"></td>
+    <td width="50%"><img src="docs/screenshots/07-ceremonia.png" alt="Ceremonia final con podio, momentazos y clasificación" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Adivina: sin opciones, se escribe</em></td>
+    <td align="center"><em>Ceremonia final</em></td>
+  </tr>
+</table>
+
+> Las capturas se generan de la aplicación real con
+> `PW_PROBE=1 pnpm exec playwright test e2e/screenshots.probe.spec.ts`, así que
+> no pueden quedarse mintiendo respecto a la interfaz.
 
 ## Modos de juego
 
