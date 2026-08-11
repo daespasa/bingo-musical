@@ -18,6 +18,16 @@ import type {
   ReactionPayload,
   RoundResultsPayload,
   Reaction,
+  QuizQuestionView,
+  QuizAnswerSubmittedPayload,
+  QuizDistributionPayload,
+  SubmitAnswerAck,
+  FreeTextQuestionView,
+  GuessEvaluationPayload,
+  SubmitTextAnswerAck,
+  SurvivalStandingView,
+  SurvivalStandingsPayload,
+  MyLivesView,
 } from '@bingo/shared';
 import { createRoomSocket } from '@/lib/socket';
 
@@ -29,6 +39,39 @@ export type RoomConnection = {
   schedule: RoundSchedulePayload | null;
   prepare: RoundPreparePayload | null;
   revealed: RoundRevealedPayload | null;
+  /**
+   * Canción identificada mientras suena, en bingo clásico. Es distinto de
+   * `revealed`: aquí no se está desvelando nada, se está buscando en el cartón.
+   */
+  nowPlaying: { title: string; artist: string } | null;
+  /** Pregunta en curso, sin la solución. */
+  question: QuizQuestionView | null;
+  /** Qué opción he elegido, si ya he respondido. */
+  myAnswer: number | null;
+  /** Cuánta gente lleva respondido, para el anfitrión y la proyección. */
+  answerProgress: QuizAnswerSubmittedPayload | null;
+  /**
+   * Si la ronda admite respuestas ya.
+   *
+   * Las opciones se enseñan en cuanto llegan, pero no se pueden pulsar hasta
+   * que la canción arranca: un botón que el servidor va a rechazar es peor que
+   * un botón desactivado.
+   */
+  answersOpen: boolean;
+  /** Solución y reparto de respuestas. Solo llega tras cerrar la ronda. */
+  distribution: QuizDistributionPayload | null;
+  submitAnswer: (optionIndex: number) => Promise<SubmitAnswerAck>;
+  /** Enunciado de la ronda de respuesta libre, sin la solución. */
+  freeText: FreeTextQuestionView | null;
+  /** Intentos ya escritos en esta ronda, en orden. */
+  myAttempts: string[];
+  /** Cómo se resolvió la ronda escrita. Solo tras el reveal. */
+  guessEvaluation: GuessEvaluationPayload | null;
+  submitTextAnswer: (text: string) => Promise<SubmitTextAnswerAck>;
+  /** Clasificación de vidas. Vacía fuera de Supervivencia. */
+  survivalStandings: SurvivalStandingView[];
+  /** Mis vidas y si estoy eliminado. Nulo fuera de Supervivencia. */
+  myLives: MyLivesView;
   finished: GameFinishedPayload | null;
   lastClaim: ClaimResultPayload | null;
   /** Reclamaciones aceptadas de la partida, en orden de llegada. */
@@ -62,6 +105,17 @@ export function useRoom(token: string | null): RoomConnection {
   const [schedule, setSchedule] = useState<RoundSchedulePayload | null>(null);
   const [prepare, setPrepare] = useState<RoundPreparePayload | null>(null);
   const [revealed, setRevealed] = useState<RoundRevealedPayload | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<{ title: string; artist: string } | null>(null);
+  const [question, setQuestion] = useState<QuizQuestionView | null>(null);
+  const [myAnswer, setMyAnswer] = useState<number | null>(null);
+  const [answerProgress, setAnswerProgress] = useState<QuizAnswerSubmittedPayload | null>(null);
+  const [distribution, setDistribution] = useState<QuizDistributionPayload | null>(null);
+  const [answersOpen, setAnswersOpen] = useState(false);
+  const [freeText, setFreeText] = useState<FreeTextQuestionView | null>(null);
+  const [myAttempts, setMyAttempts] = useState<string[]>([]);
+  const [guessEvaluation, setGuessEvaluation] = useState<GuessEvaluationPayload | null>(null);
+  const [survivalStandings, setSurvivalStandings] = useState<SurvivalStandingView[]>([]);
+  const [myLives, setMyLives] = useState<MyLivesView>(null);
   const [finished, setFinished] = useState<GameFinishedPayload | null>(null);
   const [lastClaim, setLastClaim] = useState<ClaimResultPayload | null>(null);
   const [acceptedClaims, setAcceptedClaims] = useState<ClaimResultPayload[]>([]);
@@ -88,6 +142,20 @@ export function useRoom(token: string | null): RoomConnection {
           setState(s);
           setLeaderboard(s.leaderboard);
           setPaused(s.status === 'PAUSED');
+          // Al reconectar a media ronda de bingo clásico, la canción vuelve a
+          // verse: sin esto, quien recarga se queda buscando a ciegas.
+          if (s.settings.revealMode === 'VISIBLE_FROM_START') {
+            setNowPlaying(s.round?.revealed ?? null);
+          }
+          // Y la pregunta en curso, con la respuesta ya enviada si la había:
+          // reconectar no puede servir para responder dos veces.
+          setQuestion(s.round?.question ?? null);
+          setMyAnswer(s.round?.myAnswer?.optionIndex ?? null);
+          setFreeText(s.round?.freeText ?? null);
+          setMyAttempts(s.round?.myAttempts ?? []);
+          // Las vidas las manda el servidor: reconectar no las devuelve.
+          setSurvivalStandings(s.survivalStandings ?? []);
+          setMyLives(s.myLives ?? null);
         }
       }),
     );
@@ -99,6 +167,15 @@ export function useRoom(token: string | null): RoomConnection {
       'round:prepare',
       p<RoundPreparePayload>((d) => {
         setPrepare(d);
+        setNowPlaying(d.revealed);
+        setQuestion(d.question);
+        setFreeText(d.freeText);
+        setMyAttempts([]);
+        setGuessEvaluation(null);
+        setMyAnswer(null);
+        setAnswerProgress(null);
+        setDistribution(null);
+        setAnswersOpen(false);
         setRevealed(null);
         setSchedule(null);
         setLastClaim(null);
@@ -133,12 +210,38 @@ export function useRoom(token: string | null): RoomConnection {
       'round:schedule',
       p<RoundSchedulePayload>((d) => setSchedule(d)),
     );
+    // La ventana de respuesta se abre cuando arranca el fragmento y se cierra
+    // al revelar; el servidor rechaza cualquier cosa fuera de ahí.
+    socket.on('round:started', () => setAnswersOpen(true));
     socket.on(
       'round:revealed',
       p<RoundRevealedPayload>((d) => {
         setRevealed(d);
         setAwaitingReveal(false);
+        setAnswersOpen(false);
       }),
+    );
+    socket.on(
+      'quiz:answer-submitted',
+      p<QuizAnswerSubmittedPayload>((d) => setAnswerProgress(d)),
+    );
+    socket.on(
+      'quiz:distribution-revealed',
+      p<QuizDistributionPayload>((d) => setDistribution(d)),
+    );
+    socket.on(
+      'survival:standings-updated',
+      p<SurvivalStandingsPayload>((d) => setSurvivalStandings(d.standings)),
+    );
+    // Las vidas propias llegan en privado: el cliente no tiene que buscarse
+    // en la lista, y sobre todo no las decide él.
+    socket.on(
+      'survival:my-lives',
+      p<{ lives: number; eliminated: boolean }>((d) => setMyLives(d)),
+    );
+    socket.on(
+      'guess:evaluation-revealed',
+      p<GuessEvaluationPayload>((d) => setGuessEvaluation(d)),
     );
     socket.on('round:awaiting-reveal', () => setAwaitingReveal(true));
     socket.on(
@@ -240,6 +343,38 @@ export function useRoom(token: string | null): RoomConnection {
     socketRef.current?.emit('player:react', { reaction });
   }, []);
 
+  const submitAnswer = useCallback((optionIndex: number): Promise<SubmitAnswerAck> => {
+    return new Promise((resolve) => {
+      const socket = socketRef.current;
+      if (!socket) return resolve({ ok: false, message: 'Sin conexión' });
+      socket
+        .timeout(5000)
+        .emit('player:answer', { optionIndex }, (err: unknown, ack: SubmitAnswerAck) => {
+          const result: SubmitAnswerAck = err ? { ok: false, message: 'Tiempo agotado' } : ack;
+          // Se marca la elección en la interfaz, pero el ack no dice si es
+          // correcta: eso solo se sabe al revelarse la ronda.
+          if (result.ok) setMyAnswer(optionIndex);
+          resolve(result);
+        });
+    });
+  }, []);
+
+  const submitTextAnswer = useCallback((text: string): Promise<SubmitTextAnswerAck> => {
+    return new Promise((resolve) => {
+      const socket = socketRef.current;
+      if (!socket) return resolve({ ok: false, message: 'Sin conexión' });
+      socket
+        .timeout(5000)
+        .emit('player:text-answer', { text }, (err: unknown, ack: SubmitTextAnswerAck) => {
+          const result: SubmitTextAnswerAck = err ? { ok: false, message: 'Tiempo agotado' } : ack;
+          // Se apunta el intento gastado. El ack no dice si es correcta: eso
+          // solo se sabe al revelarse la ronda.
+          if (result.ok) setMyAttempts((prev) => [...prev, text.trim()]);
+          resolve(result);
+        });
+    });
+  }, []);
+
   const markCell = useCallback(
     (cellId: string): Promise<MarkCellAck> => {
       return new Promise((resolve) => {
@@ -277,6 +412,19 @@ export function useRoom(token: string | null): RoomConnection {
     schedule,
     prepare,
     revealed,
+    nowPlaying,
+    question,
+    myAnswer,
+    answerProgress,
+    answersOpen,
+    distribution,
+    freeText,
+    myAttempts,
+    guessEvaluation,
+    submitTextAnswer,
+    survivalStandings,
+    myLives,
+    submitAnswer,
     finished,
     lastClaim,
     acceptedClaims,

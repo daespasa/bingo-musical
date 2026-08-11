@@ -6,12 +6,36 @@ import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import clsx from 'clsx';
 import { Gift, ListMusic, Wand2 } from 'lucide-react';
+import {
+  BINGO_VARIANTS,
+  type BingoRevealMode,
+  type GameMode,
+  type FreeTextQuestionType,
+  type MultipleChoiceQuestionType,
+} from '@bingo/shared';
 import { api, ApiError } from '@/lib/api';
+import { GameModeSelector } from '@/components/game-mode-selector';
 import type { CollectionSummary } from '@/lib/types';
 
 type FormData = {
   name: string;
   collectionId: string;
+  mode: GameMode;
+  revealMode: BingoRevealMode;
+  /** Tipos de pregunta del quiz. Al menos uno. */
+  questionTypes: MultipleChoiceQuestionType[];
+  optionCount: number;
+  /** Qué se pide escribir en «Adivina la canción». */
+  guessType: FreeTextQuestionType;
+  /** Intentos permitidos; `null` es ilimitado hasta que acabe el tiempo. */
+  attempts: number | null;
+  /** Vidas iniciales en Supervivencia. */
+  lives: number;
+  /** Con qué tipo de ronda se juega Supervivencia. */
+  survivalRoundKind: 'MULTIPLE_CHOICE' | 'FREE_TEXT';
+  loseLifeOnNoAnswer: boolean;
+  /** Reparto de rondas del modo mixto. */
+  mixedPreset: 'EQUILIBRADO' | 'SOLO_RECONOCIMIENTO';
   cardSize: number;
   freeCenter: boolean;
   snippetDurationMs: number;
@@ -24,6 +48,47 @@ type FormData = {
   showLeaderboard: boolean;
   shuffleTracks: boolean;
 };
+
+/**
+ * Tipos de pregunta que el quiz ofrece hoy.
+ *
+ * Año y álbum existen en el dominio pero no se ofrecen aquí: dependen de
+ * metadatos que las colecciones importadas no siempre traen, y una pregunta
+ * sin datos fiables es una pregunta injusta.
+ */
+const QUIZ_QUESTION_TYPES: Array<{
+  id: MultipleChoiceQuestionType;
+  label: string;
+  help: string;
+}> = [
+  { id: 'SONG_TITLE', label: 'Título', help: '¿Cómo se llama esta canción?' },
+  { id: 'ARTIST', label: 'Artista', help: '¿De quién es esta canción?' },
+  { id: 'DECADE', label: 'Década', help: '¿De qué década es? Necesita año en la colección.' },
+];
+
+/** Qué se pide escribir en «Adivina la canción». */
+const GUESS_TYPES: Array<{ id: FreeTextQuestionType; label: string; help: string }> = [
+  { id: 'SONG_TITLE', label: 'Título', help: 'Escribe cómo se llama la canción.' },
+  { id: 'ARTIST', label: 'Artista', help: 'Escribe de quién es. Vale el artista principal.' },
+];
+
+/** Repartos de ronda del modo mixto. */
+const MIXED_PRESETS: Array<{
+  id: 'EQUILIBRADO' | 'SOLO_RECONOCIMIENTO';
+  label: string;
+  help: string;
+}> = [
+  {
+    id: 'EQUILIBRADO',
+    label: 'Equilibrado',
+    help: 'Un poco de todo: título, artista y década, con y sin opciones.',
+  },
+  {
+    id: 'SOLO_RECONOCIMIENTO',
+    label: 'Solo reconocimiento',
+    help: 'Todo a escribir, sin opciones que ayuden. Para grupos rodados.',
+  },
+];
 
 const RULE_TOGGLES = [
   ['freeCenter', 'Centro libre', 'La casilla central cuenta como acertada (3×3 y 5×5).'],
@@ -49,6 +114,16 @@ export default function NewGamePage() {
     formState: { isSubmitting },
   } = useForm<FormData>({
     defaultValues: {
+      mode: 'MUSIC_BINGO',
+      revealMode: 'HIDDEN_UNTIL_REVEAL',
+      questionTypes: ['SONG_TITLE'],
+      optionCount: 4,
+      guessType: 'SONG_TITLE',
+      attempts: 1,
+      lives: 3,
+      survivalRoundKind: 'MULTIPLE_CHOICE',
+      loseLifeOnNoAnswer: true,
+      mixedPreset: 'EQUILIBRADO',
       cardSize: 3,
       freeCenter: false,
       snippetDurationMs: 15000,
@@ -65,6 +140,26 @@ export default function NewGamePage() {
   const selectedCollection = watch('collectionId');
   const cardSize = watch('cardSize');
   const autoReveal = watch('autoReveal');
+  const mode = watch('mode');
+  const revealMode = watch('revealMode');
+  const questionTypes = watch('questionTypes');
+  const guessType = watch('guessType');
+  const attempts = watch('attempts');
+  const lives = watch('lives');
+  const survivalRoundKind = watch('survivalRoundKind');
+  const mixedPreset = watch('mixedPreset');
+
+  // Al menos un tipo de pregunta: sin ninguno no habría nada que preguntar.
+  const toggleQuestionType = (tipo: MultipleChoiceQuestionType) => {
+    const next = questionTypes.includes(tipo)
+      ? questionTypes.filter((t) => t !== tipo)
+      : [...questionTypes, tipo];
+    if (next.length === 0) return;
+    setValue('questionTypes', next);
+  };
+  // En bingo clásico la canción se ve desde el primer segundo, así que no hay
+  // nada que reconocer de oído y las reglas de reconocimiento pierden sentido.
+  const revealedFromStart = revealMode === 'VISIBLE_FROM_START';
 
   const onSubmit = async (data: FormData) => {
     setError(null);
@@ -74,6 +169,32 @@ export default function NewGamePage() {
         body: JSON.stringify({
           name: data.name,
           collectionId: data.collectionId,
+          mode: data.mode,
+          // El servidor revalida esta configuración con el esquema del modo;
+          // aquí solo se manda lo que el anfitrión ha elegido.
+          modeConfig:
+            data.mode === 'MULTIPLE_CHOICE'
+              ? {
+                  mode: 'MULTIPLE_CHOICE',
+                  questionTypes: data.questionTypes,
+                  optionCount: Number(data.optionCount),
+                }
+              : data.mode === 'MIXED'
+                ? { mode: 'MIXED', preset: data.mixedPreset }
+                : data.mode === 'SURVIVAL'
+                  ? {
+                      mode: 'SURVIVAL',
+                      lives: Number(data.lives),
+                      roundKind: data.survivalRoundKind,
+                      loseLifeOnNoAnswer: data.loseLifeOnNoAnswer,
+                    }
+                  : data.mode === 'FREE_TEXT'
+                    ? {
+                        mode: 'FREE_TEXT',
+                        questionTypes: [data.guessType],
+                        attempts: data.attempts === null ? null : Number(data.attempts),
+                      }
+                    : { mode: data.mode, revealMode: data.revealMode },
           settings: {
             cardSize: Number(data.cardSize),
             freeCenter: data.freeCenter,
@@ -99,6 +220,260 @@ export default function NewGamePage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-2xl font-bold">Nueva partida</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <div className="card p-6">
+          <GameModeSelector
+            value={mode}
+            onSelectAction={(next) => setValue('mode', next, { shouldValidate: true })}
+          />
+        </div>
+
+        {mode === 'MUSIC_BINGO' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">Variante del bingo</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {BINGO_VARIANTS.map((variant) => (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={revealMode === variant.id}
+                    onClick={() => setValue('revealMode', variant.id)}
+                    className={clsx(
+                      'rounded-xl border p-4 text-left transition',
+                      revealMode === variant.id
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                    )}
+                  >
+                    <span className="font-semibold">{variant.name}</span>
+                    <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                      {variant.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {revealedFromStart && (
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                  Buena opción para grupos con niveles musicales muy distintos: nadie queda fuera
+                  por no reconocer la canción de oído.
+                </p>
+              )}
+            </fieldset>
+          </div>
+        )}
+
+        {mode === 'MULTIPLE_CHOICE' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">¿Qué se pregunta?</legend>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {QUIZ_QUESTION_TYPES.map((tipo) => {
+                  const activo = questionTypes.includes(tipo.id);
+                  return (
+                    <button
+                      key={tipo.id}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={activo}
+                      onClick={() => toggleQuestionType(tipo.id)}
+                      className={clsx(
+                        'rounded-xl border p-4 text-left transition',
+                        activo
+                          ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                          : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                      )}
+                    >
+                      <span className="font-semibold">{tipo.label}</span>
+                      <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                        {tipo.help}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                Con varios tipos, las rondas los van alternando.
+              </p>
+            </fieldset>
+
+            <div className="mt-5">
+              <label className="label" htmlFor="optionCount">
+                Número de opciones
+              </label>
+              <select
+                id="optionCount"
+                className="input"
+                {...register('optionCount', { valueAsNumber: true })}
+              >
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {mode === 'MIXED' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">¿Cómo se reparten las rondas?</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {MIXED_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={mixedPreset === preset.id}
+                    onClick={() => setValue('mixedPreset', preset.id)}
+                    className={clsx(
+                      'rounded-xl border p-4 text-left transition',
+                      mixedPreset === preset.id
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                    )}
+                  >
+                    <span className="font-semibold">{preset.label}</span>
+                    <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                      {preset.help}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                El bingo no entra en la mezcla: se juega con cartón y no encaja en una ronda suelta.
+              </p>
+            </fieldset>
+          </div>
+        )}
+
+        {mode === 'SURVIVAL' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">Vidas por jugador</legend>
+              <div className="flex gap-2">
+                {[1, 2, 3, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    role="radio"
+                    aria-checked={Number(lives) === n}
+                    onClick={() => setValue('lives', n)}
+                    className={clsx(
+                      'flex-1 rounded-xl border py-3 font-semibold transition',
+                      Number(lives) === n
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 dark:border-slate-700',
+                    )}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="mt-5">
+              <legend className="label">¿Cómo se responde?</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    ['MULTIPLE_CHOICE', 'Con opciones', 'Cuatro respuestas: elige la correcta.'],
+                    ['FREE_TEXT', 'Respuesta libre', 'Sin opciones: escribe el título.'],
+                  ] as const
+                ).map(([id, label, help]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={survivalRoundKind === id}
+                    onClick={() => setValue('survivalRoundKind', id)}
+                    className={clsx(
+                      'rounded-xl border p-4 text-left transition',
+                      survivalRoundKind === id
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                    )}
+                  >
+                    <span className="font-semibold">{label}</span>
+                    <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                      {help}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <label className="mt-5 flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-brand-600"
+                {...register('loseLifeOnNoAnswer')}
+              />
+              <span>
+                <span className="font-medium">No responder cuesta una vida</span>
+                <span className="block text-slate-500 dark:text-slate-400">
+                  Desactívalo si prefieres que dudar y callarse no penalice igual que fallar.
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
+
+        {mode === 'FREE_TEXT' && (
+          <div className="card p-6">
+            <fieldset>
+              <legend className="label">¿Qué hay que escribir?</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {GUESS_TYPES.map((tipo) => (
+                  <button
+                    key={tipo.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={guessType === tipo.id}
+                    onClick={() => setValue('guessType', tipo.id)}
+                    className={clsx(
+                      'rounded-xl border p-4 text-left transition',
+                      guessType === tipo.id
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                        : 'border-slate-200 hover:border-brand-300 dark:border-slate-700',
+                    )}
+                  >
+                    <span className="font-semibold">{tipo.label}</span>
+                    <span className="mt-1 block text-sm text-slate-500 dark:text-slate-400">
+                      {tipo.help}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="mt-5">
+              <label className="label" htmlFor="attempts">
+                Intentos por ronda
+              </label>
+              <select
+                id="attempts"
+                className="input"
+                value={attempts === null ? 'null' : String(attempts)}
+                onChange={(event) =>
+                  setValue(
+                    'attempts',
+                    event.target.value === 'null' ? null : Number(event.target.value),
+                  )
+                }
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="null">Ilimitados hasta que acabe el tiempo</option>
+              </select>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                Se aceptan erratas razonables y da igual acentos, mayúsculas o «feat».
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="card p-6">
           <label className="label" htmlFor="name">
             Nombre de la partida

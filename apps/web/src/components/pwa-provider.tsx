@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
+import { APP_BRAND } from '@bingo/shared';
 
 /** Evento no estándar de Chromium para instalación de PWA. */
 type BeforeInstallPromptEvent = Event & {
@@ -62,7 +63,7 @@ export function PwaProvider() {
   return (
     <div className="animate-toast fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-md border-2 border-slate-900 bg-slate-50 p-3 shadow-sleeve dark:border-slate-100 dark:bg-slate-900">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold">Instalar Bingo Musical</p>
+        <p className="text-sm font-semibold">Instalar {APP_BRAND.name}</p>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Añádelo a tu pantalla de inicio para jugar a pantalla completa.
         </p>

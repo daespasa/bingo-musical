@@ -3,6 +3,8 @@
  * contractVersion se incrementa ante cambios incompatibles.
  */
 
+import type { BingoRevealMode, GameMode } from './game-modes';
+
 export const CONTRACT_VERSION = 1;
 
 export type BaseRealtimeEvent<T> = {
@@ -58,11 +60,69 @@ export type RoundView = {
   startsAt: number | null;
   endsAt: number | null;
   revealed: { title: string; artist: string } | null;
+  /** La pregunta en curso, sin la solución, para reconectar a media ronda. */
+  question: QuizQuestionView | null;
+  /** Si quien pide el estado ya respondió, y qué opción eligió. */
+  myAnswer: { optionIndex: number } | null;
+  /** El enunciado de la ronda de respuesta libre, sin la solución. */
+  freeText: FreeTextQuestionView | null;
+  /** Intentos ya gastados por quien pide el estado, en orden. */
+  myAttempts: string[];
+};
+
+/** Vidas propias en Supervivencia. Nulo en los demás modos. */
+export type MyLivesView = { lives: number; eliminated: boolean } | null;
+
+/** Lo que de una ronda de respuesta libre puede ver quien juega. */
+export type FreeTextQuestionView = {
+  type: 'SONG_TITLE' | 'ARTIST' | 'TITLE_AND_ARTIST';
+  prompt: string;
+};
+
+/** Cómo se resolvió una ronda de respuesta libre. Solo tras el reveal. */
+export type GuessEvaluationPayload = {
+  roundId: string;
+  correctText: string;
+  correctCount: number;
+  answeredCount: number;
+  totalPlayers: number;
+  /** Cuántos aciertos llegaron por cada camino. */
+  byType: { EXACT: number; ALIAS: number; NORMALIZED: number; FUZZY: number };
+};
+
+/** Estado de vidas de una persona, tal y como lo ve la sala. */
+export type SurvivalStandingView = {
+  participantId: string;
+  alias: string;
+  lives: number;
+  eliminated: boolean;
+  eliminatedAtRound: number | null;
+};
+
+export type SurvivalStandingsPayload = { standings: SurvivalStandingView[] };
+export type SurvivalLifeLostPayload = { participantId: string; alias: string; lives: number };
+export type SurvivalEliminatedPayload = {
+  participantId: string;
+  alias: string;
+  roundIndex: number;
+};
+
+export type SubmitTextAnswerRequest = { text: string };
+export type SubmitTextAnswerAck = {
+  ok: boolean;
+  message?: string;
+  /** Intentos restantes; `null` significa ilimitados. */
+  attemptsLeft?: number | null;
 };
 
 export type RoomStatePayload = {
   roomId: string;
   code: string;
+  /**
+   * Modo de juego. No confundir con `mode`, que es cómo se juega la sala
+   * (proyector o remoto); esto es a qué se juega.
+   */
+  gameMode: GameMode;
   mode: 'PROJECTOR' | 'REMOTE' | 'HYBRID';
   status: string;
   gameName: string;
@@ -75,12 +135,18 @@ export type RoomStatePayload = {
     lineEnabled: boolean;
     bingoEnabled: boolean;
     showLeaderboard: boolean;
+    /** Variante del bingo, para que la interfaz sepa qué contar. */
+    revealMode: BingoRevealMode;
   };
   participants: ParticipantView[];
   round: RoundView | null;
   leaderboard: LeaderboardEntry[];
   card: CardView | null; // solo para el jugador actual
   locked: boolean;
+  /** Clasificación de vidas. Vacía fuera de Supervivencia. */
+  survivalStandings: SurvivalStandingView[];
+  /** Vidas de quien pide el estado, para que reconectar no las devuelva. */
+  myLives: MyLivesView;
 };
 
 export type RoundSchedulePayload = {
@@ -99,7 +165,49 @@ export type RoundPreparePayload = {
   index: number;
   totalRounds: number;
   previewUrl: string;
+  /**
+   * Título y artista cuando la variante los enseña desde el primer segundo
+   * (bingo clásico). En bingo a ciegas es `null` y el servidor no los manda
+   * hasta `round:revealed`: si viajaran antes, se regalaría la respuesta.
+   */
+  revealed: { title: string; artist: string } | null;
+  /**
+   * La pregunta de la ronda en los modos que preguntan.
+   *
+   * Nunca dice cuál es la correcta: `QuizQuestionView` no tiene ese campo a
+   * propósito, para que no pueda colarse al añadir datos a la ronda.
+   */
+  question: QuizQuestionView | null;
+  /** El enunciado de la ronda de respuesta libre, sin la solución. */
+  freeText: FreeTextQuestionView | null;
 };
+
+/** Lo que de una pregunta puede ver quien juega antes del reveal. */
+export type QuizQuestionView = {
+  type: 'SONG_TITLE' | 'ARTIST' | 'RELEASE_YEAR' | 'DECADE' | 'ALBUM';
+  prompt: string;
+  options: string[];
+};
+
+/** Cuánta gente lleva respondido. No dice quién ni qué. */
+export type QuizAnswerSubmittedPayload = {
+  answeredCount: number;
+  totalPlayers: number;
+};
+
+/** La solución y el reparto de respuestas. Solo se emite tras cerrar la ronda. */
+export type QuizDistributionPayload = {
+  roundId: string;
+  correctIndex: number;
+  correctText: string;
+  /** Cuántas respuestas ha recibido cada opción, en orden de opción. */
+  counts: number[];
+  answeredCount: number;
+  totalPlayers: number;
+};
+
+export type SubmitAnswerRequest = { optionIndex: number };
+export type SubmitAnswerAck = { ok: boolean; message?: string };
 
 export type RoundRevealedPayload = {
   roundId: string;
@@ -130,7 +238,18 @@ export type HighlightPayload = {
     | 'BEST_STREAK'
     | 'FIRST_LINE'
     | 'BINGO'
-    | 'BIGGEST_COMEBACK';
+    | 'BIGGEST_COMEBACK'
+    // Modos de pregunta. Los que no son de nadie en concreto llegan con
+    // `alias` vacío: son hitos de la ronda, no de una persona.
+    | 'ONLY_CORRECT'
+    | 'ALL_CORRECT'
+    | 'NOBODY_CORRECT'
+    | 'POPULAR_DISTRACTOR'
+    // Supervivencia
+    | 'FIRST_ELIMINATION'
+    | 'LAST_SURVIVOR'
+    | 'MULTIPLE_ELIMINATION'
+    | 'SURVIVED_ON_ONE_LIFE';
   alias: string;
   roundIndex: number | null;
   data?: Record<string, unknown>;
@@ -142,6 +261,10 @@ export type GameFinishedPayload = {
   highlights: HighlightPayload[];
   totalRounds: number;
   durationMs: number;
+  /** El modo, para que la ceremonia premie lo que corresponde. */
+  gameMode: GameMode;
+  /** Orden de eliminación, de la primera caída a la última. Solo Supervivencia. */
+  eliminationOrder: string[];
 };
 
 export type RoomErrorPayload = { code: string; message: string };
@@ -160,6 +283,8 @@ export const ClientEvents = {
   AudioError: 'audio:error',
   AudioDriftReport: 'audio:drift-report',
   CardMark: 'card:mark',
+  PlayerAnswer: 'player:answer',
+  PlayerTextAnswer: 'player:text-answer',
   ClaimLine: 'claim:line',
   ClaimBingo: 'claim:bingo',
   HostStart: 'host:start',
@@ -205,6 +330,12 @@ export type RoundResultsPayload = {
   streaks: Array<{ alias: string; streak: number }>;
   /** Quién ha adelantado a quién desde la ronda anterior. */
   climbers: Array<{ alias: string; from: number; to: number }>;
+  /** El modo, para que el resumen cuente la ronda con sus palabras. */
+  gameMode: GameMode;
+  /** Alias de quienes han caído en esta ronda. Vacío fuera de Supervivencia. */
+  eliminated: string[];
+  /** Cuántos siguen en pie. Nulo fuera de Supervivencia. */
+  survivorsLeft: number | null;
 };
 
 export const ServerEvents = {
@@ -223,6 +354,13 @@ export const ServerEvents = {
   RoundSkipped: 'round:skipped',
   RoundReplayed: 'round:replayed',
   CardUpdated: 'card:updated',
+  QuizAnswerSubmitted: 'quiz:answer-submitted',
+  QuizDistributionRevealed: 'quiz:distribution-revealed',
+  GuessEvaluationRevealed: 'guess:evaluation-revealed',
+  SurvivalLifeLost: 'survival:life-lost',
+  SurvivalPlayerEliminated: 'survival:player-eliminated',
+  SurvivalStandingsUpdated: 'survival:standings-updated',
+  SurvivalMyLives: 'survival:my-lives',
   ClaimAccepted: 'claim:accepted',
   ClaimRejected: 'claim:rejected',
   LeaderboardUpdated: 'leaderboard:updated',

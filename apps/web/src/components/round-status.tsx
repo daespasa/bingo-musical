@@ -13,6 +13,8 @@ export function RoundStatus({
   schedule,
   prepare,
   revealed,
+  nowPlaying,
+  hint = '¿La tienes en el cartón?',
   paused,
   playing,
   audioError,
@@ -20,6 +22,14 @@ export function RoundStatus({
   schedule: RoundSchedulePayload | null;
   prepare: RoundPreparePayload | null;
   revealed: RoundRevealedPayload | null;
+  /** Canción identificada desde el principio, en bingo clásico. */
+  nowPlaying?: { title: string; artist: string } | null;
+  /**
+   * Qué se espera de quien juega mientras suena. Depende del modo: en una
+   * partida sin cartones, preguntar «¿la tienes en el cartón?» no significa
+   * nada.
+   */
+  hint?: string;
   paused: boolean;
   playing: boolean;
   audioError: string | null;
@@ -74,9 +84,7 @@ export function RoundStatus({
           <p className="font-display text-lg leading-tight">
             {playing ? '¡Suena la canción!' : 'Escucha…'}
           </p>
-          <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">
-            ¿La tienes en el cartón?
-          </p>
+          <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{hint}</p>
         </div>
       );
     } else {
@@ -94,9 +102,29 @@ export function RoundStatus({
     );
   }
 
+  /*
+   * Bingo clásico: la canción va identificada mientras suena. Se muestra
+   * *encima* del estado de la ronda, no en su lugar: quien juega necesita
+   * saber a la vez qué suena y cuánto le queda para marcarlo.
+   *
+   * Tras el reveal desaparece, porque entonces manda «La canción era…» y
+   * repetir el mismo título dos veces solo añade ruido.
+   */
+  const heading =
+    nowPlaying && !revealed && !paused ? (
+      <div className="mb-3 border-b-2 border-dashed border-slate-300 pb-3 dark:border-slate-700">
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+          Suena ahora · búscala en tu cartón
+        </p>
+        <p className="font-display text-xl leading-tight">{nowPlaying.title}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">{nowPlaying.artist}</p>
+      </div>
+    ) : null;
+
   return (
     <div className="card p-4">
       <p className="eyebrow mb-3">{roundLabel}</p>
+      {heading}
 
       <div className="flex items-center gap-4">
         {/*

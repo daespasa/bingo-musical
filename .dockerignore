@@ -1,0 +1,51 @@
+# Qué NO entra en el contexto de construcción de las imágenes.
+#
+# `node_modules` es el importante: pnpm instala con enlaces simbólicos que
+# apuntan a rutas del host. Si el contexto los incluye, el `COPY` de cada app
+# los deja caer encima de los que el contenedor acaba de instalar, los enlaces
+# dejan de resolver y la construcción falla con un «Cannot find module» que
+# parece un problema de dependencias y no lo es.
+#
+# Sin este archivo, la imagen solo se construía en un checkout limpio —el de
+# CI—, nunca en la máquina de quien desarrolla.
+node_modules
+**/node_modules
+
+# Artefactos de compilación: la imagen los genera dentro.
+dist
+.next
+**/dist
+**/.next
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Cachés de herramientas
+.turbo
+**/.turbo
+.pnpm-store
+
+# Salidas de pruebas
+playwright-report
+test-results
+coverage
+
+# Assets generados por script (el Dockerfile los regenera)
+apps/web/public/audio
+apps/web/public/icons
+
+# Entorno y control de versiones
+.env
+.env.*
+!.env.example
+.git
+.github
+.husky
+
+# Documentación y utillaje que no afecta a la imagen
+*.md
+!README.md
+.vscode
+.idea
+.claude
+.codegraph
+docs

@@ -47,6 +47,16 @@ enum GameStatus {
   ARCHIVED
 }
 
+/// Modo de juego de una partida. Solo entran valores que el servidor sabe
+/// jugar de principio a fin: un valor aquí es una promesa al anfitrión.
+enum GameMode {
+  MUSIC_BINGO
+  MULTIPLE_CHOICE
+  FREE_TEXT
+  SURVIVAL
+  MIXED
+}
+
 enum ParticipantRole {
   HOST
   PLAYER
@@ -109,6 +119,9 @@ enum ScoreEventType {
   BINGO_BONUS
   WRONG_MARK
   WRONG_CLAIM
+  // Modos de pregunta: el acierto y el fallo no son marcas de cartón
+  CORRECT_ANSWER
+  WRONG_ANSWER
 }
 
 enum HighlightType {
@@ -118,6 +131,25 @@ enum HighlightType {
   FIRST_LINE
   BINGO
   BIGGEST_COMEBACK
+  // Modos de pregunta
+  ONLY_CORRECT
+  ALL_CORRECT
+  NOBODY_CORRECT
+  POPULAR_DISTRACTOR
+  // Supervivencia
+  FIRST_ELIMINATION
+  LAST_SURVIVOR
+  MULTIPLE_ELIMINATION
+  SURVIVED_ON_ONE_LIFE
+}
+
+/// Qué se pregunta sobre la canción que suena.
+enum QuestionType {
+  SONG_TITLE
+  ARTIST
+  RELEASE_YEAR
+  DECADE
+  ALBUM
 }
 
 enum AuditActorType {
@@ -190,6 +222,9 @@ model Track {
   albumId         String?
   album           Album?      @relation(fields: [albumId], references: [id])
   durationMs      Int?
+  /// Año de publicación. Alimenta las preguntas de año y de década; nulo
+  /// significa que esas preguntas no pueden usar esta pista.
+  releaseYear     Int?
   source          TrackSource @default(DEMO)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -271,6 +306,13 @@ model Game {
   id           String          @id @default(uuid())
   name         String
   status       GameStatus      @default(DRAFT)
+  /// Las partidas anteriores a Gramola son bingo: por eso el valor por defecto
+  /// es MUSIC_BINGO y la migración no necesita reescribir ninguna fila.
+  mode         GameMode        @default(MUSIC_BINGO)
+  /// Configuración específica del modo, validada con Zod al escribir y al leer
+  /// (ver packages/shared/src/game-config.ts). Nulo = valores por defecto del
+  /// modo, que es lo que corresponde al historial anterior.
+  modeConfig   Json?
   ownerId      String
   owner        User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   collectionId String
@@ -336,6 +378,7 @@ model Room {
   highlights   Highlight[]
   result       GameResult?
   auditLogs    AuditLog[]
+  lifeStates   PlayerLifeState[]
 
   @@index([status])
   @@index([expiresAt])
@@ -359,10 +402,12 @@ model RoomParticipant {
   audioReadiness AudioReadiness?
   card           BingoCard?
   marks          PlayerMark[]
+  answers        PlayerAnswer[]
   claims         Claim[]
   scoreEvents    ScoreEvent[]
   highlights     Highlight[]
   wonResults     GameResult[]
+  lifeState      PlayerLifeState?
 
   @@unique([roomId, aliasNormalized])
   @@index([roomId])
@@ -451,12 +496,96 @@ model GameRound {
   revealedAt DateTime?
   createdAt  DateTime    @default(now())
 
-  marks  PlayerMark[]
-  claims Claim[]
-  scores ScoreEvent[]
+  marks    PlayerMark[]
+  claims   Claim[]
+  scores   ScoreEvent[]
+  question RoundQuestion?
+  answers  PlayerAnswer[]
 
   @@unique([roomId, index])
   @@index([roomId, status])
+}
+
+/// La pregunta de una ronda en los modos que preguntan.
+///
+/// Se persiste al crear la ronda para que todo el mundo reciba exactamente la
+/// misma pregunta y las mismas opciones, y para que el resultado sea
+/// reconstruible después sin volver a generarla.
+model RoundQuestion {
+  id      String       @id @default(uuid())
+  roundId String       @unique
+  round   GameRound    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  type    QuestionType
+  /// Enunciado ya redactado, para no recomponerlo en cada superficie.
+  prompt  String
+  /// Respuesta correcta en texto, para el reveal y el historial. Nunca viaja
+  /// al cliente antes de que la ronda se revele.
+  correctText String
+
+  options AnswerOption[]
+  answers PlayerAnswer[]
+}
+
+/// Una opción de respuesta. `isCorrect` no sale nunca del servidor antes del
+/// reveal: el cliente recibe las opciones sin esa columna.
+model AnswerOption {
+  id         String        @id @default(uuid())
+  questionId String
+  question   RoundQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  position   Int
+  text       String
+  isCorrect  Boolean       @default(false)
+
+  answers PlayerAnswer[]
+
+  @@unique([questionId, position])
+  @@index([questionId])
+}
+
+/// Vidas de una persona en una partida de supervivencia.
+///
+/// Se persiste, y no solo en memoria, porque es lo que decide quién sigue
+/// jugando: una reconexión no puede devolver vidas ni resucitar a nadie. Las
+/// vidas **no** son puntos y no viajan por `ScoreEvent`.
+model PlayerLifeState {
+  id                String          @id @default(uuid())
+  roomId            String
+  room              Room            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId     String          @unique
+  participant       RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  lives             Int
+  /// Índice de la ronda en la que se quedó sin vidas. Nulo = sigue en juego.
+  eliminatedAtRound Int?
+  /// Orden de eliminación, para la ceremonia. Nulo mientras siga en juego.
+  eliminationOrder  Int?
+  updatedAt         DateTime        @updatedAt
+
+  @@index([roomId])
+}
+
+/// La respuesta de una persona a una ronda.
+model PlayerAnswer {
+  id            String          @id @default(uuid())
+  roundId       String
+  round         GameRound       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      RoundQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   RoomParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  /// Opción elegida en preguntas con opciones.
+  optionId      String?
+  option        AnswerOption?   @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  /// Texto escrito en respuesta libre. Preparado para el modo de adivinar.
+  freeText      String?
+  isCorrect     Boolean
+  latencyMs     Int?
+  /// Número de intento, empezando en 1. Con un solo intento siempre vale 1.
+  attempt       Int             @default(1)
+  createdAt     DateTime        @default(now())
+
+  /// Impide contar dos veces el mismo intento aunque el evento llegue repetido.
+  @@unique([roundId, participantId, attempt])
+  @@index([participantId])
 }
 
 model PlayerMark {

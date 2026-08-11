@@ -107,7 +107,6 @@ test('sonda de partida real', async ({ browser, page }) => {
 
   for (const p of players) await p.context.close();
 
-   
   console.log(
     '\n=== HALLAZGOS ===\n' + (findings.length ? JSON.stringify(findings, null, 2) : 'ninguno'),
   );

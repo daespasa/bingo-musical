@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { DEMO_USER, demoCollectionCard, loginAsHost } from './helpers';
+import { DEMO_USER, demoCollectionCard, loginAsHost, olvidarSesionCompartida } from './helpers';
 
 test.describe('Autenticación y protección de rutas', () => {
   test('el dashboard redirige a login sin sesión', async ({ page }) => {
@@ -20,6 +20,8 @@ test.describe('Autenticación y protección de rutas', () => {
 
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();
     await expect(page).toHaveURL(/\/login/);
+    // Este cierre invalida la sesión que comparten las demás pruebas.
+    olvidarSesionCompartida();
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login/);
   });
@@ -81,7 +83,7 @@ test.describe('PWA', () => {
       display: string;
       icons: Array<{ sizes: string; purpose?: string }>;
     };
-    expect(body.name).toBe('Bingo Musical');
+    expect(body.name).toBe('Gramola');
     expect(body.display).toBe('standalone');
     expect(body.icons.map((i) => i.sizes)).toContain('512x512');
     expect(body.icons.some((i) => i.purpose === 'maskable')).toBe(true);

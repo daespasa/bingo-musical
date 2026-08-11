@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, Headphones, Music4 } from 'lucide-react';
+import { APP_BRAND } from '@bingo/shared';
 
 /** Portada del cartón de muestra: dos casillas ya marcadas. */
 const SLEEVE_TRACKS = [
@@ -38,7 +39,7 @@ export default function HomePage() {
           <span className="grid h-9 w-9 place-items-center rounded-md border-2 border-slate-900 bg-brand-600 text-slate-50 dark:border-slate-100">
             <Music4 className="h-4 w-4" aria-hidden />
           </span>
-          Bingo Musical
+          {APP_BRAND.name}
         </Link>
         <Link
           href="/login"
@@ -50,29 +51,27 @@ export default function HomePage() {
 
       <div className="grid flex-1 items-center gap-14 py-14 lg:grid-cols-[1.05fr_.95fr] lg:gap-12 lg:py-20">
         <section>
-          <p className="eyebrow">Bingo musical en directo</p>
+          <p className="eyebrow">Juegos musicales en directo</p>
           <h1 className="mt-5 font-display text-[2.6rem] leading-[0.92] tracking-[-0.03em] sm:text-[3.4rem] lg:text-[3.9rem]">
-            Suenan quince
+            Tu música.
             <br />
-            segundos.
+            <span className="text-brand-600 dark:text-brand-400">Vuestro</span>
             <br />
-            <span className="text-brand-600 dark:text-brand-400">Reconócela</span> antes
-            <br />
-            que nadie.
+            juego.
           </h1>
           <p className="mt-6 max-w-md text-pretty text-lg leading-8 text-slate-600 dark:text-slate-300">
-            El anfitrión elige la lista y reparte cartones. Ninguno se repite. Marca la canción
-            mientras suena y adelanta a los demás por velocidad.
+            Crea una sala y juega con amigos mediante bingo, preguntas y desafíos musicales. Cada
+            móvil es un mando: sin instalar nada y sin cuenta para quien juega.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link href="/join" className="btn-primary sm:w-auto">
-              <Headphones className="h-4 w-4" aria-hidden />
-              Tengo un código
+            <Link href="/register" className="btn-primary sm:w-auto">
+              Crear partida
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
-            <Link href="/register" className="btn-secondary sm:w-auto">
-              Crear una partida
+            <Link href="/join" className="btn-secondary sm:w-auto">
+              <Headphones className="h-4 w-4" aria-hidden />
+              Entrar con código
             </Link>
           </div>
 

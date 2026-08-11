@@ -1,6 +1,7 @@
 import { WifiOff } from 'lucide-react';
+import { brandTitle } from '@bingo/shared';
 
-export const metadata = { title: 'Sin conexión · Bingo Musical' };
+export const metadata = { title: brandTitle('Sin conexión') };
 
 export default function OfflinePage() {
   return (

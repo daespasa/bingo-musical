@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { APP_BRAND } from '@bingo/shared';
 import { Archivo, Archivo_Black, DM_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
@@ -31,12 +32,12 @@ const mono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Bingo Musical',
-  description: 'Bingo musical en tiempo real: reconoce la canción y canta línea o bingo.',
-  applicationName: 'Bingo Musical',
+  title: APP_BRAND.name,
+  description: APP_BRAND.longDescription,
+  applicationName: APP_BRAND.name,
   appleWebApp: {
     capable: true,
-    title: 'Bingo Musical',
+    title: APP_BRAND.shortName,
     statusBarStyle: 'black-translucent',
   },
   icons: {

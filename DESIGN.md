@@ -1,4 +1,4 @@
-# Sistema visual — Bingo Musical
+# Sistema visual — Gramola
 
 Dirección: **funda de disco**. El producto es un juego de reconocer canciones, así
 que la interfaz toma prestado el lenguaje de una edición en vinilo: papel hueso,
@@ -77,6 +77,63 @@ que los recoge, así que no pueden discrepar.
 Escanear el QR es un atajo, nunca la única vía: el botón solo aparece si el
 navegador trae el detector de códigos, y si se deniega la cámara lo dice y
 deja escribir el código a mano.
+
+## Modos de juego
+
+Los cinco modos comparten sistema visual: el mismo papel, la misma tinta, el
+mismo disco. No hay un tema por modo, porque la sala es la misma y cambiar de
+piel a mitad de partida desorienta.
+
+Lo que sí tiene cada modo es una **figura propia**, además de su color:
+
+| Modo               | Figura              | Por qué                |
+| ------------------ | ------------------- | ---------------------- |
+| Bingo musical      | Cuadrícula          | Es el cartón           |
+| Quiz musical       | Lista de respuestas | Son las opciones       |
+| Adivina la canción | Onda de sonido      | Solo se tiene el audio |
+| Supervivencia      | Corazón             | Son las vidas          |
+| Modo mixto         | Pistas mezcladas    | Cada ronda cambia      |
+
+**Nunca solo color.** Cada estado va acompañado de forma o texto: la respuesta
+correcta lleva una marca de verificación, la equivocada una cruz, las vidas se
+escriben en cifra además de dibujarse en corazones, y las eliminaciones se
+dicen con palabras.
+
+### Opciones del quiz
+
+Cada opción se numera como un corte del disco —A, B, C, D, en monoespaciada—
+dentro de un recuadro. Al revelar, el reparto de respuestas **se rellena dentro
+del propio botón**, como el nivel de un vúmetro, en lugar de dibujar un gráfico
+aparte: es el mismo objeto contando dos cosas, no dos objetos compitiendo.
+
+Las opciones se ven en cuanto llegan, pero **deshabilitadas** hasta que arranca
+el fragmento. Un botón que el servidor va a rechazar es peor que un botón
+apagado.
+
+### Campo de Adivina
+
+Un solo campo, con Enter para enviar. Los intentos ya gastados se muestran como
+etiquetas, para no repetirlos sin darse cuenta. Mientras la ronda está abierta
+**no se dice si un intento ha acertado**: la evaluación llega entera al
+revelarse, y entonces se cuenta también _cómo_ se acertó —exacta, sin tildes o
+con alguna errata—, que es media gracia del modo.
+
+### Vidas y eliminación
+
+Las vidas propias van en una región viva (`role="status"`): perder una es la
+información más importante de la ronda y debe anunciarse sin ir a buscarla. Al
+quedar una, se avisa en texto («última oportunidad»), no solo en rojo.
+
+Quien queda eliminado no ve la pantalla vacía ni un cartel de derrota: sigue
+viendo la partida, la respuesta y la clasificación, y se le dice explícitamente
+que sigue mirando.
+
+### Bingo clásico
+
+La canción va identificada **encima** del estado de la ronda, no en su lugar:
+hay que saber a la vez qué suena y cuánto queda para marcar. Tras el revelado
+el encabezado desaparece, porque entonces manda «La canción era…» y repetir el
+título dos veces solo añade ruido.
 
 ## Reglas de calidad
 

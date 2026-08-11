@@ -51,15 +51,43 @@ export async function loginAsHost(page: Page, opciones: { fresh?: boolean } = {}
   if (sesionCompartida) {
     await page.context().addCookies(sesionCompartida);
     await page.goto('/dashboard');
-    // Si la sesión ya no vale, la aplicación devuelve al acceso
-    if (/\/dashboard/.test(page.url())) {
-      await expect(page.getByRole('link', { name: 'Tu cuenta' })).toBeVisible();
-      return;
-    }
+
+    /*
+     * Comprobar la URL no basta, y comprobar que existe el enlace «Tu cuenta»
+     * tampoco: la cookie puede seguir presente pero estar revocada en el
+     * servidor —tras un cierre de sesión o al cerrar las demás sesiones— y el
+     * middleware solo mira que exista. La página empieza a renderizarse en
+     * /dashboard y solo se va a /login cuando el cliente resuelve la sesión.
+     *
+     * Así que se espera a un dato que únicamente llega con sesión válida: el
+     * nombre de la cuenta. Sin esto, el helper daba por buena una sesión
+     * muerta y la prueba fallaba más tarde, en una navegación cualquiera.
+     */
+    const sigueValida = await page
+      .getByRole('link', { name: 'Tu cuenta' })
+      .filter({ hasText: 'Anfitrión Demo' })
+      .waitFor({ state: 'visible', timeout: 5_000 })
+      .then(
+        () => true,
+        () => false,
+      );
+    if (sigueValida) return;
+
     sesionCompartida = null;
     await page.context().clearCookies();
   }
   await entrarPorFormulario(page);
+}
+
+/**
+ * Olvida la sesión compartida.
+ *
+ * La llaman las pruebas que la invalidan a propósito (cerrar sesión, cerrar
+ * las demás sesiones). Sin esto, la siguiente prueba pagaría la comprobación
+ * de arriba en balde antes de volver a entrar.
+ */
+export function olvidarSesionCompartida(): void {
+  sesionCompartida = null;
 }
 
 /**
@@ -68,13 +96,40 @@ export async function loginAsHost(page: Page, opciones: { fresh?: boolean } = {}
  */
 export async function createGameAndOpenRoom(
   page: Page,
-  options: { name: string; snippetSeconds?: '10' | '15'; autoReveal?: boolean } = {
+  options: {
+    name: string;
+    snippetSeconds?: '10' | '15';
+    autoReveal?: boolean;
+    /** Variante del bingo. Por defecto, a ciegas: el bingo de siempre. */
+    variant?: 'Bingo a ciegas' | 'Bingo clásico';
+    /** Modo de juego. Por defecto, bingo musical. */
+    mode?: 'Bingo musical' | 'Quiz musical' | 'Adivina la canción' | 'Supervivencia' | 'Modo mixto';
+    /** Vidas iniciales en Supervivencia. */
+    lives?: 1 | 2 | 3 | 5;
+    /** Tamaño del cartón de bingo. Por defecto, 3×3. */
+    cardSize?: 3 | 4 | 5;
+  } = {
     name: 'E2E',
   },
 ): Promise<string> {
   await page.goto('/dashboard/games/new');
+  if (options.mode && options.mode !== 'Bingo musical') {
+    await page.getByRole('radio', { name: new RegExp(options.mode) }).click();
+  }
+  if (options.variant) {
+    await page.getByRole('radio', { name: new RegExp(options.variant) }).click();
+  }
+  if (options.lives) {
+    await page
+      .getByRole('group', { name: 'Vidas por jugador' })
+      .getByRole('radio', { name: String(options.lives), exact: true })
+      .click();
+  }
   await page.getByLabel('Nombre de la partida').fill(options.name);
   await demoCollectionCard(page).click();
+  if (options.cardSize) {
+    await page.getByRole('button', { name: `${options.cardSize} × ${options.cardSize}` }).click();
+  }
   await page.getByLabel('Duración del fragmento (s)').selectOption(options.snippetSeconds ?? '10');
   await page.getByLabel('Tiempo extra de respuesta (s)').selectOption('5');
   await page.getByLabel('Pausa de resultados entre rondas (s)').selectOption('3');

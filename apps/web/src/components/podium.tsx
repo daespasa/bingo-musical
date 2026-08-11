@@ -6,6 +6,7 @@ import {
   Award,
   Flag,
   Flame,
+  Heart,
   Medal,
   Megaphone,
   Repeat,
@@ -14,7 +15,13 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react';
-import type { GameFinishedPayload, HighlightPayload, LeaderboardEntry } from '@bingo/shared';
+import type {
+  GameFinishedPayload,
+  GameMode,
+  HighlightPayload,
+  LeaderboardEntry,
+} from '@bingo/shared';
+import { api } from '@/lib/api';
 import { Leaderboard } from './leaderboard';
 
 const HIGHLIGHTS: Record<
@@ -27,6 +34,34 @@ const HIGHLIGHTS: Record<
   FIRST_LINE: { label: 'Primera línea', Icon: Megaphone, className: 'text-brand-500' },
   BINGO: { label: 'Bingo', Icon: Trophy, className: 'text-amber-500' },
   BIGGEST_COMEBACK: { label: 'Mayor remontada', Icon: Rocket, className: 'text-emerald-500' },
+  // Modos de pregunta
+  ONLY_CORRECT: { label: 'Único acierto', Icon: Sparkles, className: 'text-amber-500' },
+  ALL_CORRECT: { label: 'Acertaron todos', Icon: Sparkles, className: 'text-emerald-500' },
+  NOBODY_CORRECT: { label: 'No acertó nadie', Icon: Megaphone, className: 'text-slate-500' },
+  POPULAR_DISTRACTOR: { label: 'La trampa favorita', Icon: Repeat, className: 'text-rose-500' },
+  // Supervivencia
+  FIRST_ELIMINATION: { label: 'Primera eliminación', Icon: Heart, className: 'text-rose-500' },
+  LAST_SURVIVOR: { label: 'Último superviviente', Icon: Trophy, className: 'text-amber-500' },
+  MULTIPLE_ELIMINATION: { label: 'Caída múltiple', Icon: Heart, className: 'text-accent-500' },
+  SURVIVED_ON_ONE_LIFE: {
+    label: 'Aguantó con una vida',
+    Icon: Flame,
+    className: 'text-orange-500',
+  },
+};
+
+/**
+ * Cómo se llama la clasificación en cada modo.
+ *
+ * En supervivencia no es «quién puntuó más»: es quién aguantó, y llamarla
+ * igual que en el resto contaría la partida al revés.
+ */
+const RANKING_LABEL: Record<GameMode, string> = {
+  MUSIC_BINGO: 'Clasificación final',
+  MULTIPLE_CHOICE: 'Clasificación final',
+  FREE_TEXT: 'Clasificación final',
+  SURVIVAL: 'Quién aguantó más',
+  MIXED: 'Clasificación final',
 };
 
 const CONFETTI_COLORS = ['#a855f7', '#f43f5e', '#fbbf24', '#34d399', '#38bdf8'];
@@ -120,12 +155,17 @@ export function PodiumCeremony({
   finished,
   highlightId,
   code,
+  /** Solo el anfitrión puede convocar la revancha. */
+  canRematch,
 }: {
   finished: GameFinishedPayload;
   highlightId?: string;
   code: string;
+  canRematch?: boolean;
 }) {
   const [step, setStep] = useState(0);
+  const [rematching, setRematching] = useState(false);
+  const [rematchError, setRematchError] = useState<string | null>(null);
   useEffect(() => {
     const timers = [1000, 2500, 4000, 5500].map((ms, i) => setTimeout(() => setStep(i + 1), ms));
     return () => timers.forEach(clearTimeout);
@@ -171,10 +211,59 @@ export function PodiumCeremony({
               </ul>
             </section>
           )}
+          {/*
+           * Supervivencia se cuenta al revés que el resto: importa el orden en
+           * que fue cayendo la gente, no solo quién puntuó más.
+           */}
+          {finished.eliminationOrder.length > 0 && (
+            <section className="card animate-rise w-full p-4">
+              <h2 className="eyebrow mb-3">Orden de caída</h2>
+              <ol className="flex flex-col gap-1 text-sm">
+                {finished.eliminationOrder.map((alias, i) => (
+                  <li key={`${alias}-${i}`} className="flex justify-between">
+                    <span className="data text-slate-500 dark:text-slate-400">{i + 1}º</span>
+                    <span>{alias}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
           <section className="card animate-rise w-full p-4">
-            <h2 className="eyebrow mb-3">Clasificación final</h2>
+            <h2 className="eyebrow mb-3">{RANKING_LABEL[finished.gameMode]}</h2>
             <Leaderboard entries={finished.leaderboard} highlightId={highlightId} />
           </section>
+          {canRematch && (
+            <button
+              className="btn-primary"
+              disabled={rematching}
+              onClick={() => {
+                setRematching(true);
+                setRematchError(null);
+                // La revancha crea una partida gemela y una sala nueva: esta
+                // queda intacta en el historial.
+                api<{ code: string }>(`/rooms/${code}/rematch`, {
+                  method: 'POST',
+                  body: JSON.stringify({ mode: 'REMOTE' }),
+                })
+                  .then((room) => {
+                    window.location.href = `/room/${room.code}/host`;
+                  })
+                  .catch(() => {
+                    setRematchError('No se pudo crear la revancha');
+                    setRematching(false);
+                  });
+              }}
+            >
+              <Repeat className="h-4 w-4" aria-hidden />
+              {rematching ? 'Creando sala…' : 'Jugar revancha'}
+            </button>
+          )}
+          {rematchError && (
+            <p role="alert" className="text-sm text-accent-500">
+              {rematchError}
+            </p>
+          )}
           <Link href={`/room/${code}/results`} className="text-sm text-brand-600 hover:underline">
             Ver resumen de la partida
           </Link>
