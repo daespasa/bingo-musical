@@ -19,7 +19,7 @@ export function ExitGameLink({ className = '' }: { className?: string }) {
   // destino al resolverse la consulta se pulsa antes de tiempo.
   if (state === 'cargando') {
     return (
-      <button type="button" className={classes} disabled>
+      <button type="button" className={classes} disabled aria-busy="true">
         Salir
       </button>
     );

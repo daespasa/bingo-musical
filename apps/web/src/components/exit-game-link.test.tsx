@@ -27,7 +27,9 @@ describe('ExitGameLink', () => {
     useIsAuthenticated.mockReturnValue('cargando');
     render(<ExitGameLink />);
     expect(screen.queryByRole('link')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Salir' })).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Salir' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
   });
 
   it('conserva el aspecto y admite clases extra', () => {

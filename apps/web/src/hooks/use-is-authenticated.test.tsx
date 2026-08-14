@@ -35,16 +35,17 @@ describe('useIsAuthenticated', () => {
     await waitFor(() => expect(result.current).toBe('autenticado'));
   });
 
-  it('da invitado cuando /auth/me responde 401', async () => {
+  it('da invitado cuando /auth/me responde 401, sin reintentar', async () => {
     api.mockRejectedValue(new ApiError(401, 'No autenticado'));
     const { result } = renderHook(() => useIsAuthenticated(), { wrapper });
     await waitFor(() => expect(result.current).toBe('invitado'));
+    expect(api).toHaveBeenCalledTimes(1);
   });
 
-  it('se queda en cargando ante un error de red: no expulsa a nadie', async () => {
+  it('ante un error de red reintenta y se queda en cargando, no expulsa a nadie', async () => {
     api.mockRejectedValue(new TypeError('Failed to fetch'));
     const { result } = renderHook(() => useIsAuthenticated(), { wrapper });
-    await waitFor(() => expect(api).toHaveBeenCalled());
+    await waitFor(() => expect(api.mock.calls.length).toBeGreaterThan(1), { timeout: 3000 });
     expect(result.current).toBe('cargando');
   });
 

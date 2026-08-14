@@ -25,7 +25,7 @@ test.describe('Salida de partida', () => {
     const salir = marta.page.getByRole('link', { name: 'Salir' });
     await expect(salir).toBeVisible({ timeout: 20_000 });
     await salir.click();
-    await expect(marta.page).toHaveURL(/\/$/);
+    await expect(marta.page).toHaveURL('/');
     await expect(marta.page.getByRole('link', { name: /Entrar con código/ })).toBeVisible();
 
     // Anfitrión: vuelve al panel, y la sesión sigue viva (el menú de usuario
