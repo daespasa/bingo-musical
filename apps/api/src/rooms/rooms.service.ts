@@ -5,7 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
-import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, sanitizeAlias, normalizeText } from '@bingo/shared';
+import {
+  ROOM_CODE_ALPHABET,
+  ROOM_CODE_LENGTH,
+  sanitizeAlias,
+  normalizeText,
+  describeModeSummary,
+  type GameMode,
+} from '@bingo/shared';
 import type { Room } from '@bingo/database';
 import { PrismaService } from '../prisma.service';
 import { GuestTokenService } from './guest-token.service';
@@ -20,6 +27,10 @@ export type PublicRoom = {
   mode: string;
   status: string;
   gameName: string;
+  /** El modo de juego. `mode`, arriba, es otra cosa: proyector o mando. */
+  gameMode: GameMode;
+  /** La línea que la sala de espera enseña en lugar del cartón. */
+  modeSummary: string;
   cardSize: number;
   participantCount: number;
   locked: boolean;
@@ -93,20 +104,30 @@ export class RoomsService {
     const room = await this.prisma.room.findUnique({
       where: { code: code.toUpperCase() },
       include: {
-        game: { select: { name: true, settings: { select: { cardSize: true } } } },
+        game: {
+          select: {
+            name: true,
+            mode: true,
+            modeConfig: true,
+            settings: { select: { cardSize: true } },
+          },
+        },
         _count: { select: { participants: { where: { kickedAt: null, role: 'PLAYER' } } } },
       },
     });
     if (!room || room.expiresAt.getTime() < Date.now()) {
       throw new NotFoundException('Sala no encontrada o caducada');
     }
+    const cardSize = room.game.settings?.cardSize ?? 3;
     return {
       id: room.id,
       code: room.code,
       mode: room.mode,
       status: room.status,
       gameName: room.game.name,
-      cardSize: room.game.settings?.cardSize ?? 3,
+      gameMode: room.game.mode,
+      modeSummary: describeModeSummary(room.game.mode, room.game.modeConfig, cardSize),
+      cardSize,
       participantCount: room._count.participants,
       locked: room.lockedAt !== null,
     };
