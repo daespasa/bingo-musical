@@ -2,6 +2,7 @@ export * from './brand';
 export * from './answer-matching';
 export * from './game-modes';
 export * from './game-config';
+export * from './mode-summary';
 export * from './normalize';
 export * from './scoring';
 export * from './cards';
