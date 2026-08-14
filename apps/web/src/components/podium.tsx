@@ -21,6 +21,7 @@ import type {
   HighlightPayload,
   LeaderboardEntry,
 } from '@bingo/shared';
+import { ExitGameLink } from '@/components/exit-game-link';
 import { api } from '@/lib/api';
 import { Leaderboard } from './leaderboard';
 
@@ -267,9 +268,7 @@ export function PodiumCeremony({
           <Link href={`/room/${code}/results`} className="text-sm text-brand-600 hover:underline">
             Ver resumen de la partida
           </Link>
-          <Link href="/" className="btn-secondary">
-            Salir
-          </Link>
+          <ExitGameLink />
         </>
       )}
     </main>
