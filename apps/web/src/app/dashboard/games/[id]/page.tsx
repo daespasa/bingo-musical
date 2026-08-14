@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, MonitorPlay, Smartphone, Wand2 } from 'lucide-react';
+import { describeModeSummary } from '@bingo/shared';
 import { api, ApiError } from '@/lib/api';
 import type { CollectionDetail, GameDetail } from '@/lib/types';
 import { TrackList } from '@/components/track-list';
@@ -57,8 +58,8 @@ export default function GameDetailPage({ params }: { params: Promise<{ id: strin
         <div>
           <h1 className="text-2xl font-bold">{game.name}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {game.collection.name} · {game.collection.trackCount} canciones · Cartón{' '}
-            {game.settings?.cardSize}×{game.settings?.cardSize} ·{' '}
+            {game.collection.name} · {game.collection.trackCount} canciones ·{' '}
+            {describeModeSummary(game.mode, game.modeConfig, game.settings?.cardSize)} ·{' '}
             {(game.settings?.snippetDurationMs ?? 15000) / 1000}s por ronda
           </p>
           {game.settings && (

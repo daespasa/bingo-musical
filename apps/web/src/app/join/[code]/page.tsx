@@ -66,7 +66,7 @@ export default function JoinCodePage({ params }: { params: Promise<{ code: strin
             </p>
             <h1 className="mb-1 text-center text-2xl font-bold">{room.gameName}</h1>
             <p className="mb-6 text-center text-sm text-slate-500 dark:text-slate-400">
-              {room.participantCount} jugadores dentro · cartón {room.cardSize}×{room.cardSize}
+              {room.participantCount} jugadores dentro · {room.modeSummary}
             </p>
             <form onSubmit={join} className="flex flex-col gap-4">
               <div>

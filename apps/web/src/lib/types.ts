@@ -1,3 +1,5 @@
+import type { GameMode } from '@bingo/shared';
+
 export type CollectionSummary = {
   id: string;
   name: string;
@@ -39,6 +41,8 @@ export type GameDetail = {
   createdAt: string;
   collection: { id: string; name: string; trackCount: number };
   settings: GameSettings | null;
+  mode: GameMode;
+  modeConfig: unknown;
   rooms: Array<{ id: string; code: string; status: string; mode: string; createdAt: string }>;
 };
 
@@ -48,7 +52,8 @@ export type RoomPublic = {
   mode: string;
   status: string;
   gameName: string;
-  cardSize: number;
+  gameMode: GameMode;
+  modeSummary: string;
   participantCount: number;
   locked: boolean;
 };
