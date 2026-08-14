@@ -16,18 +16,23 @@ const SLEEVE_TRACKS = [
 ];
 const SLEEVE_MARKED = [4, 7];
 
+/*
+ * Los tres pasos de montar una partida, en el orden en que ocurren. Las
+ * etiquetas recogen el rótulo para que la tira se lea como su desarrollo y no
+ * como tres datos sueltos.
+ */
 const CREDITS = [
   {
-    label: 'Jugadores',
-    text: 'Entran con un código de seis letras o el QR. Sin instalar nada, sin cuenta.',
+    label: 'Tu música',
+    text: 'Empieza con la colección de muestra o importa cualquier lista pública de Spotify.',
   },
   {
-    label: 'Música',
-    text: 'Colección demo incluida, o importa una lista pública de Spotify.',
+    label: 'Su móvil',
+    text: 'Entran con el código o el QR. Nada que instalar, ninguna cuenta que crear.',
   },
   {
-    label: 'Reglas',
-    text: 'Nadie puede colar una marca ni cantar una línea que no tiene. Se comprueba todo.',
+    label: 'Vuestro juego',
+    text: 'Bingo, quiz, adivina la canción, supervivencia o una mezcla de todo.',
   },
 ];
 
@@ -60,8 +65,8 @@ export default function HomePage() {
             juego.
           </h1>
           <p className="mt-6 max-w-md text-pretty text-lg leading-8 text-slate-600 dark:text-slate-300">
-            Crea una sala y juega con amigos mediante bingo, preguntas y desafíos musicales. Cada
-            móvil es un mando: sin instalar nada y sin cuenta para quien juega.
+            Pon la música, comparte un código de seis letras y que cada móvil sea un mando. Sin
+            instalar nada y sin cuenta para quien juega.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
