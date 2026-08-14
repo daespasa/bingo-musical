@@ -252,9 +252,9 @@ modos futuros de anunciarse antes de tiempo.
 ## Pulido posterior a v0.6.0
 
 Siete observaciones de uso sobre la release `v0.6.0`, cada una con su spec, su
-rama y su ciclo (índice en
-`docs/superpowers/specs/2026-08-11-pulido-v0.6.0-indice.md`, rama
-`fix/config-por-modo`). No son una épica: no comparten código ni dependen unas
+rama y su ciclo. El índice de specs y las specs 1, 2, 3, 5, 6 y 7 viven en la
+rama `fix/config-por-modo`, pendiente de fusionar; solo la spec 4 (este copy)
+ha llegado ya a esta rama. No son una épica: no comparten código ni dependen unas
 de otras salvo donde se indica.
 
 | #   | Spec                                  | Estado    |

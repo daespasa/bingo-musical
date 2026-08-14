@@ -5,7 +5,7 @@ test.describe('Portada', () => {
     await page.goto('/');
 
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Tu música');
-    await expect(page.getByText(/comparte un código de seis letras/)).toBeVisible();
+    await expect(page.getByText(/comparte un código de seis caracteres/)).toBeVisible();
 
     // Los tres créditos son los tres pasos de montar una partida. Se acota al
     // <dt> de cada crédito porque «Tu música» también aparece, parcialmente,
@@ -13,6 +13,10 @@ test.describe('Portada', () => {
     for (const etiqueta of ['Tu música', 'Su móvil', 'Vuestro juego']) {
       await expect(page.getByRole('term').getByText(etiqueta, { exact: true })).toBeVisible();
     }
+    await expect(
+      page.getByText(/colección de muestra o importa cualquier lista pública de Spotify/),
+    ).toBeVisible();
+    await expect(page.getByText(/Entran con el código o el QR\. Nada que instalar/)).toBeVisible();
     await expect(page.getByText(/Bingo, quiz, adivina la canción/)).toBeVisible();
 
     // Lo que el spec deja intacto sigue ahí.

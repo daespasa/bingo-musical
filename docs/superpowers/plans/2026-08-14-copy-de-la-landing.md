@@ -31,6 +31,9 @@ responsive.
 - Textos exactos (copiados del spec, sin reescribirlos):
   - Párrafo: «Pon la música, comparte un código de seis letras y que cada móvil sea un
     mando. Sin instalar nada y sin cuenta para quien juega.»
+    > Nota de revisión final: «seis letras» se enmendó a «seis caracteres» porque el
+    > alfabeto de los códigos de sala incluye dígitos
+    > (`packages/shared/src/room-code.ts`), no solo letras.
   - Crédito 1 — etiqueta «Tu música»: «Empieza con la colección de muestra o importa
     cualquier lista pública de Spotify.»
   - Crédito 2 — etiqueta «Su móvil»: «Entran con el código o el QR. Nada que instalar,

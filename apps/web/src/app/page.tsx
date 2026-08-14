@@ -65,7 +65,7 @@ export default function HomePage() {
             juego.
           </h1>
           <p className="mt-6 max-w-md text-pretty text-lg leading-8 text-slate-600 dark:text-slate-300">
-            Pon la música, comparte un código de seis letras y que cada móvil sea un mando. Sin
+            Pon la música, comparte un código de seis caracteres y que cada móvil sea un mando. Sin
             instalar nada y sin cuenta para quien juega.
           </p>
 
