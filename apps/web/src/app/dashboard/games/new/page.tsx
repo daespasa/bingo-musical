@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, type UseFormRegister } from 'react-hook-form';
 import { useState } from 'react';
 import clsx from 'clsx';
 import { Gift, ListMusic, Wand2 } from 'lucide-react';
@@ -90,13 +90,44 @@ const MIXED_PRESETS: Array<{
   },
 ];
 
-const RULE_TOGGLES = [
+/* Reglas que solo existen si hay cartón. */
+const BINGO_RULE_TOGGLES = [
   ['freeCenter', 'Centro libre', 'La casilla central cuenta como acertada (3×3 y 5×5).'],
   ['lineEnabled', 'Premio por línea', 'Los jugadores pueden cantar línea.'],
   ['bingoEnabled', 'Premio por bingo', 'Los jugadores pueden cantar bingo (termina la partida).'],
+] as const;
+
+/* Reglas de cualquier partida, juegue al modo que juegue. */
+const COMMON_RULE_TOGGLES = [
   ['showLeaderboard', 'Ranking entre rondas', 'Muestra la clasificación tras cada canción.'],
   ['shuffleTracks', 'Orden aleatorio', 'Baraja las canciones al empezar.'],
 ] as const;
+
+type RuleToggleKey =
+  (typeof BINGO_RULE_TOGGLES)[number][0] | (typeof COMMON_RULE_TOGGLES)[number][0];
+
+/** Interruptor de una regla, compartido entre las reglas del bingo y las comunes. */
+function RuleToggle({
+  fieldKey,
+  label,
+  help,
+  register,
+}: {
+  fieldKey: RuleToggleKey;
+  label: string;
+  help: string;
+  register: UseFormRegister<FormData>;
+}) {
+  return (
+    <label className="flex items-start gap-3 text-sm">
+      <input type="checkbox" className="mt-1 h-4 w-4 accent-brand-600" {...register(fieldKey)} />
+      <span>
+        <span className="font-medium">{label}</span>
+        <span className="block text-slate-500 dark:text-slate-400">{help}</span>
+      </span>
+    </label>
+  );
+}
 
 export default function NewGamePage() {
   const router = useRouter();
@@ -196,15 +227,23 @@ export default function NewGamePage() {
                       }
                     : { mode: data.mode, revealMode: data.revealMode },
           settings: {
-            cardSize: Number(data.cardSize),
-            freeCenter: data.freeCenter,
+            // Fuera del bingo estos cuatro no significan nada, y guardar lo que
+            // quedara en el formulario haría que el dato contradijera a la
+            // partida jugada. `cardSize` mantiene 3 porque la columna no admite
+            // nulo y es su valor por defecto en Prisma.
+            ...(data.mode === 'MUSIC_BINGO'
+              ? {
+                  cardSize: Number(data.cardSize),
+                  freeCenter: data.freeCenter,
+                  lineEnabled: data.lineEnabled,
+                  bingoEnabled: data.bingoEnabled,
+                }
+              : { cardSize: 3, freeCenter: false, lineEnabled: false, bingoEnabled: false }),
             snippetDurationMs: Number(data.snippetDurationMs),
             answerWindowMs: Number(data.answerWindowMs),
             autoReveal: data.autoReveal,
             autoAdvance: data.autoAdvance,
             roundResultsMs: Number(data.roundResultsMs),
-            lineEnabled: data.lineEnabled,
-            bingoEnabled: data.bingoEnabled,
             showLeaderboard: data.showLeaderboard,
             shuffleTracks: data.shuffleTracks,
           },
@@ -522,24 +561,28 @@ export default function NewGamePage() {
         </div>
 
         <div className="card p-6">
-          <p className="label">Cartón</p>
-          <div className="mb-4 flex gap-2">
-            {[3, 4, 5].map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => setValue('cardSize', size)}
-                className={clsx(
-                  'flex-1 rounded-xl border py-3 font-semibold transition',
-                  Number(cardSize) === size
-                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
-                    : 'border-slate-200 dark:border-slate-700',
-                )}
-              >
-                {size} × {size}
-              </button>
-            ))}
-          </div>
+          {/* Fuera del bingo no hay cartón que elegir, así que el rótulo pasa a
+              describir lo único que queda en la tarjeta: los tiempos. */}
+          <p className="label">{mode === 'MUSIC_BINGO' ? 'Cartón' : 'Tiempos'}</p>
+          {mode === 'MUSIC_BINGO' && (
+            <div className="mb-4 flex gap-2">
+              {[3, 4, 5].map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => setValue('cardSize', size)}
+                  className={clsx(
+                    'flex-1 rounded-xl border py-3 font-semibold transition',
+                    Number(cardSize) === size
+                      ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                      : 'border-slate-200 dark:border-slate-700',
+                  )}
+                >
+                  {size} × {size}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="label" htmlFor="snippet">
@@ -628,18 +671,18 @@ export default function NewGamePage() {
         <div className="card p-6">
           <p className="label">Reglas</p>
           <div className="flex flex-col gap-3">
-            {RULE_TOGGLES.map(([key, label, help]) => (
-              <label key={key} className="flex items-start gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4 accent-brand-600"
-                  {...register(key)}
+            {mode === 'MUSIC_BINGO' &&
+              BINGO_RULE_TOGGLES.map(([key, label, help]) => (
+                <RuleToggle
+                  key={key}
+                  fieldKey={key}
+                  label={label}
+                  help={help}
+                  register={register}
                 />
-                <span>
-                  <span className="font-medium">{label}</span>
-                  <span className="block text-slate-500 dark:text-slate-400">{help}</span>
-                </span>
-              </label>
+              ))}
+            {COMMON_RULE_TOGGLES.map(([key, label, help]) => (
+              <RuleToggle key={key} fieldKey={key} label={label} help={help} register={register} />
             ))}
           </div>
         </div>
