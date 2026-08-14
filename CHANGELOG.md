@@ -2,6 +2,14 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Changed
+
+- Cada modo enseña su propia configuración: el cartón y las reglas de línea y bingo solo
+  aparecen en el bingo, y la sala de espera y el resumen de partida dicen el dato que
+  corresponde a cada modo (opciones, intentos, vidas o mezcla).
+
 ## [0.6.0] - 2026-08-11
 
 **Bingo Musical pasa a llamarse Gramola** y deja de ser un solo juego para
