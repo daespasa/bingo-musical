@@ -2,6 +2,14 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Changed
+
+- La portada cuenta qué es Gramola, qué hace falta para empezar y qué se juega, en
+  vez de describir cómo se validan las jugadas del bingo. Los tres créditos pasan a
+  ser los tres pasos de montar una partida.
+
 ## [0.6.0] - 2026-08-11
 
 **Bingo Musical pasa a llamarse Gramola** y deja de ser un solo juego para
