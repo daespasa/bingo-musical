@@ -2,6 +2,14 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [SemVer](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Changed
+
+- Salir de una partida devuelve a cada quien a su sitio: quien tiene cuenta vuelve
+  a sus partidas y el invitado a la portada. El botón lo dice, para que salir no se
+  confunda con cerrar sesión.
+
 ## [0.6.0] - 2026-08-11
 
 **Bingo Musical pasa a llamarse Gramola** y deja de ser un solo juego para
