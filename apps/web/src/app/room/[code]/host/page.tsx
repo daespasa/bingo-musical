@@ -96,14 +96,17 @@ export default function HostPage({ params }: { params: Promise<{ code: string }>
   const players = state?.participants.filter((p) => p.role === 'PLAYER') ?? [];
   const inLobby = state?.status === 'LOBBY';
   const autoReveal = state?.settings.autoReveal ?? true;
-  // La pista depende del modo: en una partida sin cartones, preguntar «¿la
-  // tienes en el cartón?» no significa nada.
-  const roundHint =
-    state?.gameMode === 'MULTIPLE_CHOICE'
+  // La pista sale de lo que hay realmente en pantalla, no del modo: en
+  // MIXED el tipo de reto cambia de una ronda a otra, y en SURVIVAL nunca
+  // hay cartón, así que enumerar `gameMode` deja huecos que caen en un
+  // «¿la tienes en el cartón?» imposible de cumplir.
+  const roundHint = state?.card
+    ? '¿La tienes en el cartón?'
+    : room.question
       ? 'Elige la respuesta correcta'
-      : state?.gameMode === 'FREE_TEXT'
+      : room.freeText
         ? 'Escribe lo que estás escuchando'
-        : '¿La tienes en el cartón?';
+        : 'Escucha con atención';
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-6">

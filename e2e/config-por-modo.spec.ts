@@ -38,6 +38,11 @@ test.describe('Configuración por modo en el asistente', () => {
       await expect(page.getByRole('checkbox', { name: /Ranking entre rondas/ })).toBeVisible();
       await expect(page.getByRole('checkbox', { name: /Orden aleatorio/ })).toBeVisible();
     }
+
+    // Volver a «Bingo musical» debe recuperar los cuatro controles: es la
+    // regresión más probable de un condicional de render mal invertido.
+    await page.getByRole('radio', { name: /Bingo musical/ }).click();
+    await expectBingoControlsVisible(page);
   });
 
   test('la sala de espera de un quiz habla de opciones, no de cartones', async ({ page }) => {

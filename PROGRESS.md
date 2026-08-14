@@ -158,6 +158,12 @@
   viviendo en la configuración común en vez de en `musicBingoConfig`, que es donde
   pertenecen ahora que solo el bingo los usa. Moverlos exige migración porque ya hay
   partidas guardadas con esos campos en su sitio actual; queda pendiente.
+  Mientras tanto, la API acepta hoy esos cuatro campos en cualquier modo
+  (`apps/api/src/games/games.dto.ts`) y los persiste tal cual
+  (`apps/api/src/games/games.service.ts`), sin comprobar que el modo sea
+  `MUSIC_BINGO`. La coherencia entre lo guardado y lo jugado la garantiza solo
+  el wizard de la web al enviar el formulario; normalizarlos en el servidor
+  (rechazarlos o descartarlos fuera del bingo) queda pendiente.
 
 ## Validaciones ejecutadas en esta épica
 

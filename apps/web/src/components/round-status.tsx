@@ -14,7 +14,7 @@ export function RoundStatus({
   prepare,
   revealed,
   nowPlaying,
-  hint = '¿La tienes en el cartón?',
+  hint = 'Escucha con atención',
   paused,
   playing,
   audioError,

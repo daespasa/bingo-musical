@@ -23,7 +23,13 @@ export function describeModeSummary(mode: GameMode, storedConfig: unknown, cardS
   let config;
   try {
     config = readGameModeConfig(mode, storedConfig);
-  } catch {
+  } catch (err) {
+    // No se relanza: esto es una etiqueta de pantalla y negarse a pintarla
+    // no protege de nada. Pero un mensaje de «la configuración dice ser de
+    // X pero la partida es de Y» sí es corrupción real de datos (no una
+    // partida antigua sin configurar), así que se avisa para poder
+    // detectarla sin dejar de degradar a la configuración por defecto.
+    console.warn(`[mode-summary] configuración inválida para el modo ${mode}:`, err);
     config = readGameModeConfig(mode, null);
   }
 

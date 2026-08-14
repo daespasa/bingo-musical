@@ -179,6 +179,9 @@ export default function NewGamePage() {
   const lives = watch('lives');
   const survivalRoundKind = watch('survivalRoundKind');
   const mixedPreset = watch('mixedPreset');
+  // Se usa en el render para no repetir la comparación en cada bloque
+  // condicional. El envío (`onSubmit`) mira `data.mode`, no esto.
+  const esBingo = mode === 'MUSIC_BINGO';
 
   // Al menos un tipo de pregunta: sin ninguno no habría nada que preguntar.
   const toggleQuestionType = (tipo: MultipleChoiceQuestionType) => {
@@ -266,7 +269,7 @@ export default function NewGamePage() {
           />
         </div>
 
-        {mode === 'MUSIC_BINGO' && (
+        {esBingo && (
           <div className="card p-6">
             <fieldset>
               <legend className="label">Variante del bingo</legend>
@@ -562,9 +565,11 @@ export default function NewGamePage() {
 
         <div className="card p-6">
           {/* Fuera del bingo no hay cartón que elegir, así que el rótulo pasa a
-              describir lo único que queda en la tarjeta: los tiempos. */}
-          <p className="label">{mode === 'MUSIC_BINGO' ? 'Cartón' : 'Tiempos'}</p>
-          {mode === 'MUSIC_BINGO' && (
+              describir lo único que queda en la tarjeta: los tiempos. Dentro
+              del bingo también incluye la duración del fragmento y el tiempo
+              extra, así que el rótulo lo refleja. */}
+          <p className="label">{esBingo ? 'Cartón y tiempos' : 'Tiempos'}</p>
+          {esBingo && (
             <div className="mb-4 flex gap-2">
               {[3, 4, 5].map((size) => (
                 <button
@@ -671,7 +676,7 @@ export default function NewGamePage() {
         <div className="card p-6">
           <p className="label">Reglas</p>
           <div className="flex flex-col gap-3">
-            {mode === 'MUSIC_BINGO' &&
+            {esBingo &&
               BINGO_RULE_TOGGLES.map(([key, label, help]) => (
                 <RuleToggle
                   key={key}
