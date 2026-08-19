@@ -12,6 +12,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - Salir de una partida devuelve a cada quien a su sitio: quien tiene cuenta vuelve
   a sus partidas y el invitado a la portada. El botón lo dice, para que salir no se
   confunda con cerrar sesión.
+- Cada modo enseña su propia configuración: el cartón y las reglas de línea y bingo solo
+  aparecen en el bingo, y la sala de espera y el resumen de partida dicen el dato que
+  corresponde a cada modo (opciones, intentos, vidas o mezcla).
 
 ## [0.6.0] - 2026-08-11
 

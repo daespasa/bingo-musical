@@ -139,12 +139,17 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
     ...room.survivalStandings.map((s) => s.lives),
     1,
   );
-  const roundHint =
-    state?.gameMode === 'MULTIPLE_CHOICE'
+  // La pista sale de lo que hay realmente en pantalla, no del modo: en
+  // MIXED el tipo de reto cambia de una ronda a otra, y en SURVIVAL nunca
+  // hay cartón, así que enumerar `gameMode` deja huecos que caen en un
+  // «¿la tienes en el cartón?» imposible de cumplir.
+  const roundHint = state?.card
+    ? '¿La tienes en el cartón?'
+    : room.question
       ? 'Elige la respuesta correcta'
-      : state?.gameMode === 'FREE_TEXT'
+      : room.freeText
         ? 'Escribe lo que estás escuchando'
-        : '¿La tienes en el cartón?';
+        : 'Escucha con atención';
   const players = state?.participants.filter((p) => p.role === 'PLAYER') ?? [];
 
   return (

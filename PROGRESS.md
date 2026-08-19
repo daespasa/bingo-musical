@@ -141,6 +141,30 @@
 - **Revancha**: duplica la partida y abre una sala nueva, para no sobrescribir
   el historial de la que acaba de terminar. Solo el anfitrión.
 
+## Pulido posterior a v0.6.0
+
+### Spec 1 — Configuración específica de cada modo (`feat/config-por-modo-web`)
+
+- `describeModeSummary` en `@bingo/shared`: redacta el resumen de la configuración
+  según el modo (opciones, intentos, vidas o mezcla), con sus 8 tests.
+- `gameMode` y `modeSummary` viajan en el DTO de sala de la API.
+- El wizard oculta el cartón y las reglas de línea y bingo fuera del bingo, y fuerza
+  valores neutros al enviar la configuración de un modo que no las usa.
+- La sala de espera y el resumen de partida enseñan el resumen del modo en vez de
+  hablar siempre de cartón y bingo.
+- `e2e/config-por-modo.spec.ts` cubre el bingo, los demás modos y la sala de espera
+  de un quiz.
+- **Deuda consciente**: `cardSize`, `freeCenter`, `lineEnabled` y `bingoEnabled` siguen
+  viviendo en la configuración común en vez de en `musicBingoConfig`, que es donde
+  pertenecen ahora que solo el bingo los usa. Moverlos exige migración porque ya hay
+  partidas guardadas con esos campos en su sitio actual; queda pendiente.
+  Mientras tanto, la API acepta hoy esos cuatro campos en cualquier modo
+  (`apps/api/src/games/games.dto.ts`) y los persiste tal cual
+  (`apps/api/src/games/games.service.ts`), sin comprobar que el modo sea
+  `MUSIC_BINGO`. La coherencia entre lo guardado y lo jugado la garantiza solo
+  el wizard de la web al enviar el formulario; normalizarlos en el servidor
+  (rechazarlos o descartarlos fuera del bingo) queda pendiente.
+
 ## Validaciones ejecutadas en esta épica
 
 Ejecutadas el 2026-08-08 sobre `feat/mode-aware-show`:
