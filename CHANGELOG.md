@@ -6,6 +6,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ### Changed
 
+- La portada cuenta qué es Gramola, qué hace falta para empezar y qué se juega, en
+  vez de describir cómo se validan las jugadas del bingo. Los tres créditos pasan a
+  ser los tres pasos de montar una partida.
 - Salir de una partida devuelve a cada quien a su sitio: quien tiene cuenta vuelve
   a sus partidas y el invitado a la portada. El botón lo dice, para que salir no se
   confunda con cerrar sesión.

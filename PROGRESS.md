@@ -259,6 +259,34 @@ su propia rama:
 - El aviso de instalación de la PWA solo aparece en navegadores Chromium; en
   iOS hay que usar «Añadir a pantalla de inicio».
 
+## Pulido posterior a v0.6.0
+
+Siete observaciones de uso sobre la release `v0.6.0`, cada una con su spec, su
+rama y su ciclo. El índice de specs y las specs 1, 2, 3, 5, 6 y 7 viven en la
+rama `fix/config-por-modo`, pendiente de fusionar; solo la spec 4 (este copy)
+ha llegado ya a esta rama. No son una épica: no comparten código ni dependen unas
+de otras salvo donde se indica.
+
+| #   | Spec                                  | Estado    |
+| --- | ------------------------------------- | --------- |
+| 1   | Configuración específica de cada modo | Pendiente |
+| 2   | Salida de partida                     | Pendiente |
+| 3   | Artista en las opciones del quiz      | Pendiente |
+| 4   | Copy de la portada                    | Hecha     |
+| 5   | Tema claro y oscuro                   | Pendiente |
+| 6   | Portadas en el cartón                 | Pendiente |
+| 7   | Auditoría responsive                  | Pendiente |
+
+### Spec 4 — Copy de la portada (`feat/copy-de-la-landing`)
+
+- La portada cuenta qué es Gramola, qué hace falta para empezar y qué se juega,
+  en vez de describir cómo se validan las jugadas del bingo.
+- Los tres créditos pasan a ser los tres pasos de montar una partida: «Tu
+  música», «Su móvil» y «Vuestro juego».
+- Rótulo, botones e ilustración de la portada no se tocan.
+- `e2e/portada.spec.ts` comprueba el contenido y que a 360 px no hay scroll
+  horizontal.
+
 ## Próximo paso
 
 Fase 6: adivina la canción. Reutiliza `PlayerAnswer` (que ya tiene `freeText` e
