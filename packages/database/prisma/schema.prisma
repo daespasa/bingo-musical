@@ -534,6 +534,9 @@ model AnswerOption {
   question   RoundQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   position   Int
   text       String
+  /// Línea secundaria de la opción. Hoy el artista en las preguntas de título;
+  /// nulo cuando el tipo de pregunta no lo admite.
+  subtitle   String?
   isCorrect  Boolean       @default(false)
 
   answers PlayerAnswer[]
