@@ -573,9 +573,10 @@ export class GameEngineService {
         prompt: payload.prompt,
         correctText: payload.correctText,
         options: {
-          create: payload.options.map((text, position) => ({
+          create: payload.options.map((option, position) => ({
             position,
-            text,
+            text: option.text,
+            subtitle: option.subtitle,
             isCorrect: position === payload.correctIndex,
           })),
         },
@@ -1237,13 +1238,13 @@ export class GameEngineService {
           type: 'POPULAR_DISTRACTOR',
           alias: '—',
           roundIndex: r.index,
-          data: { text: r.question.options[worst], count: worstCount },
+          data: { text: r.question.options[worst]!.text, count: worstCount },
         });
         this.emitRoom(rt, 'highlight:created', {
           type: 'POPULAR_DISTRACTOR',
           alias: '—',
           roundIndex: r.index,
-          data: { text: r.question.options[worst], count: worstCount },
+          data: { text: r.question.options[worst]!.text, count: worstCount },
         });
       }
     }
