@@ -28,6 +28,10 @@ type Props = {
 export function QuizOptions({ question, myAnswer, distribution, disabled, onAnswerAction }: Props) {
   const revealed = distribution !== null;
   const totalAnswers = distribution ? distribution.counts.reduce((a, b) => a + b, 0) : 0;
+  // El texto puede repetirse entre opciones (p. ej. "Sí"/"No" en varias
+  // preguntas): solo sirve como key si es único dentro de esta pregunta.
+  const hasDuplicateTexts =
+    new Set(question.options.map((o) => o.text)).size !== question.options.length;
 
   return (
     <div className="card p-4">
@@ -43,7 +47,7 @@ export function QuizOptions({ question, myAnswer, distribution, disabled, onAnsw
           const share = totalAnswers > 0 ? (count / totalAnswers) * 100 : 0;
 
           return (
-            <li key={option}>
+            <li key={hasDuplicateTexts ? index : option.text}>
               <button
                 type="button"
                 disabled={disabled || revealed || myAnswer !== null}
@@ -55,7 +59,7 @@ export function QuizOptions({ question, myAnswer, distribution, disabled, onAnsw
                  * momento.
                  */
                 aria-label={[
-                  `Opción ${LETTERS[index]}: ${option}`,
+                  `Opción ${LETTERS[index]}: ${option.text}${option.subtitle ? `, de ${option.subtitle}` : ''}`,
                   chosen ? 'Tu respuesta.' : '',
                   isCorrect ? 'Respuesta correcta.' : '',
                   isWrongChoice ? 'Respuesta incorrecta.' : '',
@@ -103,7 +107,14 @@ export function QuizOptions({ question, myAnswer, distribution, disabled, onAnsw
                   <span className="data shrink-0 rounded border-2 border-current px-1.5 py-0.5 text-xs">
                     {LETTERS[index]}
                   </span>
-                  <span className="min-w-0 flex-1 font-semibold leading-tight">{option}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold leading-tight">{option.text}</span>
+                    {option.subtitle && (
+                      <span className="block text-sm leading-tight text-slate-500 dark:text-slate-400">
+                        {option.subtitle}
+                      </span>
+                    )}
+                  </span>
 
                   {/* La forma distingue el resultado; el color solo acompaña. */}
                   {isCorrect && <Check className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />}

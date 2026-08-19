@@ -140,7 +140,7 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
                       const correcto = room.distribution?.correctIndex === index;
                       return (
                         <li
-                          key={option}
+                          key={option.text}
                           className={
                             'flex items-center gap-3 rounded-md border-2 px-4 py-3 text-left text-2xl ' +
                             (room.distribution
@@ -153,7 +153,14 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
                           <span className="data shrink-0 rounded border-2 border-current px-2 py-0.5 text-lg">
                             {['A', 'B', 'C', 'D'][index]}
                           </span>
-                          <span className="min-w-0 flex-1 font-semibold">{option}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-semibold leading-tight">{option.text}</span>
+                            {option.subtitle && (
+                              <span className="block text-xl leading-tight text-slate-500 dark:text-slate-400">
+                                {option.subtitle}
+                              </span>
+                            )}
+                          </span>
                           {room.distribution && (
                             <span className="data shrink-0 text-xl">
                               {room.distribution.counts[index] ?? 0}
