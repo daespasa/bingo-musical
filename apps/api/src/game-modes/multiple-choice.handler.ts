@@ -39,6 +39,36 @@ export type QuizAnswer = { optionIndex: number };
 
 export type QuizResult = { correct: boolean };
 
+/**
+ * El distractor que más gente se ha tragado, si de verdad ha engañado.
+ *
+ * Función pura para poder probar la selección sin montar el motor completo:
+ * recibe las opciones ya resueltas (no strings) para que un cambio de forma
+ * en `QuizOption` no pueda colarse silenciosamente en el highlight (ver
+ * fallo detectado y corregido en la Tarea 4: se guardaba el objeto opción
+ * entero en vez de su `text`).
+ */
+export function pickPopularDistractor(
+  options: readonly QuizOption[],
+  correctIndex: number,
+  counts: readonly number[],
+  correctAnswersCount: number,
+): { text: string; count: number } | null {
+  let worst = -1;
+  let worstCount = 0;
+  counts.forEach((count, index) => {
+    if (index === correctIndex) return;
+    if (count > worstCount) {
+      worst = index;
+      worstCount = count;
+    }
+  });
+  if (worst >= 0 && worstCount >= 2 && worstCount > correctAnswersCount) {
+    return { text: options[worst]!.text, count: worstCount };
+  }
+  return null;
+}
+
 @Injectable()
 export class MultipleChoiceHandler implements GameModeHandler<'MULTIPLE_CHOICE'> {
   readonly mode = 'MULTIPLE_CHOICE' as const;
