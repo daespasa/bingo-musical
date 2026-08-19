@@ -26,6 +26,17 @@ const POOL: RoundTrack[] = [
 
 const rng = () => createRng('test');
 
+// Pool con dos pistas homónimas de artistas distintos, para las pruebas de
+// subtítulo: la deduplicación de distractores es por texto, así que ambas no
+// pueden aparecer nunca a la vez como opciones.
+const pool: RoundTrack[] = [
+  track('h1', 'Corazón de Neón', 'Artista Uno', 1985, 'Álbum Uno'),
+  track('h2', 'Bajo la Lluvia', 'Artista Dos', 1990),
+  track('h3', 'Corazón de Neón', 'Artista Tres', 1998),
+  track('h4', 'Estrella Fugaz', 'Artista Cuatro', 2005),
+  track('h5', 'Voces del Viento', 'Artista Cinco', 2012),
+];
+
 describe('décadas', () => {
   it('agrupa el año en su década', () => {
     expect(decadeOf(1983)).toBe('1980s');
@@ -71,7 +82,7 @@ describe('construcción de la pregunta', () => {
     })!;
 
     expect(q.correctText).toBe('Neon Nights');
-    expect(q.options.filter((o) => o === 'Neon Nights')).toHaveLength(1);
+    expect(q.options.filter((o) => o.text === 'Neon Nights')).toHaveLength(1);
   });
 
   it('respeta el número de opciones pedido', () => {
@@ -95,7 +106,7 @@ describe('construcción de la pregunta', () => {
       optionCount: 4,
       rng: rng(),
     })!;
-    expect(new Set(q.options).size).toBe(q.options.length);
+    expect(new Set(q.options.map((o) => o.text)).size).toBe(q.options.length);
   });
 
   it('saca los distractores de la propia colección', () => {
@@ -107,7 +118,7 @@ describe('construcción de la pregunta', () => {
       rng: rng(),
     })!;
     const titulos = new Set(POOL.map((t) => t.title));
-    for (const option of q.options) expect(titulos.has(option)).toBe(true);
+    for (const option of q.options) expect(titulos.has(option.text)).toBe(true);
   });
 
   it('no propone como distractor otro tema del mismo artista al preguntar artista', () => {
@@ -120,7 +131,7 @@ describe('construcción de la pregunta', () => {
       optionCount: 4,
       rng: rng(),
     })!;
-    expect(q.options.filter((o) => o === 'Cohete 9')).toHaveLength(1);
+    expect(q.options.filter((o) => o.text === 'Cohete 9')).toHaveLength(1);
   });
 
   it('propone décadas creíbles, no disparates', () => {
@@ -134,7 +145,7 @@ describe('construcción de la pregunta', () => {
 
     expect(q.correctText).toBe('1980s');
     for (const option of q.options) {
-      expect(option).toMatch(/^(19[5-9]0|20[0-3]0)s$/);
+      expect(option.text).toMatch(/^(19[5-9]0|20[0-3]0)s$/);
     }
   });
 
@@ -150,7 +161,7 @@ describe('construcción de la pregunta', () => {
 
     // Ambas son de los 80: sin relleno solo habría una opción.
     expect(q.options).toHaveLength(3);
-    expect(q.options).toContain('1980s');
+    expect(q.options.map((o) => o.text)).toContain('1980s');
   });
 
   it('devuelve null cuando la pista no puede sostener el tipo', () => {
@@ -207,5 +218,62 @@ describe('construcción de la pregunta', () => {
           .prompt,
     );
     expect(new Set(prompts).size).toBe(3);
+  });
+});
+
+describe('subtítulo de las opciones', () => {
+  it('en SONG_TITLE cada opción trae el artista de SU canción, no el de la que suena', () => {
+    const draft = buildQuizQuestion({
+      type: 'SONG_TITLE',
+      track: pool[0]!,
+      pool,
+      optionCount: 4,
+      rng: createRng('semilla'),
+    })!;
+
+    for (const option of draft.options) {
+      const suya = pool.find((t) => t.title === option.text)!;
+      expect(option.subtitle).toBe(suya.artist);
+    }
+  });
+
+  it('en ARTIST no hay subtítulo: sería regalar la respuesta', () => {
+    const draft = buildQuizQuestion({
+      type: 'ARTIST',
+      track: pool[0]!,
+      pool,
+      optionCount: 4,
+      rng: createRng('semilla'),
+    })!;
+    expect(draft.options.every((o) => o.subtitle === null)).toBe(true);
+  });
+
+  it('en DECADE tampoco', () => {
+    const draft = buildQuizQuestion({
+      type: 'DECADE',
+      track: pool[0]!,
+      pool,
+      optionCount: 4,
+      rng: createRng('semilla'),
+    })!;
+    expect(draft.options.every((o) => o.subtitle === null)).toBe(true);
+  });
+
+  it('la misma semilla da el mismo orden y los mismos pares título/artista', () => {
+    const uno = buildQuizQuestion({
+      type: 'SONG_TITLE',
+      track: pool[0]!,
+      pool,
+      optionCount: 4,
+      rng: createRng('misma'),
+    })!;
+    const dos = buildQuizQuestion({
+      type: 'SONG_TITLE',
+      track: pool[0]!,
+      pool,
+      optionCount: 4,
+      rng: createRng('misma'),
+    })!;
+    expect(dos.options).toEqual(uno.options);
   });
 });
