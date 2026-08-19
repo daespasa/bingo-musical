@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultConfigForMode } from '@bingo/shared';
-import { MultipleChoiceHandler, toPublicQuizRound } from './multiple-choice.handler';
+import {
+  MultipleChoiceHandler,
+  pickPopularDistractor,
+  toPublicQuizRound,
+  type QuizOption,
+} from './multiple-choice.handler';
 import type { RoundTrack } from './game-mode-handler';
 import type { ScoringSettings } from './game-mode-handler';
 
@@ -69,7 +74,7 @@ function crearRonda(overrides: Partial<{ index: number; questionTypes: string[] 
 describe('rondas de quiz', () => {
   it('construye una pregunta con la respuesta correcta señalada', async () => {
     const round = await crearRonda();
-    expect(round.options[round.correctIndex]).toBe(round.correctText);
+    expect(round.options[round.correctIndex]?.text).toBe(round.correctText);
   });
 
   it('alterna los tipos de pregunta entre rondas', async () => {
@@ -125,6 +130,15 @@ describe('la solución no viaja antes del reveal', () => {
     expect(JSON.stringify(json)).not.toContain('correctIndex');
     expect(JSON.stringify(json)).not.toContain('correctText');
     expect(JSON.stringify(json)).not.toContain('isCorrect');
+  });
+
+  it('la vista pública lleva los subtítulos y sigue sin decir cuál es la correcta', async () => {
+    const round = await crearRonda();
+    const publica = toPublicQuizRound(round) as Record<string, unknown>;
+
+    expect(publica.options).toEqual(round.options);
+    expect(publica).not.toHaveProperty('correctText');
+    expect(publica).not.toHaveProperty('correctIndex');
   });
 
   it('las opciones no van ordenadas con la correcta siempre primero', async () => {
@@ -223,5 +237,34 @@ describe('puntuación', () => {
       scoring: SCORING,
     });
     expect(events).toEqual([{ type: 'WRONG_ANSWER', points: -25 }]);
+  });
+});
+
+describe('el distractor más popular', () => {
+  const options: QuizOption[] = [
+    { text: 'La Vieja Radio', subtitle: 'Los Sintéticos' },
+    { text: 'Neon Nights', subtitle: 'The Demo Waves' },
+    { text: 'Ruta 404', subtitle: 'Cohete 9' },
+  ];
+
+  it('devuelve el texto de la opción, no el objeto entero', () => {
+    // Reproduce el fallo de la Tarea 4: si el highlight guardara la opción
+    // completa en vez de leer `option.text`, `data.text` sería un objeto y
+    // se habría serializado como "[object Object]" en el resumen.
+    const distractor = pickPopularDistractor(options, 2, [3, 1, 2], 1);
+    expect(distractor).toEqual({ text: 'La Vieja Radio', count: 3 });
+    expect(typeof distractor?.text).toBe('string');
+  });
+
+  it('ignora la opción correcta aunque sea la más votada', () => {
+    // El índice 1 (el correcto) es el que más votos tiene; el distractor
+    // debe salir del resto de opciones, no de ese.
+    const distractor = pickPopularDistractor(options, 1, [1, 5, 3], 0);
+    expect(distractor).toEqual({ text: 'Ruta 404', count: 3 });
+  });
+
+  it('no destaca nada si el distractor no ha engañado a suficiente gente', () => {
+    expect(pickPopularDistractor(options, 1, [1, 4, 0], 1)).toBeNull();
+    expect(pickPopularDistractor(options, 1, [0, 4, 0], 1)).toBeNull();
   });
 });

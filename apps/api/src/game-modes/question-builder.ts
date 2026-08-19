@@ -11,12 +11,15 @@ import type { RoundTrack } from './game-mode-handler';
  * un jugador que reconecta podría ver opciones distintas a las de los demás.
  */
 
+/** Una opción de respuesta con su subtítulo opcional (el artista, cuando aplica). */
+export type QuizOptionDraft = { text: string; subtitle: string | null };
+
 export type QuizQuestionDraft = {
   type: MultipleChoiceQuestionType;
   prompt: string;
   correctText: string;
   /** Opciones ya barajadas. La correcta está entre ellas exactamente una vez. */
-  options: string[];
+  options: QuizOptionDraft[];
 };
 
 const PROMPTS: Record<MultipleChoiceQuestionType, string> = {
@@ -51,6 +54,23 @@ function correctAnswerFor(type: MultipleChoiceQuestionType, track: RoundTrack): 
   }
 }
 
+/**
+ * Subtítulo de una opción para un tipo de pregunta dado.
+ *
+ * Solo `SONG_TITLE` lo lleva: ahí el título es la respuesta y el artista es
+ * información de apoyo que ayuda a reconocer la canción. En `ARTIST` el
+ * artista ES la respuesta, así que mostrarlo regalaría la solución; en el
+ * resto de tipos no aporta nada y se omite. Se centraliza aquí para no
+ * repartir esta decisión por el archivo.
+ */
+function subtitleFor(type: MultipleChoiceQuestionType, track: RoundTrack): string | null {
+  if (type !== 'SONG_TITLE') return null;
+  // Un artista en blanco no puede servir de subtítulo: dejaría esa opción
+  // sin segunda línea mientras las demás sí la tienen, rompiendo el
+  // invariante de «para todas las opciones o para ninguna».
+  return track.artist.trim().length > 0 ? track.artist : null;
+}
+
 /** Los tipos que la colección puede sostener con los metadatos que tiene. */
 export function supportedQuestionTypes(
   pool: readonly RoundTrack[],
@@ -79,8 +99,11 @@ function distractorsFor(
   correct: string,
   wanted: number,
   rng: () => number,
-): string[] {
-  const candidates = new Set<string>();
+): QuizOptionDraft[] {
+  // Se dedup por texto (no por par texto+artista): dos pistas homónimas de
+  // artistas distintos no pueden aparecer las dos como opciones, porque
+  // entonces habría dos respuestas correctas para la misma pregunta.
+  const candidates = new Map<string, QuizOptionDraft>();
 
   for (const other of pool) {
     if (other.id === track.id) continue;
@@ -89,23 +112,24 @@ function distractorsFor(
     // Comparación laxa: si otra pista se titula igual, no es un distractor,
     // es la misma respuesta escrita dos veces.
     if (value.toLowerCase().trim() === correct.toLowerCase().trim()) continue;
-    candidates.add(value);
+    if (candidates.has(value)) continue;
+    candidates.set(value, { text: value, subtitle: subtitleFor(type, other) });
   }
 
-  const picked = seededShuffle([...candidates], rng).slice(0, wanted);
+  const picked = seededShuffle([...candidates.values()], rng).slice(0, wanted);
 
   // Las décadas admiten relleno razonable cuando la colección es pequeña:
   // décadas vecinas siguen siendo respuestas creíbles, no disparates.
   if (type === 'DECADE' && picked.length < wanted && track.releaseYear !== null) {
     const base = Math.floor(track.releaseYear / 10) * 10;
-    const used = new Set([correct, ...picked]);
+    const used = new Set([correct, ...picked.map((option) => option.text)]);
     for (const offset of [-10, 10, -20, 20, -30, 30]) {
       if (picked.length >= wanted) break;
       const candidate = `${base + offset}s`;
       if (base + offset < 1950 || base + offset > 2030) continue;
       if (used.has(candidate)) continue;
       used.add(candidate);
-      picked.push(candidate);
+      picked.push({ text: candidate, subtitle: null });
     }
   }
 
@@ -131,7 +155,8 @@ export function buildQuizQuestion(args: {
   const distractors = distractorsFor(type, track, pool, correct, optionCount - 1, rng);
   if (distractors.length === 0) return null;
 
-  const options = seededShuffle([correct, ...distractors], rng);
+  const correctOption: QuizOptionDraft = { text: correct, subtitle: subtitleFor(type, track) };
+  const options = seededShuffle([correctOption, ...distractors], rng);
 
   return {
     type,

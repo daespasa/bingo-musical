@@ -26,7 +26,11 @@ import type { GameSettings, HighlightType } from '@bingo/database';
 import { PrismaService } from '../prisma.service';
 import { GameModeRegistry } from '../game-modes/game-mode.registry';
 import { revealedInfo } from '../game-modes/music-bingo.handler';
-import { toPublicQuizRound, type QuizRoundPayload } from '../game-modes/multiple-choice.handler';
+import {
+  pickPopularDistractor,
+  toPublicQuizRound,
+  type QuizRoundPayload,
+} from '../game-modes/multiple-choice.handler';
 import {
   toPublicFreeTextRound,
   type FreeTextResult,
@@ -573,9 +577,14 @@ export class GameEngineService {
         prompt: payload.prompt,
         correctText: payload.correctText,
         options: {
-          create: payload.options.map((text, position) => ({
+          // El subtítulo se persiste para el historial y la auditoría, no
+          // para servirlo de vuelta: la reconexión se resuelve contra la
+          // ronda en memoria (ver `roundView` más arriba), no leyendo esta
+          // columna, así que no hace falta ni hay que buscar un lector aquí.
+          create: payload.options.map((option, position) => ({
             position,
-            text,
+            text: option.text,
+            subtitle: option.subtitle,
             isCorrect: position === payload.correctIndex,
           })),
         },
@@ -1223,27 +1232,24 @@ export class GameEngineService {
 
     // El distractor que más gente se ha tragado, si de verdad ha engañado.
     if (r.question) {
-      let worst = -1;
-      let worstCount = 0;
-      counts.forEach((count, index) => {
-        if (index === r.question!.correctIndex) return;
-        if (count > worstCount) {
-          worst = index;
-          worstCount = count;
-        }
-      });
-      if (worst >= 0 && worstCount >= 2 && worstCount > correctAnswers.length) {
+      const distractor = pickPopularDistractor(
+        r.question.options,
+        r.question.correctIndex,
+        counts,
+        correctAnswers.length,
+      );
+      if (distractor) {
         rt.highlights.push({
           type: 'POPULAR_DISTRACTOR',
           alias: '—',
           roundIndex: r.index,
-          data: { text: r.question.options[worst], count: worstCount },
+          data: distractor,
         });
         this.emitRoom(rt, 'highlight:created', {
           type: 'POPULAR_DISTRACTOR',
           alias: '—',
           roundIndex: r.index,
-          data: { text: r.question.options[worst], count: worstCount },
+          data: distractor,
         });
       }
     }
