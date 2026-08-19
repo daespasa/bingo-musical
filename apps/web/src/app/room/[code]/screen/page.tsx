@@ -32,6 +32,11 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
     enabled: audioEnabled && isProjector,
     paused: room.paused,
   });
+  // El texto puede repetirse entre opciones: solo sirve como key si es único
+  // dentro de esta pregunta (mismo criterio que en `quiz-options.tsx`).
+  const questionHasDuplicateTexts = room.question
+    ? new Set(room.question.options.map((o) => o.text)).size !== room.question.options.length
+    : false;
 
   if (error) {
     return (
@@ -140,7 +145,7 @@ export default function ScreenPage({ params }: { params: Promise<{ code: string 
                       const correcto = room.distribution?.correctIndex === index;
                       return (
                         <li
-                          key={option.text}
+                          key={questionHasDuplicateTexts ? index : option.text}
                           className={
                             'flex items-center gap-3 rounded-md border-2 px-4 py-3 text-left text-2xl ' +
                             (room.distribution

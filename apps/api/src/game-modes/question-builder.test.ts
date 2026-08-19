@@ -29,9 +29,9 @@ const rng = () => createRng('test');
 // Pool con dos pistas homónimas de artistas distintos, para las pruebas de
 // subtítulo: la deduplicación de distractores es por texto, así que ambas no
 // pueden aparecer nunca a la vez como opciones.
-const pool: RoundTrack[] = [
+const POOL_HOMONIMOS: RoundTrack[] = [
   track('h1', 'Corazón de Neón', 'Artista Uno', 1985, 'Álbum Uno'),
-  track('h2', 'Bajo la Lluvia', 'Artista Dos', 1990),
+  track('h2', 'Bajo la Lluvia', 'Artista Dos', 1990, 'Álbum Dos'),
   track('h3', 'Corazón de Neón', 'Artista Tres', 1998),
   track('h4', 'Estrella Fugaz', 'Artista Cuatro', 2005),
   track('h5', 'Voces del Viento', 'Artista Cinco', 2012),
@@ -225,52 +225,48 @@ describe('subtítulo de las opciones', () => {
   it('en SONG_TITLE cada opción trae el artista de SU canción, no el de la que suena', () => {
     const draft = buildQuizQuestion({
       type: 'SONG_TITLE',
-      track: pool[0]!,
-      pool,
+      track: POOL_HOMONIMOS[0]!,
+      pool: POOL_HOMONIMOS,
       optionCount: 4,
       rng: createRng('semilla'),
     })!;
 
     for (const option of draft.options) {
-      const suya = pool.find((t) => t.title === option.text)!;
+      const suya = POOL_HOMONIMOS.find((t) => t.title === option.text)!;
       expect(option.subtitle).toBe(suya.artist);
     }
   });
 
-  it('en ARTIST no hay subtítulo: sería regalar la respuesta', () => {
-    const draft = buildQuizQuestion({
-      type: 'ARTIST',
-      track: pool[0]!,
-      pool,
-      optionCount: 4,
-      rng: createRng('semilla'),
-    })!;
-    expect(draft.options.every((o) => o.subtitle === null)).toBe(true);
-  });
-
-  it('en DECADE tampoco', () => {
-    const draft = buildQuizQuestion({
-      type: 'DECADE',
-      track: pool[0]!,
-      pool,
-      optionCount: 4,
-      rng: createRng('semilla'),
-    })!;
-    expect(draft.options.every((o) => o.subtitle === null)).toBe(true);
-  });
+  // Los cuatro tipos que NO son SONG_TITLE: ninguno debe llevar subtítulo.
+  // Cubrir los cuatro (y no solo un par) es lo que cierra el invariante de
+  // seguridad; un futuro `type === 'SONG_TITLE' || type === 'ALBUM'` se
+  // colaría con la suite en verde si faltara cualquiera de ellos.
+  it.each(['ARTIST', 'ALBUM', 'RELEASE_YEAR', 'DECADE'] as const)(
+    'en %s no hay subtítulo: sería regalar la respuesta o no aportar nada',
+    (type) => {
+      const draft = buildQuizQuestion({
+        type,
+        track: POOL_HOMONIMOS[0]!,
+        pool: POOL_HOMONIMOS,
+        optionCount: 4,
+        rng: createRng('semilla'),
+      })!;
+      expect(draft.options.every((o) => o.subtitle === null)).toBe(true);
+    },
+  );
 
   it('la misma semilla da el mismo orden y los mismos pares título/artista', () => {
     const uno = buildQuizQuestion({
       type: 'SONG_TITLE',
-      track: pool[0]!,
-      pool,
+      track: POOL_HOMONIMOS[0]!,
+      pool: POOL_HOMONIMOS,
       optionCount: 4,
       rng: createRng('misma'),
     })!;
     const dos = buildQuizQuestion({
       type: 'SONG_TITLE',
-      track: pool[0]!,
-      pool,
+      track: POOL_HOMONIMOS[0]!,
+      pool: POOL_HOMONIMOS,
       optionCount: 4,
       rng: createRng('misma'),
     })!;

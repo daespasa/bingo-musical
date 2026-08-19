@@ -306,9 +306,12 @@ de otras salvo donde se indica.
 - Cada opción de una pregunta de título (`SONG_TITLE`) lleva el artista debajo,
   en `text-sm` gris, tanto en la pantalla del jugador como en el proyector. En
   las preguntas de artista no aparece, para no regalar la respuesta.
-- `AnswerOption.subtitle` viaja en el contrato y lo persiste el motor; las
-  preguntas anteriores a esta migración tienen `subtitle` nulo y se abren
-  igual, sin artista debajo del título.
+- `AnswerOption.subtitle` viaja en el contrato y el motor lo persiste en la
+  base de datos solo para historial y auditoría: nadie lo relee de ahí, la
+  reconexión se sirve siempre de la ronda en memoria. Las preguntas creadas
+  antes de esta migración tienen esa columna nula en la base de datos, pero
+  eso es irrelevante para su comportamiento actual, que depende únicamente
+  de la ronda en memoria.
 - `e2e/quiz.spec.ts` comprueba que las cuatro opciones muestran el artista y
   que, antes del revelado, la solución sigue sin aparecer ni por texto ni en
   el DOM.

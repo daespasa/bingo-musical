@@ -577,6 +577,10 @@ export class GameEngineService {
         prompt: payload.prompt,
         correctText: payload.correctText,
         options: {
+          // El subtítulo se persiste para el historial y la auditoría, no
+          // para servirlo de vuelta: la reconexión se resuelve contra la
+          // ronda en memoria (ver `roundView` más arriba), no leyendo esta
+          // columna, así que no hace falta ni hay que buscar un lector aquí.
           create: payload.options.map((option, position) => ({
             position,
             text: option.text,

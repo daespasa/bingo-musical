@@ -64,7 +64,11 @@ function correctAnswerFor(type: MultipleChoiceQuestionType, track: RoundTrack): 
  * repartir esta decisión por el archivo.
  */
 function subtitleFor(type: MultipleChoiceQuestionType, track: RoundTrack): string | null {
-  return type === 'SONG_TITLE' ? track.artist : null;
+  if (type !== 'SONG_TITLE') return null;
+  // Un artista en blanco no puede servir de subtítulo: dejaría esa opción
+  // sin segunda línea mientras las demás sí la tienen, rompiendo el
+  // invariante de «para todas las opciones o para ninguna».
+  return track.artist.trim().length > 0 ? track.artist : null;
 }
 
 /** Los tipos que la colección puede sostener con los metadatos que tiene. */

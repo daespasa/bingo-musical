@@ -63,8 +63,9 @@ export function pickPopularDistractor(
       worstCount = count;
     }
   });
-  if (worst >= 0 && worstCount >= 2 && worstCount > correctAnswersCount) {
-    return { text: options[worst]!.text, count: worstCount };
+  const worstOption = worst >= 0 ? options[worst] : undefined;
+  if (worstOption && worstCount >= 2 && worstCount > correctAnswersCount) {
+    return { text: worstOption.text, count: worstCount };
   }
   return null;
 }
