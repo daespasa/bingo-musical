@@ -295,11 +295,26 @@ de otras salvo donde se indica.
 | --- | ------------------------------------- | --------- |
 | 1   | Configuración específica de cada modo | Pendiente |
 | 2   | Salida de partida                     | Pendiente |
-| 3   | Artista en las opciones del quiz      | Pendiente |
+| 3   | Artista en las opciones del quiz      | Hecha     |
 | 4   | Copy de la portada                    | Hecha     |
 | 5   | Tema claro y oscuro                   | Pendiente |
 | 6   | Portadas en el cartón                 | Pendiente |
 | 7   | Auditoría responsive                  | Pendiente |
+
+### Spec 3 — Artista en las opciones del quiz (`feat/artista-en-opciones`)
+
+- Cada opción de una pregunta de título (`SONG_TITLE`) lleva el artista debajo,
+  en `text-sm` gris, tanto en la pantalla del jugador como en el proyector. En
+  las preguntas de artista no aparece, para no regalar la respuesta.
+- `AnswerOption.subtitle` viaja en el contrato y lo persiste el motor; las
+  preguntas anteriores a esta migración tienen `subtitle` nulo y se abren
+  igual, sin artista debajo del título.
+- `e2e/quiz.spec.ts` comprueba que las cuatro opciones muestran el artista y
+  que, antes del revelado, la solución sigue sin aparecer ni por texto ni en
+  el DOM.
+- Comprobación visual a 360×640: el reproductor y las cuatro opciones a dos
+  líneas caben sin scroll, con el objetivo táctil de cada opción por encima
+  de 44 px.
 
 ### Spec 4 — Copy de la portada (`feat/copy-de-la-landing`)
 

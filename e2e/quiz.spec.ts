@@ -32,6 +32,21 @@ test.describe('Quiz musical', () => {
     // Nadie reparte cartones en el quiz.
     await expect(marta.page.getByRole('grid')).toHaveCount(0);
 
+    // Es una pregunta de título: las cuatro opciones llevan el artista debajo.
+    for (const letter of ['A', 'B', 'C', 'D']) {
+      await expect(
+        marta.page.getByRole('button', { name: new RegExp(`^Opción ${letter}:.*, de .+`) }),
+      ).toBeVisible();
+    }
+
+    // Antes del reveal, la solución no aparece: ni como texto en pantalla...
+    await expect(marta.page.getByText(/^La respuesta era /)).toHaveCount(0);
+    // ...ni escondida en el DOM servido.
+    const htmlAntesDelReveal = await marta.page.content();
+    for (const filtracion of ['correctIndex', 'correctText', 'isCorrect', 'expectedAnswer']) {
+      expect(htmlAntesDelReveal).not.toContain(filtracion);
+    }
+
     // Cada uno elige una opción distinta, para que la distribución se reparta.
     await marta.page.getByRole('button', { name: /^Opción A:/ }).click();
     await expect(marta.page.getByText('Respuesta enviada · esperando al resto')).toBeVisible();

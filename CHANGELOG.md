@@ -15,6 +15,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 - Cada modo enseña su propia configuración: el cartón y las reglas de línea y bingo solo
   aparecen en el bingo, y la sala de espera y el resumen de partida dicen el dato que
   corresponde a cada modo (opciones, intentos, vidas o mezcla).
+- En el quiz, cada opción de una pregunta de título lleva el artista debajo, para que dos
+  canciones homónimas se distingan y quien reconoce la voz tenga por dónde agarrarse. En
+  las preguntas de artista no aparece: sería regalar la respuesta.
 
 ## [0.6.0] - 2026-08-11
 
