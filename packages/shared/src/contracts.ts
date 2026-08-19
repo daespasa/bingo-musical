@@ -182,11 +182,20 @@ export type RoundPreparePayload = {
   freeText: FreeTextQuestionView | null;
 };
 
+/**
+ * Una opción de respuesta tal y como la ve quien juega.
+ *
+ * El subtítulo (p. ej. el artista) existe para todas las opciones o para
+ * ninguna: si solo lo llevara la correcta, su sola presencia delataría la
+ * solución antes del reveal.
+ */
+export type QuizOptionView = { text: string; subtitle: string | null };
+
 /** Lo que de una pregunta puede ver quien juega antes del reveal. */
 export type QuizQuestionView = {
   type: 'SONG_TITLE' | 'ARTIST' | 'RELEASE_YEAR' | 'DECADE' | 'ALBUM';
   prompt: string;
-  options: string[];
+  options: QuizOptionView[];
 };
 
 /** Cuánta gente lleva respondido. No dice quién ni qué. */

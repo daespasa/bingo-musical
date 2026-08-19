@@ -16,6 +16,9 @@ import type {
 } from './game-mode-handler';
 import { buildQuizQuestion, supportedQuestionTypes } from './question-builder';
 
+/** Una opción de respuesta con su subtítulo opcional (el artista, cuando aplica). */
+export type QuizOption = { text: string; subtitle: string | null };
+
 /**
  * La ronda de quiz tal y como la conoce el servidor.
  *
@@ -28,7 +31,7 @@ export type QuizRoundPayload = {
   prompt: string;
   correctText: string;
   /** Opciones en el orden definitivo; el índice es su posición. */
-  options: string[];
+  options: QuizOption[];
   correctIndex: number;
 };
 
@@ -79,7 +82,7 @@ export class MultipleChoiceHandler implements GameModeHandler<'MULTIPLE_CHOICE'>
       prompt: draft.prompt,
       correctText: draft.correctText,
       options: draft.options,
-      correctIndex: draft.options.indexOf(draft.correctText),
+      correctIndex: draft.options.findIndex((option) => option.text === draft.correctText),
     });
   }
 
@@ -136,7 +139,7 @@ const STREAK_LENGTH = 3;
 export type QuizRoundPublicView = {
   type: MultipleChoiceQuestionType;
   prompt: string;
-  options: string[];
+  options: QuizOption[];
 };
 
 export function toPublicQuizRound(round: QuizRoundPayload): QuizRoundPublicView {

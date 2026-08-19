@@ -69,7 +69,7 @@ function crearRonda(overrides: Partial<{ index: number; questionTypes: string[] 
 describe('rondas de quiz', () => {
   it('construye una pregunta con la respuesta correcta señalada', async () => {
     const round = await crearRonda();
-    expect(round.options[round.correctIndex]).toBe(round.correctText);
+    expect(round.options[round.correctIndex]?.text).toBe(round.correctText);
   });
 
   it('alterna los tipos de pregunta entre rondas', async () => {
@@ -125,6 +125,15 @@ describe('la solución no viaja antes del reveal', () => {
     expect(JSON.stringify(json)).not.toContain('correctIndex');
     expect(JSON.stringify(json)).not.toContain('correctText');
     expect(JSON.stringify(json)).not.toContain('isCorrect');
+  });
+
+  it('la vista pública lleva los subtítulos y sigue sin decir cuál es la correcta', async () => {
+    const round = await crearRonda();
+    const publica = toPublicQuizRound(round) as Record<string, unknown>;
+
+    expect(publica.options).toEqual(round.options);
+    expect(publica).not.toHaveProperty('correctText');
+    expect(publica).not.toHaveProperty('correctIndex');
   });
 
   it('las opciones no van ordenadas con la correcta siempre primero', async () => {
