@@ -61,7 +61,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    // El script anti-parpadeo muta `<html>` (clase `.dark` y `style.colorScheme`)
+    // antes de la hidratación, a propósito: sin `suppressHydrationWarning` React
+    // avisaría de una diferencia entre servidor y cliente que aquí es deseada.
+    // Se acota solo a este elemento, que es exactamente el que muta el script.
+    <html
+      lang="es"
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           // Corre antes del primer pintado: sin esto, quien tenga el tema
