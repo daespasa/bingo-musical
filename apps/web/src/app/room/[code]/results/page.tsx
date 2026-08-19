@@ -1,9 +1,9 @@
 'use client';
 
 import { use } from 'react';
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Flame, Megaphone, Repeat, Rocket, Sparkles, Trophy, Zap } from 'lucide-react';
+import { ExitGameLink } from '@/components/exit-game-link';
 import { api } from '@/lib/api';
 
 type ResultData = {
@@ -47,9 +47,7 @@ export default function ResultsPage({ params }: { params: Promise<{ code: string
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="text-slate-500">Esta sala aún no tiene resultados.</p>
-        <Link href="/" className="btn-secondary">
-          Inicio
-        </Link>
+        <ExitGameLink />
       </main>
     );
   }
@@ -112,9 +110,7 @@ export default function ResultsPage({ params }: { params: Promise<{ code: string
         </section>
       )}
 
-      <Link href="/" className="btn-secondary self-center">
-        Volver al inicio
-      </Link>
+      <ExitGameLink className="self-center" />
     </main>
   );
 }

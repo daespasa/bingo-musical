@@ -242,6 +242,16 @@ Ya no queda ningún modo del catálogo sin implementar. El registro sigue
 negándose a resolver un handler inexistente, que es lo que protegerá a los
 modos futuros de anunciarse antes de tiempo.
 
+## Pulido posterior a v0.6.0
+
+Ronda de specs sobre observaciones de uso de la release `v0.6.0`, cada una en
+su propia rama:
+
+- [x] Spec 2 — Salida de partida (`feat/salida-de-partida`): el botón de salir
+      de una partida terminada lleva a quien tiene cuenta a `/dashboard` y al
+      invitado a `/`, con la etiqueta acorde («Volver a mis partidas» / «Salir»)
+      para que no se confunda con cerrar sesión.
+
 ## Errores conocidos (heredados de v0.5.2)
 
 - Al reiniciar la API con una partida en curso, la sala pierde el runtime en
