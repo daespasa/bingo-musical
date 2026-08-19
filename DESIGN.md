@@ -144,4 +144,6 @@ título dos veces solo añade ruido.
 - Objetivos táctiles de 44 px como mínimo (`min-h-11`) y botones a ancho completo
   por debajo de 640 px.
 - `prefers-reduced-motion` detiene el disco y el resto de animaciones.
-- Modo claro y oscuro con la misma paleta, no dos temas distintos.
+- Modo claro y oscuro con la misma paleta, no dos temas distintos. Selector de
+  tres estados (claro, oscuro, automático) guardado en el dispositivo;
+  «Automático» es el estado por defecto y sigue a `prefers-color-scheme`.

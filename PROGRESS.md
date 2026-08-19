@@ -297,7 +297,7 @@ de otras salvo donde se indica.
 | 2   | Salida de partida                     | Pendiente |
 | 3   | Artista en las opciones del quiz      | Hecha     |
 | 4   | Copy de la portada                    | Hecha     |
-| 5   | Tema claro y oscuro                   | Pendiente |
+| 5   | Tema claro y oscuro                   | Hecha     |
 | 6   | Portadas en el cartón                 | Pendiente |
 | 7   | Auditoría responsive                  | Pendiente |
 
@@ -328,6 +328,23 @@ de otras salvo donde se indica.
 - Rótulo, botones e ilustración de la portada no se tocan.
 - `e2e/portada.spec.ts` comprueba el contenido y que a 360 px no hay scroll
   horizontal.
+
+### Spec 5 — Tema claro y oscuro (`feat/tema-claro-oscuro`)
+
+- Selector de tema con tres estados (claro, oscuro, automático), en el menú
+  de usuario y en el `<nav>` de la portada. Se guarda por dispositivo en
+  `localStorage` (`gramola:theme`), no en el perfil de usuario.
+- Nace en «Automático», que sigue `prefers-color-scheme` como se comportaba
+  hasta ahora; el anfitrión puede forzar claro u oscuro para proyectar sin
+  tocar los ajustes del sistema.
+- Un script inline en el layout aplica la clase `dark` a `<html>` antes del
+  primer pintado, para no arrancar en el tema equivocado ni un instante.
+- `e2e/tema.spec.ts` comprueba que el tema elegido sobrevive a una recarga
+  ya en el primer pintado (sin esperar a la hidratación) y que, en
+  automático, la clase sigue al sistema en caliente, sin recargar.
+- El `themeColor` del layout sigue resolviéndose por `prefers-color-scheme`
+  y no por la preferencia guardada: con el tema forzado, la barra del
+  navegador puede no coincidir con la interfaz (ver `DECISIONS.md`).
 
 ## Próximo paso
 
