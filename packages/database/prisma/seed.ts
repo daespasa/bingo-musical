@@ -94,6 +94,25 @@ async function main(): Promise<void> {
             source: 'DEMO',
           },
         });
+    /*
+     * Cada pista de la demo tiene su álbum, que existe solo para colgar la
+     * carátula: la portada vive en `Album.coverUrl` y el cartón la alcanza por
+     * unión. Las carátulas las dibuja `scripts/generate-demo-covers.mjs`; no
+     * hay ninguna portada comercial en el repositorio. Reutilizar el álbum ya
+     * enlazado mantiene el seed idempotente: no se duplican álbumes ni quedan
+     * rutas colgando.
+     */
+    const coverUrl = `/covers/demo-${String(i + 1).padStart(2, '0')}.png`;
+    const album = track.albumId
+      ? await prisma.album.update({
+          where: { id: track.albumId },
+          data: { title: t.title, coverUrl },
+        })
+      : await prisma.album.create({ data: { title: t.title, coverUrl } });
+    if (track.albumId !== album.id) {
+      await prisma.track.update({ where: { id: track.id }, data: { albumId: album.id } });
+    }
+
     await prisma.trackPreview.upsert({
       where: { trackId_provider: { trackId: track.id, provider: 'DEMO_LOCAL' } },
       update: {},
