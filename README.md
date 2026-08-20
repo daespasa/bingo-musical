@@ -313,7 +313,12 @@ hostnames bajo el mismo dominio registrable**, de forma que la cookie de sesión
 | Hostname                   | Destino en el túnel    | Puerto del host |
 | -------------------------- | ---------------------- | --------------- |
 | `gramola.daespasa.com`     | web (Next.js)          | `3100`          |
-| `api.gramola.daespasa.com` | API (REST + WebSocket) | `3101`          |
+| `gramola-api.daespasa.com` | API (REST + WebSocket) | `3101`          |
+
+> El certificado universal de Cloudflare es `*.daespasa.com` y solo cubre **un
+> nivel** de subdominio: `api.gramola.daespasa.com` falla el handshake TLS antes
+> de llegar al servidor. De ahí `gramola-api`, con guion en vez de un tercer
+> nivel.
 
 Pasos en el servidor:
 
@@ -322,9 +327,9 @@ Pasos en el servidor:
    ```bash
    NODE_ENV=production
    WEB_URL=https://gramola.daespasa.com
-   API_URL=https://api.gramola.daespasa.com
-   NEXT_PUBLIC_API_URL=https://api.gramola.daespasa.com
-   NEXT_PUBLIC_SOCKET_URL=https://api.gramola.daespasa.com
+   API_URL=https://gramola-api.daespasa.com
+   NEXT_PUBLIC_API_URL=https://gramola-api.daespasa.com
+   NEXT_PUBLIC_SOCKET_URL=https://gramola-api.daespasa.com
    SESSION_SECRET=<openssl rand -hex 32>
    GUEST_TOKEN_SECRET=<openssl rand -hex 32>
    WEB_HOST_PORT=3100
@@ -347,9 +352,11 @@ Pasos en el servidor:
 
 3. En Cloudflare Zero Trust, dos _public hostnames_ en el mismo túnel:
    `gramola.daespasa.com` → `http://localhost:3100` y
-   `api.gramola.daespasa.com` → `http://localhost:3101`.
-4. En Cloudflare DNS, los registros `gramola` y `api.gramola` apuntan al túnel.
-5. Si usas Google, añade `https://api.gramola.daespasa.com/auth/google/callback`
+   `gramola-api.daespasa.com` → `http://localhost:3101`. Han de apuntar a
+   `localhost`, no a la IP de la red local: los puertos solo escuchan en
+   loopback y `cloudflared` comparte la red del host.
+4. En Cloudflare DNS, los registros `gramola` y `gramola-api` apuntan al túnel.
+5. Si usas Google, añade `https://gramola-api.daespasa.com/auth/google/callback`
    como URI de redirección autorizado.
 
 ## Seguridad
