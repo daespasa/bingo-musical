@@ -32,6 +32,10 @@ export class RoomStateService {
     const leaderboard = await this.engine.leaderboard(roomId);
     const scoreById = new Map(leaderboard.map((e) => [e.participantId, e.score]));
     const card = await this.cards.getForParticipant(forParticipantId);
+    const bingoConfig =
+      room.game.mode === 'MUSIC_BINGO'
+        ? readGameModeConfig('MUSIC_BINGO', room.game.modeConfig)
+        : null;
 
     return {
       roomId: room.id,
@@ -50,12 +54,10 @@ export class RoomStateService {
         showLeaderboard: settings?.showLeaderboard ?? true,
         // La configuración se lee con el modo real de la partida: leerla
         // siempre como bingo hacía que una partida de quiz reventara aquí y la
-        // sala se quedara sin estado. `revealMode` solo significa algo en
-        // bingo; en los demás modos se manda el valor neutro.
-        revealMode:
-          room.game.mode === 'MUSIC_BINGO'
-            ? readGameModeConfig('MUSIC_BINGO', room.game.modeConfig).revealMode
-            : 'HIDDEN_UNTIL_REVEAL',
+        // sala se quedara sin estado. `revealMode` y `showArtwork` solo
+        // significan algo en bingo; en los demás modos van sus valores neutros.
+        revealMode: bingoConfig?.revealMode ?? 'HIDDEN_UNTIL_REVEAL',
+        showArtwork: bingoConfig?.showArtwork ?? false,
       },
       gameMode: room.game.mode,
       // Las vidas salen del runtime, que es la autoridad; reconectar no las

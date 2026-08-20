@@ -37,6 +37,8 @@ export const musicBingoConfigSchema = z.object({
   configVersion,
   /** A ciegas (bingo de siempre) o revelado desde el primer segundo. */
   revealMode: z.enum(BINGO_REVEAL_MODES).default('HIDDEN_UNTIL_REVEAL'),
+  /** Las casillas muestran la carátula del álbum, nítida al revelar. */
+  showArtwork: z.boolean().default(false),
 });
 
 export const multipleChoiceConfigSchema = z.object({

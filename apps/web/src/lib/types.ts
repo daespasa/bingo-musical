@@ -6,6 +6,8 @@ export type CollectionSummary = {
   description: string | null;
   isDemo: boolean;
   trackCount: number;
+  /** Si tiene carátulas suficientes para el cartón con portadas. */
+  hasArtwork: boolean;
 };
 
 export type CollectionTrack = {

@@ -98,13 +98,13 @@ Los cinco se juegan de principio a fin y comparten sala, código, QR, lobby,
 audio sincronizado, temporizador, ranking, momentazos, ceremonia, reacciones,
 reconexión, historial y colecciones. Solo cambia el reto.
 
-| Modo                   | Qué se hace                                                                                                                                                       | Jugadores | Dificultad |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------- |
-| **Bingo musical**      | Completa tu cartón mientras suenan tus canciones. Dos variantes: _a ciegas_ (hay que reconocerla de oído) y _clásico_ (la canción se ve desde el primer segundo). | 2–40      | Relajada   |
-| **Quiz musical**       | Escucha el fragmento y elige la respuesta correcta entre 2 y 4 opciones. Título, artista o década.                                                                | 2–60      | Media      |
-| **Adivina la canción** | Sin opciones: escribe lo que estás escuchando. Se aceptan acentos, mayúsculas, «feat» y erratas razonables.                                                       | 2–30      | Exigente   |
-| **Supervivencia**      | Cada error cuesta una vida. Gana quien queda en pie.                                                                                                              | 3–40      | Exigente   |
-| **Modo mixto**         | Cada ronda cambia de reto, con opciones y respuesta libre repartidas.                                                                                             | 2–40      | Media      |
+| Modo                   | Qué se hace                                                                                                                                                                                                          | Jugadores | Dificultad |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------- |
+| **Bingo musical**      | Completa tu cartón mientras suenan tus canciones. Dos variantes: _a ciegas_ (hay que reconocerla de oído) y _clásico_ (la canción se ve desde el primer segundo). Las casillas pueden enseñar la carátula del álbum. | 2–40      | Relajada   |
+| **Quiz musical**       | Escucha el fragmento y elige la respuesta correcta entre 2 y 4 opciones. Título, artista o década.                                                                                                                   | 2–60      | Media      |
+| **Adivina la canción** | Sin opciones: escribe lo que estás escuchando. Se aceptan acentos, mayúsculas, «feat» y erratas razonables.                                                                                                          | 2–30      | Exigente   |
+| **Supervivencia**      | Cada error cuesta una vida. Gana quien queda en pie.                                                                                                                                                                 | 3–40      | Exigente   |
+| **Modo mixto**         | Cada ronda cambia de reto, con opciones y respuesta libre repartidas.                                                                                                                                                | 2–40      | Media      |
 
 El **bingo clásico** está pensado a propósito para grupos con niveles musicales
 muy distintos —familias, mayores, asociaciones, residencias—: como la canción

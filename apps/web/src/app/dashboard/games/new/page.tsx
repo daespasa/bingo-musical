@@ -22,6 +22,8 @@ type FormData = {
   collectionId: string;
   mode: GameMode;
   revealMode: BingoRevealMode;
+  /** Casillas con la carátula del álbum. Solo en bingo. */
+  showArtwork: boolean;
   /** Tipos de pregunta del quiz. Al menos uno. */
   questionTypes: MultipleChoiceQuestionType[];
   optionCount: number;
@@ -147,6 +149,7 @@ export default function NewGamePage() {
     defaultValues: {
       mode: 'MUSIC_BINGO',
       revealMode: 'HIDDEN_UNTIL_REVEAL',
+      showArtwork: false,
       questionTypes: ['SONG_TITLE'],
       optionCount: 4,
       guessType: 'SONG_TITLE',
@@ -173,6 +176,7 @@ export default function NewGamePage() {
   const autoReveal = watch('autoReveal');
   const mode = watch('mode');
   const revealMode = watch('revealMode');
+  const showArtwork = watch('showArtwork');
   const questionTypes = watch('questionTypes');
   const guessType = watch('guessType');
   const attempts = watch('attempts');
@@ -194,6 +198,13 @@ export default function NewGamePage() {
   // En bingo clásico la canción se ve desde el primer segundo, así que no hay
   // nada que reconocer de oído y las reglas de reconocimiento pierden sentido.
   const revealedFromStart = revealMode === 'VISIBLE_FROM_START';
+  /*
+   * Las portadas solo se ofrecen si la colección elegida trae carátulas
+   * suficientes: con la mitad de las casillas vacías, el cartón se ve peor que
+   * el de solo texto.
+   */
+  const coleccionConPortadas =
+    collections?.find((c) => c.id === selectedCollection)?.hasArtwork ?? false;
 
   const onSubmit = async (data: FormData) => {
     setError(null);
@@ -228,7 +239,11 @@ export default function NewGamePage() {
                         questionTypes: [data.guessType],
                         attempts: data.attempts === null ? null : Number(data.attempts),
                       }
-                    : { mode: data.mode, revealMode: data.revealMode },
+                    : {
+                        mode: data.mode,
+                        revealMode: data.revealMode,
+                        showArtwork: data.showArtwork && coleccionConPortadas,
+                      },
           settings: {
             // Fuera del bingo estos cuatro no significan nada, y guardar lo que
             // quedara en el formulario haría que el dato contradijera a la
@@ -295,6 +310,25 @@ export default function NewGamePage() {
                   </button>
                 ))}
               </div>
+              <label className="mt-4 flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-brand-600"
+                  disabled={!coleccionConPortadas}
+                  checked={showArtwork && coleccionConPortadas}
+                  onChange={(e) => setValue('showArtwork', e.target.checked)}
+                />
+                <span className={clsx(!coleccionConPortadas && 'opacity-60')}>
+                  <span className="font-medium">Casillas con portada</span>
+                  <span className="block text-slate-500 dark:text-slate-400">
+                    {coleccionConPortadas
+                      ? 'Cada casilla enseña la carátula del álbum, desenfocada hasta que la canción se revela.'
+                      : selectedCollection
+                        ? 'Esta colección no tiene carátulas.'
+                        : 'Elige antes una colección con carátulas.'}
+                  </span>
+                </span>
+              </label>
               {revealedFromStart && (
                 <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                   Buena opción para grupos con niveles musicales muy distintos: nadie queda fuera
@@ -538,7 +572,10 @@ export default function NewGamePage() {
               <button
                 type="button"
                 key={c.id}
-                onClick={() => setValue('collectionId', c.id, { shouldValidate: true })}
+                onClick={() => {
+                  setValue('collectionId', c.id, { shouldValidate: true });
+                  if (!c.hasArtwork) setValue('showArtwork', false);
+                }}
                 className={clsx(
                   'rounded-xl border p-4 text-left transition',
                   selectedCollection === c.id

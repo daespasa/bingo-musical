@@ -286,6 +286,7 @@ export default function PlayPage({ params }: { params: Promise<{ code: string }>
               disabled={!room.connected || room.paused}
               lineRows={myLineRows}
               bingo={myBingo}
+              showArtwork={state.settings.showArtwork}
               onMark={(cellId) => void room.markCell(cellId)}
             />
           )}

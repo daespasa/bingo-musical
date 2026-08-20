@@ -6,6 +6,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ### Added
 
+- Opción del bingo «Casillas con portada»: cada casilla enseña la carátula del álbum,
+  desenfocada hasta que la canción se revela. Apagada por defecto y solo disponible si la
+  colección tiene carátulas suficientes. La colección de muestra estrena carátulas propias.
 - Selector de tema claro, oscuro o automático, guardado en el propio dispositivo. Nace en
   automático, que es como se comportaba hasta ahora, y el anfitrión puede forzar el tema
   que le convenga para proyectar sin tocar los ajustes del sistema.
