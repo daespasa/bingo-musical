@@ -32,8 +32,12 @@ function CellArtwork({ url, sharp }: { url: string; sharp: boolean }) {
           !sharp && 'blur-[3px] saturate-50',
         )}
       />
-      {/* Velo: el título tiene que leerse encima de cualquier carátula */}
-      <span className="absolute inset-0 bg-slate-50/80 dark:bg-slate-950/80" />
+      {/*
+       * Velo: el título tiene que leerse encima de cualquier carátula. Al 60 %
+       * en claro y al 70 % en oscuro, el peor caso —texto sobre la tinta del
+       * vinilo— queda en 5,7:1 y 6,3:1, por encima del mínimo de 4,5:1.
+       */}
+      <span className="absolute inset-0 bg-slate-50/60 dark:bg-slate-950/70" />
     </span>
   );
 }
@@ -67,6 +71,7 @@ export function BingoCardGrid({
         const marked = cell.status === 'VALID' && !cell.isFree;
         const wrong = cell.status === 'INVALID';
         const inLine = lineRows?.includes(Math.floor(cell.position / card.size)) ?? false;
+        const conPortada = showArtwork && !cell.isFree && Boolean(cell.coverUrl);
 
         return (
           <button
@@ -93,9 +98,7 @@ export function BingoCardGrid({
                 'border-slate-300 bg-slate-50 text-slate-800 hover:border-slate-900 hover:shadow-sleeve active:translate-y-0.5 active:shadow-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-100 dark:hover:shadow-none',
             )}
           >
-            {showArtwork && !cell.isFree && cell.coverUrl && (
-              <CellArtwork url={cell.coverUrl} sharp={marked || wrong} />
-            )}
+            {conPortada && <CellArtwork url={cell.coverUrl!} sharp={marked || wrong} />}
             {(marked || wrong) && (
               <span
                 className={clsx(
@@ -120,7 +123,16 @@ export function BingoCardGrid({
                   {cell.displayTitle}
                 </span>
                 {cell.displayArtist && (
-                  <span className="relative mt-0.5 font-mono text-[9px] uppercase tracking-wide text-slate-500 dark:text-slate-400 sm:text-[10px]">
+                  <span
+                    className={clsx(
+                      'relative mt-0.5 font-mono text-[9px] uppercase tracking-wide sm:text-[10px]',
+                      // Sobre una carátula, el gris del artista no llegaría al
+                      // contraste mínimo: ahí va con la misma tinta del título.
+                      conPortada
+                        ? 'text-slate-800 dark:text-slate-100'
+                        : 'text-slate-500 dark:text-slate-400',
+                    )}
+                  >
                     {cell.displayArtist}
                   </span>
                 )}
