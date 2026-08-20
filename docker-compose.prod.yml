@@ -20,9 +20,11 @@ services:
       API_URL: ${API_URL:?API_URL required}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-    ports:
+    # `!override`: sin él, Compose *acumula* las listas de puertos y la web y la
+    # API seguirían abriendo también los 3000/3001 del fichero base.
+    ports: !override
       - '${BIND_ADDR:-127.0.0.1}:${API_HOST_PORT:-3101}:3001'
 
   bingo-web:
-    ports:
+    ports: !override
       - '${BIND_ADDR:-127.0.0.1}:${WEB_HOST_PORT:-3100}:3000'
