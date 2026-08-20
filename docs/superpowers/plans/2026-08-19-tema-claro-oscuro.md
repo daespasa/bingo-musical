@@ -102,7 +102,7 @@ en `apps/web`), Playwright.
 
   Lo consumen el script del layout (Tarea 2, en versión inline) y el toggle (Tarea 3).
 
-- [ ] **Step 1: Escribir la prueba que falla**
+- [x] **Step 1: Escribir la prueba que falla**
 
 Crea `apps/web/src/lib/theme.test.ts`:
 
@@ -193,23 +193,23 @@ describe('THEME_STORAGE_KEY', () => {
 });
 ```
 
-- [ ] **Step 2: Verla fallar**
+- [x] **Step 2: Verla fallar**
 
 Run: `pnpm --filter @bingo/web test`
 Expected: FAIL, no existe `./theme`.
 
-- [ ] **Step 3: Implementar `apps/web/src/lib/theme.ts`**
+- [x] **Step 3: Implementar `apps/web/src/lib/theme.ts`**
 
 Escribe las cuatro exportaciones con comentarios en español que expliquen el porqué: por
 qué la preferencia es del dispositivo y no del perfil, y por qué cualquier valor raro cae
 en automático. `readStoredPreference` debe tolerar que `localStorage` lance (modo privado
 de algunos navegadores) y funcionar con el objeto que se le pase, para poder probarlo.
 
-- [ ] **Step 4: Verla pasar**
+- [x] **Step 4: Verla pasar**
 
 Run: `pnpm --filter @bingo/web test && pnpm --filter @bingo/web typecheck && pnpm --filter @bingo/web lint`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/theme.ts apps/web/src/lib/theme.test.ts
@@ -232,11 +232,11 @@ git commit -m "feat(web): resolución del tema en lógica pura y probada"
   puede importar nada, así que la clave se escribe literal ahí con un comentario que
   remita a `lib/theme.ts`.
 
-- [ ] **Step 1: Tailwind**
+- [x] **Step 1: Tailwind**
 
 `darkMode: 'media'` → `darkMode: 'class'`.
 
-- [ ] **Step 2: CSS**
+- [x] **Step 2: CSS**
 
 - El bloque `@media (prefers-color-scheme: dark) { :root { --vinyl-hole: … } }` pasa a
   `.dark { --vinyl-hole: … }`.
@@ -245,7 +245,7 @@ git commit -m "feat(web): resolución del tema en lógica pura y probada"
 - `color-scheme: light dark` en `:root` se queda como valor inicial, pero el tema efectivo
   lo fija `applyTheme` sobre el estilo en línea de `<html>`; comprueba que no se pisan.
 
-- [ ] **Step 3: Script anti-parpadeo**
+- [x] **Step 3: Script anti-parpadeo**
 
 En `layout.tsx`, dentro del `<head>` (o como `<script>` antes del contenido del `<body>`,
 según lo que permita el App Router), un script inline mínimo:
@@ -265,18 +265,18 @@ según lo que permita el App Router), un script inline mínimo:
 Ajusta el literal si la implementación de la Tarea 1 usa otros valores, pero **no**
 cambies la clave ni los nombres de los estados: tienen que coincidir exactamente.
 
-- [ ] **Step 4: Comprobar que nada se rompió**
+- [x] **Step 4: Comprobar que nada se rompió**
 
 Run: `pnpm --filter @bingo/web test && pnpm --filter @bingo/web typecheck && pnpm --filter @bingo/web lint && pnpm --filter @bingo/web build`
 
-- [ ] **Step 5: Mirarlo**
+- [x] **Step 5: Mirarlo**
 
 Con la aplicación levantada, y sin toggle todavía, comprueba a mano: con el sistema en
 oscuro la aplicación sale oscura; con `localStorage.setItem('gramola:theme','light')` y
 recarga, sale clara y **sin fogonazo**; en la consola no hay avisos de hidratación. Cuenta
 en el informe qué viste, con capturas si ayudan (no las commitees).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/web/tailwind.config.ts apps/web/src/app/globals.css apps/web/src/app/layout.tsx
@@ -299,7 +299,7 @@ git commit -m "feat(web): el tema oscuro se enciende por clase, sin fogonazo"
 - Consumes: todo lo de la Tarea 1.
 - Produces: `export function ThemeToggle(props: { className?: string }): JSX.Element`.
 
-- [ ] **Step 1: Escribir la prueba que falla**
+- [x] **Step 1: Escribir la prueba que falla**
 
 `apps/web/src/components/theme-toggle.test.tsx`: con Testing Library, comprueba que
 (a) tras montarse hay tres controles accesibles por su nombre —Claro, Oscuro,
@@ -309,11 +309,11 @@ que elijas, y el test comprueba el que sea), (c) pulsar «Oscuro» guarda `dark`
 es el tema activo, no solo el icono. Usa `localStorage` real de jsdom y límpialo entre
 pruebas.
 
-- [ ] **Step 2: Verla fallar**
+- [x] **Step 2: Verla fallar**
 
 Run: `pnpm --filter @bingo/web test`
 
-- [ ] **Step 3: Implementar el control**
+- [x] **Step 3: Implementar el control**
 
 Tres estados, `localStorage`, y suscripción al `change` de
 `matchMedia('(prefers-color-scheme: dark)')` para que «Automático» siga al sistema en
@@ -322,20 +322,20 @@ aparece tras montarse (`useEffect`), o el servidor y el cliente discreparán. As
 el sistema visual existente (`gramola-design-taste`, `DESIGN.md`), sin colores ni tamaños
 nuevos, con iconos de `lucide-react` como el resto.
 
-- [ ] **Step 4: Colocarlo**
+- [x] **Step 4: Colocarlo**
 
 - En `user-menu.tsx`, junto al enlace «Tu cuenta» y el botón «Cerrar sesión», sin romper
   la disposición actual en móvil.
 - En el `<nav>` de la portada, junto a «Acceder».
 
-- [ ] **Step 5: Comprobar**
+- [x] **Step 5: Comprobar**
 
 Run: `pnpm --filter @bingo/web test && pnpm --filter @bingo/web typecheck && pnpm --filter @bingo/web lint && pnpm --filter @bingo/web build`
 
 Y míralo de verdad: cambia entre los tres estados en la portada y en el panel, recarga en
 cada uno, y comprueba que no hay avisos de hidratación en consola. Cuéntalo en el informe.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/web/src
@@ -351,7 +351,7 @@ git commit -m "feat(web): selector de tema claro, oscuro o automático"
 - Create: `e2e/tema.spec.ts`
 - Modify: `DESIGN.md`, `DECISIONS.md`, `CHANGELOG.md`, `PROGRESS.md`
 
-- [ ] **Step 1: E2E**
+- [x] **Step 1: E2E**
 
 `e2e/tema.spec.ts`, dos pruebas:
 
@@ -362,14 +362,14 @@ git commit -m "feat(web): selector de tema claro, oscuro o automático"
 2. **Automático en caliente**: con «Automático» elegido, `page.emulateMedia({ colorScheme: 'dark' })`
    y comprobar que la clase aparece **sin recargar**; luego `'light'` y que desaparece.
 
-- [ ] **Step 2: Ejecutar**
+- [x] **Step 2: Ejecutar**
 
 ```bash
 docker compose up -d
 pnpm exec playwright test e2e/tema.spec.ts e2e/portada.spec.ts
 ```
 
-- [ ] **Step 3: Documentar**
+- [x] **Step 3: Documentar**
 
 - `DESIGN.md`: si dice que el tema lo decide el sistema, actualízalo: ahora hay tres
   estados y «Automático» es el de por defecto.
@@ -386,12 +386,12 @@ pnpm exec playwright test e2e/tema.spec.ts e2e/portada.spec.ts
 
 - `PROGRESS.md`: el spec 5 del pulido posterior a v0.6.0 como hecho.
 
-- [ ] **Step 4: Validación**
+- [x] **Step 4: Validación**
 
 Aplica `verify-gramola`. Como suelo: `pnpm test`, typecheck/lint/build de `@bingo/web`, y
 las dos pruebas E2E nuevas. La suite completa tiene inestabilidad conocida y anterior.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add e2e/tema.spec.ts DESIGN.md DECISIONS.md CHANGELOG.md PROGRESS.md
