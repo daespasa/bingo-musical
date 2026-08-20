@@ -4,8 +4,10 @@
 #     --profile full up -d --build
 #
 # Postgres y Redis dejan de publicar puertos: solo se alcanzan desde la red
-# interna del stack. La web y la API sí se publican, en puertos configurables
-# para no chocar con otros servicios del host.
+# interna del stack. La web y la API se publican solo en la interfaz de loopback
+# (`BIND_ADDR`), porque quien las expone a internet es el túnel, no el host: así
+# no quedan accesibles desde el resto de la red local. Si tu cloudflared no
+# comparte la red del host, apúntalo a la IP del bridge y pon `BIND_ADDR=0.0.0.0`.
 services:
   bingo-postgres:
     ports: !reset []
@@ -19,8 +21,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     ports:
-      - '${API_HOST_PORT:-3101}:3001'
+      - '${BIND_ADDR:-127.0.0.1}:${API_HOST_PORT:-3101}:3001'
 
   bingo-web:
     ports:
-      - '${WEB_HOST_PORT:-3100}:3000'
+      - '${BIND_ADDR:-127.0.0.1}:${WEB_HOST_PORT:-3100}:3000'
