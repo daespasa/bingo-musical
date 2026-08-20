@@ -1,5 +1,6 @@
 export * from './brand';
 export * from './answer-matching';
+export * from './artwork';
 export * from './game-modes';
 export * from './game-config';
 export * from './mode-summary';

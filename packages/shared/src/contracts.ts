@@ -26,6 +26,8 @@ export type CellView = {
   displayArtist: string;
   isFree: boolean;
   status: 'UNMARKED' | 'PENDING' | 'VALID' | 'INVALID';
+  /** Carátula del álbum. Nula cuando no hay, y entonces la casilla se pinta como siempre. */
+  coverUrl: string | null;
 };
 
 export type CardView = {
