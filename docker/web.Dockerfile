@@ -15,8 +15,11 @@ COPY tsconfig.base.json ./
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
 COPY scripts ./scripts
+# El audio de la demo y los iconos de la PWA no se versionan: se generan aquí,
+# antes del build, o el manifest y el `apple-touch-icon` darían 404.
 RUN pnpm --filter @bingo/shared build \
   && node scripts/generate-demo-audio.mjs \
+  && node scripts/generate-icons.mjs \
   && pnpm --filter @bingo/web build
 
 FROM base AS runtime
