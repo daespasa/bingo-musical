@@ -1,0 +1,26 @@
+# Superposición para publicar detrás de un proxy inverso (Cloudflare Tunnel).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#     --profile full up -d --build
+#
+# Postgres y Redis dejan de publicar puertos: solo se alcanzan desde la red
+# interna del stack. La web y la API sí se publican, en puertos configurables
+# para no chocar con otros servicios del host.
+services:
+  bingo-postgres:
+    ports: !reset []
+
+  bingo-redis:
+    ports: !reset []
+
+  bingo-api:
+    environment:
+      API_URL: ${API_URL:?API_URL required}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    ports:
+      - '${API_HOST_PORT:-3101}:3001'
+
+  bingo-web:
+    ports:
+      - '${WEB_HOST_PORT:-3100}:3000'

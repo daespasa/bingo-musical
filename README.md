@@ -305,13 +305,52 @@ Los datos viven en volúmenes nombrados (`bingo-pgdata`, `bingo-redisdata`) y so
 
 ## Despliegue en gramola.daespasa.com
 
-La arquitectura ya está preparada para ejecutarse tras Cloudflare Tunnel (la API activa `trust proxy` y cookies `Secure` en producción). Pasos previstos en el mini-PC con CasaOS:
+La arquitectura ya está preparada para ejecutarse tras Cloudflare Tunnel (la API
+activa `trust proxy` y cookies `Secure` en producción). Se publica con **dos
+hostnames bajo el mismo dominio registrable**, de forma que la cookie de sesión
+(`SameSite=Lax`) sigue viajando entre la web y la API:
 
-1. Clona el repositorio y crea el `.env` de producción con secretos nuevos, `NODE_ENV=production`, `WEB_URL=https://gramola.daespasa.com`, `API_URL=https://gramola.daespasa.com/api` y `NEXT_PUBLIC_*` apuntando al mismo dominio.
-2. `docker compose --profile full up -d --build` y `pnpm db:deploy` (o deja que el contenedor de la API aplique las migraciones al arrancar).
-3. En Cloudflare Zero Trust crea un túnel con dos rutas hacia el host: `/` → `bingo-web:3000` y `/api` + `/socket.io` → `bingo-api:3001` (el WebSocket necesita su ruta propia).
-4. En Cloudflare DNS, el registro `gramola` apunta al túnel.
-5. Actualiza el URI de redirección de Google al dominio real.
+| Hostname                   | Destino en el túnel    | Puerto del host |
+| -------------------------- | ---------------------- | --------------- |
+| `gramola.daespasa.com`     | web (Next.js)          | `3100`          |
+| `api.gramola.daespasa.com` | API (REST + WebSocket) | `3101`          |
+
+Pasos en el servidor:
+
+1. Clona el repositorio y crea el `.env` de producción:
+
+   ```bash
+   NODE_ENV=production
+   WEB_URL=https://gramola.daespasa.com
+   API_URL=https://api.gramola.daespasa.com
+   NEXT_PUBLIC_API_URL=https://api.gramola.daespasa.com
+   NEXT_PUBLIC_SOCKET_URL=https://api.gramola.daespasa.com
+   SESSION_SECRET=<openssl rand -hex 32>
+   GUEST_TOKEN_SECRET=<openssl rand -hex 32>
+   WEB_HOST_PORT=3100
+   API_HOST_PORT=3101
+   ```
+
+   `NEXT_PUBLIC_*` se compila dentro de la imagen de la web: si cambia el
+   dominio hay que reconstruirla.
+
+2. Levanta el stack con la superposición de producción, que además deja de
+   publicar los puertos de Postgres y Redis:
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+     --profile full up -d --build
+   ```
+
+   El contenedor de la API aplica las migraciones al arrancar
+   (`prisma migrate deploy`).
+
+3. En Cloudflare Zero Trust, dos _public hostnames_ en el mismo túnel:
+   `gramola.daespasa.com` → `http://localhost:3100` y
+   `api.gramola.daespasa.com` → `http://localhost:3101`.
+4. En Cloudflare DNS, los registros `gramola` y `api.gramola` apuntan al túnel.
+5. Si usas Google, añade `https://api.gramola.daespasa.com/auth/google/callback`
+   como URI de redirección autorizado.
 
 ## Seguridad
 
