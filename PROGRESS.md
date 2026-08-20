@@ -262,7 +262,7 @@ otras salvo donde se indica.
 | 3   | Artista en las opciones del quiz      | Hecha     |
 | 4   | Copy de la portada                    | Hecha     |
 | 5   | Tema claro y oscuro                   | Hecha     |
-| 6   | Portadas en el cartón                 | Pendiente |
+| 6   | Portadas en el cartón                 | Hecha     |
 | 7   | Auditoría responsive                  | Pendiente |
 
 ### Spec 1 — Configuración específica de cada modo (`feat/config-por-modo-web`)
@@ -338,9 +338,37 @@ otras salvo donde se indica.
   y no por la preferencia guardada: con el tema forzado, la barra del
   navegador puede no coincidir con la interfaz (ver `DECISIONS.md`).
 
+### Spec 6 — Portadas en el cartón (`feat/portadas-en-el-carton`)
+
+- Opción `showArtwork` dentro de `musicBingoConfig`: solo el bingo la ofrece,
+  porque en un quiz de título la portada delataría la respuesta. Apagada por
+  defecto.
+- La portada llega a la casilla **por unión** desde la celda a su pista y su
+  álbum (`Album.coverUrl`, que ya existía y no consumía nadie). Sin migración.
+- Desenfocada mientras la casilla sigue en juego y nítida cuando queda resuelta
+  —marcada o fallada—, con transición corta y sin transición bajo
+  `prefers-reduced-motion`. El título se lee siempre: velo al 60 % en claro y
+  al 70 % en oscuro, comprobado por contraste (5,7:1 y 6,3:1 en el peor caso,
+  texto sobre la tinta del vinilo). Sobre carátula, el artista deja el gris y
+  usa la tinta del título, que en gris no llegaba al mínimo.
+- Si la imagen no carga, la casilla vuelve a ser la de solo texto; nunca queda
+  un hueco roto.
+- El wizard solo deja activarla si la colección tiene carátulas en al menos el
+  80 % de sus pistas (`hasEnoughArtwork`, en `@bingo/shared`); si no, la casilla
+  se ofrece deshabilitada con el motivo escrito. Cambiar de colección la
+  recalcula.
+- La colección de muestra estrena carátulas propias, generadas por
+  `scripts/generate-demo-covers.mjs` en el lenguaje de funda de disco de la
+  marca: ninguna portada comercial entra al repositorio. El codificador PNG se
+  comparte con los iconos en `scripts/lib/png.mjs`.
+- **Peso medido** en un cartón 4×4 con portadas: 16 peticiones, 21 KB en total
+  (Next las sirve reescaladas). Extrapolado a un 5×5, unos 34 KB: asumible en
+  una red de salón.
+- `e2e/portadas.spec.ts` cubre el desenfoque, el título legible en los dos
+  momentos y que sin la opción no se pide ninguna imagen.
+
 ## Próximo paso
 
-Spec 6 — portadas en el cartón: una opción del bingo, apagada por defecto, que
-pinta la carátula del álbum en cada casilla, desenfocada hasta el revelado. El
-plan está escrito en `docs/superpowers/plans/2026-08-19-portadas-en-el-carton.md`.
-Después queda la spec 7, la auditoría responsive, todavía sin plan.
+Spec 7 — auditoría responsive, la única del pulido posterior a `v0.6.0` que
+queda. Todavía sin plan; la spec vive en
+`docs/superpowers/specs/2026-08-11-auditoria-responsive-design.md`.

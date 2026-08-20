@@ -108,6 +108,8 @@ export async function createGameAndOpenRoom(
     lives?: 1 | 2 | 3 | 5;
     /** Tamaño del cartón de bingo. Por defecto, 3×3. */
     cardSize?: 3 | 4 | 5;
+    /** Casillas con la carátula del álbum. Requiere una colección con portadas. */
+    showArtwork?: boolean;
   } = {
     name: 'E2E',
   },
@@ -127,6 +129,11 @@ export async function createGameAndOpenRoom(
   }
   await page.getByLabel('Nombre de la partida').fill(options.name);
   await demoCollectionCard(page).click();
+  // Después de elegir la colección: la opción está deshabilitada hasta saber
+  // si esa colección trae carátulas.
+  if (options.showArtwork) {
+    await page.getByRole('checkbox', { name: /Casillas con portada/ }).check();
+  }
   if (options.cardSize) {
     await page.getByRole('button', { name: `${options.cardSize} × ${options.cardSize}` }).click();
   }

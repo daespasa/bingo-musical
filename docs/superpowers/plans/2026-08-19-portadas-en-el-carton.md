@@ -111,7 +111,7 @@ colección de muestra estrena carátulas generadas por nosotros, no comerciales.
   coverUrl: string | null;
   ```
 
-- [ ] **Step 1: Escribir la prueba que falla**
+- [x] **Step 1: Escribir la prueba que falla**
 
 `packages/shared/src/artwork.test.ts`:
 
@@ -146,11 +146,11 @@ describe('hasEnoughArtwork', () => {
 });
 ```
 
-- [ ] **Step 2: Verla fallar**
+- [x] **Step 2: Verla fallar**
 
 Run: `pnpm --filter @bingo/shared test`
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 - `artwork.ts` con el umbral y la función, comentando por qué 80 % (por debajo, un cartón
   medio vacío queda peor que uno de solo texto) y por qué la colección vacía no cumple.
@@ -159,14 +159,14 @@ Run: `pnpm --filter @bingo/shared test`
 - `coverUrl: string | null` en `CellView`, con su comentario.
 - Reexporta `artwork` desde `index.ts`.
 
-- [ ] **Step 4: Verla pasar y construir**
+- [x] **Step 4: Verla pasar y construir**
 
 Run: `pnpm --filter @bingo/shared test && pnpm --filter @bingo/shared build`
 Expected: PASS. Comprueba que los tests que ya existen de `game-config` siguen en verde:
 `showArtwork` tiene `default`, así que las configuraciones guardadas sin ese campo deben
 seguir leyéndose.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/shared/src
@@ -189,7 +189,7 @@ git commit -m "feat(shared): opción de portadas en el cartón y umbral de cober
   nombre mirando cómo están nombrados los campos vecinos del DTO (`trackCount`,
   `isDemo`, …) y déjalo escrito en el informe, porque la Tarea 5 lo consume.
 
-- [ ] **Step 1: La portada en el cartón**
+- [x] **Step 1: La portada en el cartón**
 
 En `getForParticipant`, amplía el `include` para traer el álbum de la pista de cada celda,
 pidiendo **solo** lo que hace falta:
@@ -210,18 +210,18 @@ tipo lo refleje (nada de `as any`) y revisa a sus llamantes. Un comentario en es
 explicando que la portada se resuelve por unión y no se persiste en la celda, porque la
 celda ya guarda el `trackId` y duplicarla obligaría a migrar.
 
-- [ ] **Step 2: La cobertura en el listado de colecciones**
+- [x] **Step 2: La cobertura en el listado de colecciones**
 
 El wizard necesita saber, por colección, si tiene carátulas suficientes. Cuéntalo en la
 consulta que ya lista colecciones (cuántas de sus pistas tienen álbum con `coverUrl` no
 nulo) y expón el booleano usando `hasEnoughArtwork`. **No** devuelvas la lista de URLs: el
 wizard solo necesita el sí o el no.
 
-- [ ] **Step 3: Comprobar**
+- [x] **Step 3: Comprobar**
 
 Run: `pnpm --filter @bingo/shared build && pnpm --filter @bingo/api typecheck && pnpm --filter @bingo/api test`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/api/src
@@ -244,12 +244,12 @@ git commit -m "feat(api): la casilla del cartón lleva su carátula y la colecci
 - Produces: rutas locales estables (`/covers/<slug>.svg` o `.png`) que el seed escribe en
   `Album.coverUrl` de la colección de muestra.
 
-- [ ] **Step 1: Mirar cómo se generan los otros recursos de la demo**
+- [x] **Step 1: Mirar cómo se generan los otros recursos de la demo**
 
 Lee `scripts/generate-icons.mjs` y sigue su estilo: mismo tipo de script, mismas
 dependencias (ninguna nueva), misma forma de escribir en `apps/web/public`.
 
-- [ ] **Step 2: Diseñar la carátula**
+- [x] **Step 2: Diseñar la carátula**
 
 Bloques de color derivados del título, en la paleta de la marca. **Esto es diseño, no solo
 código**: aplica `gramola-design-taste` con `DESIGN.md` delante. Requisitos:
@@ -259,13 +259,13 @@ código**: aplica `gramola-design-taste` con `DESIGN.md` delante. Requisitos:
 - Sin texto dentro: el título ya va encima, en la casilla.
 - Ligera: son 25 por cartón.
 
-- [ ] **Step 3: Generarlas y asignarlas en el seed**
+- [x] **Step 3: Generarlas y asignarlas en el seed**
 
 Genera las carátulas de las pistas de la colección de muestra y haz que el seed rellene
 `Album.coverUrl` con su ruta local. El seed debe seguir siendo idempotente: ejecutarlo dos
 veces no puede duplicar álbumes ni dejar rutas colgando.
 
-- [ ] **Step 4: Comprobar**
+- [x] **Step 4: Comprobar**
 
 Run:
 
@@ -279,7 +279,7 @@ Y comprueba en la base de datos que la colección de muestra pasa del umbral del
 **Mira** un par de carátulas generadas con la herramienta de lectura de imágenes y cuenta
 en el informe si tienen el aspecto de la marca o parecen ruido de colores.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/generate-demo-covers.mjs apps/web/public/covers packages/database/prisma/seed.ts package.json
@@ -303,18 +303,18 @@ git commit -m "feat(demo): carátulas propias para la colección de muestra"
   compruébalo: si la vista de jugador no recibe hoy `showArtwork`, dilo en el informe y
   propón la vía mínima (llevarlo en el estado de sala, como el resto de ajustes visibles).
 
-- [ ] **Step 1: Escribir la prueba que falla**
+- [x] **Step 1: Escribir la prueba que falla**
 
 `bingo-card.test.tsx` con Testing Library: (a) con `coverUrl` y portadas activadas, la
 casilla pinta una imagen y **sigue mostrando el título**; (b) sin `coverUrl`, no hay
 imagen y el marcado es el de hoy; (c) sin revelar, la imagen lleva la clase de desenfoque;
 revelada, no la lleva. Usa los estados de celda que ya existen (`status`).
 
-- [ ] **Step 2: Verla fallar**
+- [x] **Step 2: Verla fallar**
 
 Run: `pnpm --filter @bingo/web test`
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 - Imagen con `next/image` ocupando la casilla, título encima con velo suficiente para que
   se lea (compruébalo con contraste, no a ojo).
@@ -325,11 +325,11 @@ Run: `pnpm --filter @bingo/web test`
 - Pide el tamaño pequeño: `sizes` acorde a una casilla, no la imagen a tamaño completo.
 - En `next.config.mjs`, declara el dominio de la CDN de Spotify en `remotePatterns`.
 
-- [ ] **Step 4: Comprobar**
+- [x] **Step 4: Comprobar**
 
 Run: `pnpm --filter @bingo/web test && pnpm --filter @bingo/web typecheck && pnpm --filter @bingo/web lint && pnpm --filter @bingo/web build`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src apps/web/next.config.mjs
@@ -349,24 +349,24 @@ git commit -m "feat(web): la casilla del cartón puede enseñar la carátula del
 - Consumes: el booleano de cobertura del listado de colecciones (Tarea 2) y `showArtwork`
   (Tarea 1).
 
-- [ ] **Step 1: Añadir la casilla**
+- [x] **Step 1: Añadir la casilla**
 
 Dentro de la sección del bingo, junto al selector de variante (la sección ya está
 condicionada a `esBingo`): «Casillas con portada», apagada por defecto.
 
-- [ ] **Step 2: Deshabilitarla cuando no proceda**
+- [x] **Step 2: Deshabilitarla cuando no proceda**
 
 Si la colección elegida no tiene carátulas suficientes, la casilla se ofrece
 **deshabilitada con el motivo escrito** («esta colección no tiene carátulas»), no oculta:
 que se vea que la opción existe. Si el anfitrión cambia de colección, el estado se
 recalcula.
 
-- [ ] **Step 3: Enviarla**
+- [x] **Step 3: Enviarla**
 
 `showArtwork` viaja dentro de `modeConfig` del bingo, junto a `revealMode`. Fuera del
 bingo no se manda (el envío ya distingue por modo).
 
-- [ ] **Step 4: Comprobar**
+- [x] **Step 4: Comprobar**
 
 Run: `pnpm --filter @bingo/web test && pnpm --filter @bingo/web typecheck && pnpm --filter @bingo/web lint && pnpm --filter @bingo/web build`
 
@@ -374,7 +374,7 @@ Y míralo: con la colección de muestra ya sembrada con carátulas, la casilla d
 activarse; comprueba también el caso deshabilitado si tienes a mano una colección sin
 portadas. Cuenta en el informe qué viste.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add "apps/web/src/app/dashboard/games/new/page.tsx"
@@ -390,7 +390,7 @@ git commit -m "feat(web): el wizard ofrece las portadas cuando la colección las
 - Create: `e2e/portadas.spec.ts`
 - Modify: `CHANGELOG.md`, `PROGRESS.md`, `README.md` si documenta las opciones del bingo
 
-- [ ] **Step 1: E2E**
+- [x] **Step 1: E2E**
 
 Dos pruebas:
 
@@ -400,7 +400,7 @@ Dos pruebas:
 2. **Sin portadas**: partida de bingo normal; **no se pide ninguna imagen** de carátula
    (compruébalo con `page.on('request')` filtrando por la ruta de las carátulas).
 
-- [ ] **Step 2: Medir el peso**
+- [x] **Step 2: Medir el peso**
 
 El riesgo escrito en el spec: 25 imágenes en un cartón 5×5, en móviles ajenos. Con una
 partida 5×5 y portadas activadas, mide cuánto pesa el conjunto de carátulas
@@ -408,7 +408,7 @@ partida 5×5 y portadas activadas, mide cuánto pesa el conjunto de carátulas
 el informe.** Si es desproporcionada para una red de salón, dilo claramente en vez de
 darlo por bueno.
 
-- [ ] **Step 3: Ejecutar y validar**
+- [x] **Step 3: Ejecutar y validar**
 
 ```bash
 docker compose up -d
@@ -418,7 +418,7 @@ pnpm exec playwright test e2e/portadas.spec.ts e2e/gameplay.spec.ts e2e/bingo-va
 
 Y `verify-gramola`: `pnpm test`, typecheck/lint/build de la web, typecheck de la API.
 
-- [ ] **Step 4: Documentar**
+- [x] **Step 4: Documentar**
 
 `CHANGELOG.md`, bajo `## [Unreleased]` → `### Added`:
 
@@ -430,7 +430,7 @@ Y `verify-gramola`: `pnpm test`, typecheck/lint/build de la web, typecheck de la
 
 `PROGRESS.md`: spec 6 del pulido posterior a v0.6.0 como hecho.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add e2e/portadas.spec.ts CHANGELOG.md PROGRESS.md README.md
