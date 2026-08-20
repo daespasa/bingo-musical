@@ -61,7 +61,26 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    // El script anti-parpadeo muta `<html>` (clase `.dark` y `style.colorScheme`)
+    // antes de la hidratación, a propósito: sin `suppressHydrationWarning` React
+    // avisaría de una diferencia entre servidor y cliente que aquí es deseada.
+    // Se acota solo a este elemento, que es exactamente el que muta el script.
+    <html
+      lang="es"
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          // Corre antes del primer pintado: sin esto, quien tenga el tema
+          // oscuro guardado ve un fogonazo blanco en cada carga. Es el único
+          // código que no puede esperar a la hidratación, de ahí que vaya
+          // inline y sin importar nada. La clave es la de `lib/theme.ts`.
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem('gramola:theme');var d=p==='dark'||((p===null||p==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.classList.toggle('dark',d);r.style.colorScheme=d?'dark':'light';}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>
         <Providers>{children}</Providers>
         <PwaProvider />

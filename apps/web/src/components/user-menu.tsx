@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { LogOut } from 'lucide-react';
 import { api, type PublicUser } from '@/lib/api';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function UserMenu() {
   const router = useRouter();
@@ -21,7 +22,15 @@ export function UserMenu() {
   };
 
   return (
-    <div className="flex items-center gap-2">
+    // `max-w` + `flex-wrap` por debajo de `lg`: la cabecera del panel (logo,
+    // navegación, cuenta y «Cerrar sesión») ya va justa de sitio en esos
+    // anchos, y el selector de tema añade un cuarto grupo que la hace
+    // desbordar sobre la navegación. En vez de comprimir la navegación hasta
+    // que se solape, la cuenta y «Cerrar sesión» conservan su fila de
+    // siempre y el selector de tema cae a una segunda línea, alineado con
+    // ellos. En `lg` la navegación ya muestra sus rótulos completos y hay
+    // sitio de sobra: todo vuelve a una sola fila.
+    <div className="flex max-w-[6.5rem] flex-wrap items-center justify-end gap-2 lg:max-w-none lg:flex-nowrap">
       <Link
         href="/dashboard/profile"
         className="flex items-center gap-2 rounded px-1 py-1 hover:text-brand-600"
@@ -56,6 +65,7 @@ export function UserMenu() {
         <LogOut className="h-3.5 w-3.5" aria-hidden />
         <span className="hidden lg:inline">Cerrar sesión</span>
       </button>
+      <ThemeToggle className="shrink-0" />
     </div>
   );
 }

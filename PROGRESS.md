@@ -141,30 +141,6 @@
 - **Revancha**: duplica la partida y abre una sala nueva, para no sobrescribir
   el historial de la que acaba de terminar. Solo el anfitrión.
 
-## Pulido posterior a v0.6.0
-
-### Spec 1 — Configuración específica de cada modo (`feat/config-por-modo-web`)
-
-- `describeModeSummary` en `@bingo/shared`: redacta el resumen de la configuración
-  según el modo (opciones, intentos, vidas o mezcla), con sus 8 tests.
-- `gameMode` y `modeSummary` viajan en el DTO de sala de la API.
-- El wizard oculta el cartón y las reglas de línea y bingo fuera del bingo, y fuerza
-  valores neutros al enviar la configuración de un modo que no las usa.
-- La sala de espera y el resumen de partida enseñan el resumen del modo en vez de
-  hablar siempre de cartón y bingo.
-- `e2e/config-por-modo.spec.ts` cubre el bingo, los demás modos y la sala de espera
-  de un quiz.
-- **Deuda consciente**: `cardSize`, `freeCenter`, `lineEnabled` y `bingoEnabled` siguen
-  viviendo en la configuración común en vez de en `musicBingoConfig`, que es donde
-  pertenecen ahora que solo el bingo los usa. Moverlos exige migración porque ya hay
-  partidas guardadas con esos campos en su sitio actual; queda pendiente.
-  Mientras tanto, la API acepta hoy esos cuatro campos en cualquier modo
-  (`apps/api/src/games/games.dto.ts`) y los persiste tal cual
-  (`apps/api/src/games/games.service.ts`), sin comprobar que el modo sea
-  `MUSIC_BINGO`. La coherencia entre lo guardado y lo jugado la garantiza solo
-  el wizard de la web al enviar el formulario; normalizarlos en el servidor
-  (rechazarlos o descartarlos fuera del bingo) queda pendiente.
-
 ## Validaciones ejecutadas en esta épica
 
 Ejecutadas el 2026-08-08 sobre `feat/mode-aware-show`:
@@ -266,16 +242,6 @@ Ya no queda ningún modo del catálogo sin implementar. El registro sigue
 negándose a resolver un handler inexistente, que es lo que protegerá a los
 modos futuros de anunciarse antes de tiempo.
 
-## Pulido posterior a v0.6.0
-
-Ronda de specs sobre observaciones de uso de la release `v0.6.0`, cada una en
-su propia rama:
-
-- [x] Spec 2 — Salida de partida (`feat/salida-de-partida`): el botón de salir
-      de una partida terminada lleva a quien tiene cuenta a `/dashboard` y al
-      invitado a `/`, con la etiqueta acorde («Volver a mis partidas» / «Salir»)
-      para que no se confunda con cerrar sesión.
-
 ## Errores conocidos (heredados de v0.5.2)
 
 - Al reiniciar la API con una partida en curso, la sala pierde el runtime en
@@ -286,20 +252,46 @@ su propia rama:
 ## Pulido posterior a v0.6.0
 
 Siete observaciones de uso sobre la release `v0.6.0`, cada una con su spec, su
-rama y su ciclo. El índice de specs y las specs 1, 2, 3, 5, 6 y 7 viven en la
-rama `fix/config-por-modo`, pendiente de fusionar; solo la spec 4 (este copy)
-ha llegado ya a esta rama. No son una épica: no comparten código ni dependen unas
-de otras salvo donde se indica.
+rama y su ciclo. No son una épica: no comparten código ni dependen unas de
+otras salvo donde se indica.
 
 | #   | Spec                                  | Estado    |
 | --- | ------------------------------------- | --------- |
-| 1   | Configuración específica de cada modo | Pendiente |
-| 2   | Salida de partida                     | Pendiente |
+| 1   | Configuración específica de cada modo | Hecha     |
+| 2   | Salida de partida                     | Hecha     |
 | 3   | Artista en las opciones del quiz      | Hecha     |
 | 4   | Copy de la portada                    | Hecha     |
-| 5   | Tema claro y oscuro                   | Pendiente |
+| 5   | Tema claro y oscuro                   | Hecha     |
 | 6   | Portadas en el cartón                 | Pendiente |
 | 7   | Auditoría responsive                  | Pendiente |
+
+### Spec 1 — Configuración específica de cada modo (`feat/config-por-modo-web`)
+
+- `describeModeSummary` en `@bingo/shared`: redacta el resumen de la configuración
+  según el modo (opciones, intentos, vidas o mezcla), con sus 8 tests.
+- `gameMode` y `modeSummary` viajan en el DTO de sala de la API.
+- El wizard oculta el cartón y las reglas de línea y bingo fuera del bingo, y fuerza
+  valores neutros al enviar la configuración de un modo que no las usa.
+- La sala de espera y el resumen de partida enseñan el resumen del modo en vez de
+  hablar siempre de cartón y bingo.
+- `e2e/config-por-modo.spec.ts` cubre el bingo, los demás modos y la sala de espera
+  de un quiz.
+- **Deuda consciente**: `cardSize`, `freeCenter`, `lineEnabled` y `bingoEnabled` siguen
+  viviendo en la configuración común en vez de en `musicBingoConfig`, que es donde
+  pertenecen ahora que solo el bingo los usa. Moverlos exige migración porque ya hay
+  partidas guardadas con esos campos en su sitio actual; queda pendiente.
+  Mientras tanto, la API acepta hoy esos cuatro campos en cualquier modo
+  (`apps/api/src/games/games.dto.ts`) y los persiste tal cual
+  (`apps/api/src/games/games.service.ts`), sin comprobar que el modo sea
+  `MUSIC_BINGO`. La coherencia entre lo guardado y lo jugado la garantiza solo
+  el wizard de la web al enviar el formulario; normalizarlos en el servidor
+  (rechazarlos o descartarlos fuera del bingo) queda pendiente.
+
+### Spec 2 — Salida de partida (`feat/salida-de-partida`)
+
+- El botón de salir de una partida terminada lleva a quien tiene cuenta a
+  `/dashboard` y al invitado a `/`, con la etiqueta acorde («Volver a mis
+  partidas» / «Salir») para que no se confunda con cerrar sesión.
 
 ### Spec 3 — Artista en las opciones del quiz (`feat/artista-en-opciones`)
 
@@ -329,10 +321,26 @@ de otras salvo donde se indica.
 - `e2e/portada.spec.ts` comprueba el contenido y que a 360 px no hay scroll
   horizontal.
 
+### Spec 5 — Tema claro y oscuro (`feat/tema-claro-oscuro`)
+
+- Selector de tema con tres estados (claro, oscuro, automático), en el menú
+  de usuario y en el `<nav>` de la portada. Se guarda por dispositivo en
+  `localStorage` (`gramola:theme`), no en el perfil de usuario.
+- Nace en «Automático», que sigue `prefers-color-scheme` como se comportaba
+  hasta ahora; el anfitrión puede forzar claro u oscuro para proyectar sin
+  tocar los ajustes del sistema.
+- Un script inline en el layout aplica la clase `dark` a `<html>` antes del
+  primer pintado, para no arrancar en el tema equivocado ni un instante.
+- `e2e/tema.spec.ts` comprueba que el tema elegido sobrevive a una recarga
+  ya en el primer pintado (sin esperar a la hidratación) y que, en
+  automático, la clase sigue al sistema en caliente, sin recargar.
+- El `themeColor` del layout sigue resolviéndose por `prefers-color-scheme`
+  y no por la preferencia guardada: con el tema forzado, la barra del
+  navegador puede no coincidir con la interfaz (ver `DECISIONS.md`).
+
 ## Próximo paso
 
-Fase 6: adivina la canción. Reutiliza `PlayerAnswer` (que ya tiene `freeText` e
-`attempt`) y necesita la pieza que falta: normalización y comparación difusa en
-`@bingo/shared`, con umbrales que dependan de la longitud. El riesgo aquí no es
-filtrar la respuesta sino un _fuzzy_ demasiado permisivo que acepte «Sal» por
-«Sol».
+Spec 6 — portadas en el cartón: una opción del bingo, apagada por defecto, que
+pinta la carátula del álbum en cada casilla, desenfocada hasta el revelado. El
+plan está escrito en `docs/superpowers/plans/2026-08-19-portadas-en-el-carton.md`.
+Después queda la spec 7, la auditoría responsive, todavía sin plan.

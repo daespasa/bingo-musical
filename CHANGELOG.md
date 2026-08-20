@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Unreleased]
 
+### Added
+
+- Selector de tema claro, oscuro o automático, guardado en el propio dispositivo. Nace en
+  automático, que es como se comportaba hasta ahora, y el anfitrión puede forzar el tema
+  que le convenga para proyectar sin tocar los ajustes del sistema.
+
 ### Changed
 
 - La portada cuenta qué es Gramola, qué hace falta para empezar y qué se juega, en

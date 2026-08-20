@@ -424,3 +424,9 @@ una persona, conservar lo que rompería instalaciones existentes.
 - **Causa 1**: no existía `.dockerignore`. El contexto arrastraba los `node_modules` del host —enlaces simbólicos de pnpm que apuntan a rutas del host— y el `COPY` de cada app los dejaba caer encima de los que el contenedor acababa de instalar. Los enlaces dejaban de resolver y la construcción moría con un `Cannot find module .../next`, que parece un problema de dependencias y no lo es. La imagen solo se construía en un checkout sin `node_modules`, es decir, en CI.
 - **Causa 2**: el `postinstall` de `@bingo/database` ejecuta `prisma generate`, que necesita el esquema; el Dockerfile solo copiaba los `package.json` antes de instalar. Estaba oculto tras una capa cacheada y salió a la luz al invalidarse la caché.
 - **Consecuencias**: ambas imágenes se construyen ya en local (`bingo-web` 1,33 GB, `bingo-api` 892 MB). De paso, el contexto de construcción es mucho más pequeño.
+
+## 2026-08-19 — El `themeColor` del layout no conoce el tema forzado
+
+- **Decisión**: `themeColor` en `layout.tsx` se deja resolviendo por `prefers-color-scheme`, sin sincronizarlo con la preferencia guardada en `gramola:theme`.
+- **Contexto**: el selector de tema añade un tercer estado (claro/oscuro/automático) que se aplica vía clase `.dark` en `<html>`, pero `themeColor` es metadata estática que el navegador evalúa por su cuenta con la media query del sistema.
+- **Consecuencias**: con el tema forzado a un valor distinto del que tiene el sistema operativo, la barra de color del navegador (en móvil, por ejemplo) puede no coincidir con la interfaz. Es un detalle menor y aceptado: sincronizarlo exigiría mutar `<meta name="theme-color">` desde JS y perder la ventaja de que sea metadata estática sin fogonazo.

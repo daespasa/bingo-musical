@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Headphones, Music4 } from 'lucide-react';
 import { APP_BRAND } from '@bingo/shared';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 /** Portada del cartón de muestra: dos casillas ya marcadas. */
 const SLEEVE_TRACKS = [
@@ -46,12 +47,15 @@ export default function HomePage() {
           </span>
           {APP_BRAND.name}
         </Link>
-        <Link
-          href="/login"
-          className="font-mono text-xs uppercase tracking-[0.14em] text-slate-500 underline-offset-4 hover:text-brand-600 hover:underline dark:text-slate-400"
-        >
-          Acceder
-        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Link
+            href="/login"
+            className="font-mono text-xs uppercase tracking-[0.14em] text-slate-500 underline-offset-4 hover:text-brand-600 hover:underline dark:text-slate-400"
+          >
+            Acceder
+          </Link>
+        </div>
       </nav>
 
       <div className="grid flex-1 items-center gap-14 py-14 lg:grid-cols-[1.05fr_.95fr] lg:gap-12 lg:py-20">
