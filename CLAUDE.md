@@ -23,7 +23,7 @@ Monorepo pnpm/Turborepo: Next.js 15 en `apps/web`, NestJS 11 en `apps/api`, Pris
 
 ## Restricciones importantes
 
-- `@bingo/shared` se consume desde `dist`: si cambia, ejecuta `pnpm --filter @bingo/shared build` o reinicia `pnpm dev`.
+- `@bingo/shared` y `@bingo/database` se consumen desde `dist`: si cambian, ejecuta `pnpm --filter <paquete> build` o reinicia `pnpm dev`.
 - Turborepo usa entorno estricto: declara variables nuevas en `turbo.json`.
 - No ejecutes `docker compose down -v`; elimina volúmenes y datos locales.
 - No incluyas música comercial, secretos ni archivos `.env` en commits.
