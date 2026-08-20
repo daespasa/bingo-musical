@@ -139,6 +139,8 @@ export type RoomStatePayload = {
     showLeaderboard: boolean;
     /** Variante del bingo, para que la interfaz sepa qué contar. */
     revealMode: BingoRevealMode;
+    /** Opción del bingo: las casillas del cartón enseñan la carátula. */
+    showArtwork: boolean;
   };
   participants: ParticipantView[];
   round: RoundView | null;
