@@ -100,9 +100,13 @@ function LoginForm() {
           Regístrate
         </Link>
       </p>
-      <p className="data mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Demo: demo@bingo.local / Demo1234!
-      </p>
+      {/* Solo en desarrollo: en un despliegue público esto anuncia una cuenta
+          real a cualquiera que abra la pantalla de acceso. */}
+      {process.env.NODE_ENV !== 'production' && (
+        <p className="data mt-2 text-xs text-slate-500 dark:text-slate-400">
+          Demo: demo@bingo.local / Demo1234!
+        </p>
+      )}
     </div>
   );
 }
