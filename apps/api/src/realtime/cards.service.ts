@@ -3,6 +3,11 @@ import { CARD_ALGORITHM_VERSION, generateCard, type CardTrack, type CardView } f
 import type { BingoCard, BingoCardCell } from '@bingo/database';
 import { PrismaService } from '../prisma.service';
 
+/** Una celda con la carátula de su pista traída por unión. */
+type CellWithCover = BingoCardCell & {
+  track?: { album: { coverUrl: string | null } | null } | null;
+};
+
 @Injectable()
 export class CardsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -48,13 +53,24 @@ export class CardsService {
   async getForParticipant(participantId: string): Promise<CardView | null> {
     const card = await this.prisma.bingoCard.findUnique({
       where: { participantId },
-      include: { cells: { orderBy: { position: 'asc' } } },
+      include: {
+        cells: {
+          orderBy: { position: 'asc' },
+          include: { track: { select: { album: { select: { coverUrl: true } } } } },
+        },
+      },
     });
     if (!card) return null;
     return this.toView(card);
   }
 
-  toView(card: BingoCard & { cells: BingoCardCell[] }): CardView {
+  /**
+   * La portada se resuelve por unión desde la celda, que ya guarda su
+   * `trackId`: duplicarla en la celda obligaría a migrar y a mantener dos
+   * copias de lo mismo. Una celda sin álbum o sin carátula sale con `null` y
+   * se pinta como siempre.
+   */
+  toView(card: BingoCard & { cells: CellWithCover[] }): CardView {
     return {
       id: card.id,
       size: card.size,
@@ -65,6 +81,7 @@ export class CardsService {
         displayArtist: c.displayArtist,
         isFree: c.isFree,
         status: c.status,
+        coverUrl: c.track?.album?.coverUrl ?? null,
       })),
     };
   }

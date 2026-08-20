@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { hasEnoughArtwork } from '@bingo/shared';
 import type { User } from '@bingo/database';
 import { AuthGuard, CurrentUser } from '../auth/auth.guard';
 import { PrismaService } from '../prisma.service';
@@ -28,6 +29,8 @@ export type CollectionSummary = {
   description: string | null;
   isDemo: boolean;
   trackCount: number;
+  /** Si tiene carátulas suficientes para ofrecer el cartón con portadas. */
+  hasArtwork: boolean;
   /** Si esta persona puede cambiarla; las de la aplicación no se tocan. */
   editable: boolean;
 };
@@ -110,12 +113,26 @@ export class CollectionsController {
       include: { _count: { select: { tracks: true } } },
       orderBy: [{ isDemo: 'desc' }, { createdAt: 'desc' }],
     });
+    /*
+     * Cuántas pistas de cada colección tienen carátula. El wizard solo necesita
+     * el sí o el no, así que no viajan las URLs: aquí basta con contarlas.
+     */
+    const covered = await this.prisma.musicCollectionTrack.groupBy({
+      by: ['collectionId'],
+      where: {
+        collectionId: { in: collections.map((c) => c.id) },
+        track: { album: { coverUrl: { not: null } } },
+      },
+      _count: { _all: true },
+    });
+    const coversByCollection = new Map(covered.map((g) => [g.collectionId, g._count._all]));
     return collections.map((c) => ({
       id: c.id,
       name: c.name,
       description: c.description,
       isDemo: c.isDemo,
       trackCount: c._count.tracks,
+      hasArtwork: hasEnoughArtwork(coversByCollection.get(c.id) ?? 0, c._count.tracks),
       editable: !c.isDemo && c.ownerId === user.id,
     }));
   }
@@ -129,7 +146,7 @@ export class CollectionsController {
         tracks: {
           orderBy: { position: 'asc' },
           include: {
-            track: { include: { artist: true, previews: true } },
+            track: { include: { artist: true, previews: true, album: true } },
           },
         },
       },
@@ -141,6 +158,10 @@ export class CollectionsController {
       description: c.description,
       isDemo: c.isDemo,
       trackCount: c._count.tracks,
+      hasArtwork: hasEnoughArtwork(
+        c.tracks.filter((ct) => ct.track.album?.coverUrl).length,
+        c._count.tracks,
+      ),
       editable: !c.isDemo && c.ownerId === user.id,
       tracks: c.tracks.map((ct) => {
         const preview =
